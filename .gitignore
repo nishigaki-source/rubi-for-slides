@@ -3,6 +3,7 @@ dist/
 .vite/
 *.log
 .DS_Store
+*.zip
 
 # Playwright e2e テストの生成物
 tests/e2e/dist/

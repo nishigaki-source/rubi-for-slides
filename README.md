@@ -189,5 +189,5 @@ tests/e2e/   # Playwrightによるe2eテスト。fixtures/(固定HTML)、kuromoj
 - `public/data/kanji-grades.sample.json` は**サンプル/プレースホルダー**であり、文部科学省の
   学年別漢字配当表(教育漢字)の全件ではない。学年フィルタ機能を実際に使えるようにする前に、
   公式データで置き換える必要がある。
-- アイコン画像(`public/icons/*.png`)は単色のプレースホルダー。デザイン確定後に差し替える。
+- アイコン画像(`public/icons/*.png`)は「文/ぶん」(漢字+ふりがな)をモチーフにしたデザイン。生成スクリプトは `scripts/generate-icons.py`(要 Pillow)。
 - `manifest.json` は `default_locale` を意図的に外している(i18n 対応は Phase 3 のタスク)。
