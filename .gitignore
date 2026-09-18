@@ -1,0 +1,20 @@
+node_modules/
+dist/
+.vite/
+*.log
+.DS_Store
+
+# Playwright e2e テストの生成物
+tests/e2e/dist/
+test-results/
+playwright-report/
+blob-report/
+
+# kuromoji の辞書ファイル。node_modules/kuromoji/dict からコピーする運用のため
+# リポジトリには含めない(`npm install` 時に scripts/sync-dict.mjs が自動生成する)。
+public/dict/*.dat.gz
+
+# 拡張機能IDを固定するための秘密鍵(Phase 2, OAuth用)。絶対にコミットしない。
+# manifest.json の "key" フィールドは公開鍵(base64)なのでコミットして問題ないが、
+# 秘密鍵(.pem)はここにしか無いので紛失しないよう別途バックアップすること。
+.secrets/

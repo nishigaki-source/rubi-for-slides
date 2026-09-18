@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Slides-like fixture</title>
+<style>
+  /* 実際の Slides と同様、文字は正確な位置に配置する。CSS リセットのみ。 */
+  body { margin: 0; font-family: sans-serif; }
+  svg { display: block; }
+</style>
+</head>
+<body>
+  <!--
+    PHASE0_FINDINGS.md と実機テストで確認した Slides の DOM 構造を再現する:
+      - 編集キャンバス本体の SVG (id=main-canvas)
+      - サムネイル(フィルムストリップ)の SVG (class に punch-filmstrip-thumbnail を含む) -> 除外対象
+      - スピーカーノート欄 (id が speakernotes- で始まる) -> 除外対象
+      - 段落は <g id="editor-i<N>-paragraph-<M>">
+      - 1 文字 1 <text> が基本だが、一部は複数文字が1要素にまとまる(実機で発見した実例を再現)
+  -->
+
+  <!-- サムネイル(フィルムストリップ) -- ルビ対象外であることを確認するためのダミー。
+       本体側の内容と紛れないよう、あえて別の単語(図書=としょ)を使う。 -->
+  <svg class="punch-filmstrip-thumbnail" width="100" height="60">
+    <g>
+      <text x="5" y="20" font-size="12">図</text>
+      <text x="20" y="20" font-size="12">書</text>
+    </g>
+  </svg>
+
+  <!-- 編集キャンバス本体 -->
+  <svg id="main-canvas" width="900" height="400" viewBox="0 0 900 400">
+    <g id="editor-p">
+      <g id="editor-i0">
+        <!-- 段落1: 送り仮名・熟語・記号混じりの一文。1文字1要素が基本。 -->
+        <g id="editor-i0-paragraph-0">
+          <text x="10" y="40" font-size="32">食</text>
+          <text x="42" y="40" font-size="32">べ</text>
+          <text x="74" y="40" font-size="32">る</text>
+          <text x="106" y="40" font-size="32">学</text>
+          <text x="138" y="40" font-size="32">校</text>
+          <text x="170" y="40" font-size="32">生</text>
+          <text x="202" y="40" font-size="32">活</text>
+          <text x="234" y="40" font-size="32">は</text>
+          <text x="266" y="40" font-size="32">楽</text>
+          <text x="298" y="40" font-size="32">し</text>
+          <text x="330" y="40" font-size="32">い</text>
+          <text x="362" y="40" font-size="32">。</text>
+        </g>
+      </g>
+
+      <g id="editor-i1">
+        <!--
+          段落2: 実機で実際に発見した不具合をそのまま再現する回帰テスト用フィクスチャ。
+          「4つのステップで楽しく学ぼう。」で、Googleスライドが「テッ」を1つの
+          <text>要素にまとめていたことが原因で、「楽」「学」のルビが隣の文字
+          (「し」「ぼ」)の位置にズレて表示される不具合が実機で見つかった。
+          この段落は「テッ」を複数文字要素として含み、その後ろに漢字(楽・学)が
+          続く構造になっており、charIndexInElement の計算が正しくなければ
+          このテストで位置がズレて検出される。
+        -->
+        <g id="editor-i1-paragraph-0">
+          <text x="10" y="100" font-size="32">4</text>
+          <text x="42" y="100" font-size="32">つ</text>
+          <text x="74" y="100" font-size="32">の</text>
+          <text x="106" y="100" font-size="32">ス</text>
+          <text x="138" y="100" font-size="32">テッ</text>
+          <text x="202" y="100" font-size="32">プ</text>
+          <text x="234" y="100" font-size="32">で</text>
+          <text x="266" y="100" font-size="32">楽</text>
+          <text x="298" y="100" font-size="32">し</text>
+          <text x="330" y="100" font-size="32">く</text>
+          <text x="362" y="100" font-size="32">学</text>
+          <text x="394" y="100" font-size="32">ぼ</text>
+          <text x="426" y="100" font-size="32">う</text>
+          <text x="458" y="100" font-size="32">。</text>
+        </g>
+      </g>
+
+      <g id="editor-i2">
+        <!-- 段落3: 折り返し(改行)をまたぐケースを再現。1行目と2行目でyを変える -->
+        <g id="editor-i2-paragraph-0">
+          <text x="10" y="200" font-size="32">を</text>
+          <text x="42" y="200" font-size="32">追</text>
+          <text x="10" y="240" font-size="32">加</text>
+        </g>
+      </g>
+
+      <g id="editor-i3">
+        <!-- 段落4: 編集追従テスト用の空の段落(テストから動的に文字を追加する) -->
+        <g id="editor-i3-paragraph-0"></g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- スピーカーノート欄 -- ルビ対象外であることを確認するためのダミー -->
+  <svg width="900" height="60">
+    <g id="speakernotes-i9-paragraph-0">
+      <text x="10" y="30" font-size="16">発</text>
+      <text x="30" y="30" font-size="16">表</text>
+    </g>
+  </svg>
+
+  <!--
+    window.chrome スタブは Playwright 側で page.addInitScript により
+    このページの他のスクリプトより先に注入される(tests/e2e/rubi.spec.ts 参照)。
+    ES module は文書順で実行されるため、kuromoji シムが先に読み込まれてから
+    content script 本体(main() を自動実行する)が読み込まれる。
+  -->
+  <script type="module" src="/tests/e2e/dist/kuromojiShim.js"></script>
+  <script type="module" src="/tests/e2e/dist/content.js"></script>
+</body>
+</html>

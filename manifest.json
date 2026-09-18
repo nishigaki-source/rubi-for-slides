@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "ルビふり for Googleスライド",
+  "version": "0.5.0",
+  "description": "Googleスライドの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu2aG1mPmUCYuILubjGS5QCSAfPPxP/FVKMWYf4zUl/7llK2h+70gqR5nLBXj8Yjih14QZqVp4XspRFxwvlcC2d7t1YqWuy9wOjq1b9MYpb7VQsiNjxD1Lay41eNi7H3grDLKhw3TChGNr39oM584HEkBkePmX5LRJBTn/xJif9Uev2jIXPRoA/iPlPyKtkvxUL3/J7aLbFKP/KzIAmmg90v0Jl2fMUDZ5QjSTppT65iV8s3SYDvqOsDunheBVXirIP6AmrIb/ykwXhFotuShEGpIcFtCyJyoRQ5ElLmHCSMLrfpsJMeuIthQSfxZnHq3756KWww7C3cUx1AMPinTNwIDAQAB",
+  "icons": {
+    "16": "public/icons/icon16.png",
+    "48": "public/icons/icon48.png",
+    "128": "public/icons/icon128.png"
+  },
+  "action": {
+    "default_icon": {
+      "16": "public/icons/icon16.png",
+      "48": "public/icons/icon48.png",
+      "128": "public/icons/icon128.png"
+    }
+  },
+  "options_page": "src/options/index.html",
+  "background": {
+    "service_worker": "src/worker/index.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://docs.google.com/presentation/*"],
+      "js": ["src/content/index.ts"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage", "identity", "activeTab"],
+  "host_permissions": [
+    "https://docs.google.com/presentation/*",
+    "https://slides.googleapis.com/*"
+  ],
+  "oauth2": {
+    "client_id": "665117522331-a7cu1n3e1be6org8mscm6b43kgdcinqm.apps.googleusercontent.com",
+    "scopes": ["https://www.googleapis.com/auth/presentations"]
+  }
+}
