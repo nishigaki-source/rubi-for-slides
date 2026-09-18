@@ -1,0 +1,495 @@
+{
+  "extName": {
+    "message": "Furigana for Google Slides"
+  },
+  "extDescription": {
+    "message": "Displays and writes hiragana furigana over kanji in Google Slides."
+  },
+  "panelDialogLabel": {
+    "message": "Furigana"
+  },
+  "panelTitle": {
+    "message": "Furigana"
+  },
+  "panelClose": {
+    "message": "Close"
+  },
+  "toggleShowRuby": {
+    "message": "Show furigana"
+  },
+  "sectionAppearance": {
+    "message": "Furigana appearance"
+  },
+  "labelSize": {
+    "message": "Size"
+  },
+  "sizeGroupAriaLabel": {
+    "message": "Furigana size"
+  },
+  "sizeSmall": {
+    "message": "Small"
+  },
+  "sizeMedium": {
+    "message": "Medium"
+  },
+  "sizeLarge": {
+    "message": "Large"
+  },
+  "labelFont": {
+    "message": "Font"
+  },
+  "labelColor": {
+    "message": "Color"
+  },
+  "labelGradeFilter": {
+    "message": "Skip kanji"
+  },
+  "gradeFilterNone": {
+    "message": "None (furigana on all kanji)"
+  },
+  "gradeFilterGrade": {
+    "message": "Kanji taught by grade $GRADE$",
+    "placeholders": {
+      "GRADE": {
+        "content": "$1"
+      }
+    }
+  },
+  "sectionWrite": {
+    "message": "Write to slide"
+  },
+  "btnCurrentSlide": {
+    "message": "This slide"
+  },
+  "btnAllSlides": {
+    "message": "All slides"
+  },
+  "labelGroupWithOriginal": {
+    "message": "Group with original text"
+  },
+  "sectionDelete": {
+    "message": "Delete written furigana"
+  },
+  "linkEditUserDict": {
+    "message": "Edit user dictionary"
+  },
+  "statusWriting": {
+    "message": "Writing…"
+  },
+  "statusWritingAll": {
+    "message": "Writing to all slides…"
+  },
+  "statusDeleting": {
+    "message": "Deleting…"
+  },
+  "statusWriteSuccessCurrent": {
+    "message": "Wrote $COUNT$ item(s)",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusWriteSuccessAll": {
+    "message": "Wrote $COUNT$ item(s) across $SLIDES$ slide(s)",
+    "placeholders": {
+      "SLIDES": {
+        "content": "$1"
+      },
+      "COUNT": {
+        "content": "$2"
+      }
+    }
+  },
+  "statusDisplayTurnedOff": {
+    "message": " (display turned off)"
+  },
+  "statusDeleteSuccess": {
+    "message": "Deleted $COUNT$ item(s)",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmWriteAll": {
+    "message": "This writes furigana to all slides, switching between them one at a time — it may take a while depending on the number of slides. Continue?"
+  },
+  "confirmDeleteAll": {
+    "message": "This deletes furigana from all slides. Continue?"
+  },
+  "sizeCannotIncrease": {
+    "message": "Can't get any bigger"
+  },
+  "sizeCannotDecrease": {
+    "message": "Can't get any smaller"
+  },
+  "errorNoPageContainer": {
+    "message": "Couldn't find the slide's display area. Please run this from the editing screen."
+  },
+  "errorCannotIdentifySlide": {
+    "message": "Couldn't identify the slide from this page's URL."
+  },
+  "errorAllSlidesFailed": {
+    "message": "Processing failed for all slides."
+  },
+  "errorFetchPresentationFailed": {
+    "message": "Failed to fetch the presentation (status: $STATUS$)",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorPageNotFound": {
+    "message": "Page not found (pageObjectId: $PAGE_ID$)",
+    "placeholders": {
+      "PAGE_ID": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorSlideUpdateFailed": {
+    "message": "Failed to update the slide (status: $STATUS$) $BODY$",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      },
+      "BODY": {
+        "content": "$2"
+      }
+    }
+  },
+  "errorGradeTableLoadFailed": {
+    "message": "Failed to load the kanji grade table (status: $STATUS$)",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsPageTitle": {
+    "message": "Furigana Advanced Settings"
+  },
+  "optionsHeading": {
+    "message": "Furigana Advanced Settings"
+  },
+  "optionsLead": {
+    "message": "Register a word here in the user dictionary to fix its reading or change its look (font/color/size) for that word only. The user dictionary takes priority over the grade filter, and applies to both Mode A (on-screen display) and Mode B (writing to the slide)."
+  },
+  "headingRegisteredWords": {
+    "message": "Registered words"
+  },
+  "colSurface": {
+    "message": "Word"
+  },
+  "colReading": {
+    "message": "Reading"
+  },
+  "colStyle": {
+    "message": "Style"
+  },
+  "emptyDictRow": {
+    "message": "No words registered yet"
+  },
+  "headingAddWord": {
+    "message": "Add a word"
+  },
+  "labelSurface": {
+    "message": "Word (as written in the slide; must contain at least one kanji)"
+  },
+  "placeholderSurface": {
+    "message": "e.g. 麻雀"
+  },
+  "labelReadingOverride": {
+    "message": "Override reading"
+  },
+  "labelReading": {
+    "message": "Reading (hiragana)"
+  },
+  "placeholderReading": {
+    "message": "e.g. まーじゃん"
+  },
+  "labelStyleOverride": {
+    "message": "Customize appearance"
+  },
+  "btnAdd": {
+    "message": "Add"
+  },
+  "btnSaveEdit": {
+    "message": "Save"
+  },
+  "btnCancelEdit": {
+    "message": "Cancel editing"
+  },
+  "btnEdit": {
+    "message": "Edit"
+  },
+  "btnDelete": {
+    "message": "Delete"
+  },
+  "headingBackup": {
+    "message": "Backup"
+  },
+  "btnExport": {
+    "message": "Export (save as JSON file)"
+  },
+  "btnImport": {
+    "message": "Import (load JSON file)"
+  },
+  "hintImportReplaces": {
+    "message": "Importing will <strong>completely replace</strong> your current user dictionary (not merged)."
+  },
+  "readingFallback": {
+    "message": "(unchanged, from kuromoji)"
+  },
+  "styleFallback": {
+    "message": "(uses global settings)"
+  },
+  "formTitleEdit": {
+    "message": "Editing \"$SURFACE$\"",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusUpdated": {
+    "message": "Updated."
+  },
+  "statusAdded": {
+    "message": "Added."
+  },
+  "statusExported": {
+    "message": "Exported."
+  },
+  "statusImported": {
+    "message": "Imported $COUNT$ entries.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusImportReadError": {
+    "message": "Failed to read the file."
+  },
+  "confirmDeleteWord": {
+    "message": "Delete \"$SURFACE$\" from the user dictionary. Continue?",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errSizeRatioPositive": {
+    "message": "Size ratio must be a positive number"
+  },
+  "errSurfaceRequired": {
+    "message": "Please enter the word"
+  },
+  "errSurfaceNeedsKanji": {
+    "message": "The word must contain at least one kanji character"
+  },
+  "errReadingHiragana": {
+    "message": "Please enter the reading in hiragana"
+  },
+  "errReadingOrStyleRequired": {
+    "message": "Please provide either a reading override or a style override"
+  },
+  "errInvalidJson": {
+    "message": "Invalid JSON format"
+  },
+  "errInvalidDictFormat": {
+    "message": "Invalid user dictionary format"
+  },
+  "errInvalidEntryFormat": {
+    "message": "\"$SURFACE$\" entry has an invalid format",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errReadingNotString": {
+    "message": "\"$SURFACE$\" reading is not a string",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errInvalidStyleFormat": {
+    "message": "\"$SURFACE$\" style is in an invalid format",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errFontFamilyNotString": {
+    "message": "\"$SURFACE$\" fontFamily is not a string",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errColorNotString": {
+    "message": "\"$SURFACE$\" color is not a string",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errSizeRatioNotNumber": {
+    "message": "\"$SURFACE$\" sizeRatio is not a number",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "fontGroupStandard": {
+    "message": "Standard (Latin)"
+  },
+  "fontGroupGoogleLatin": {
+    "message": "Google Fonts (Latin)"
+  },
+  "fontGroupJapaneseGothic": {
+    "message": "Japanese - Gothic"
+  },
+  "fontGroupJapaneseOther": {
+    "message": "Japanese - Serif, handwriting, etc."
+  },
+  "fontArial": {
+    "message": "Arial (default, sans-serif)"
+  },
+  "fontArialBlack": {
+    "message": "Arial Black"
+  },
+  "fontComicSansMs": {
+    "message": "Comic Sans MS (handwriting-style)"
+  },
+  "fontCourierNew": {
+    "message": "Courier New (monospace)"
+  },
+  "fontGeorgia": {
+    "message": "Georgia (serif-style)"
+  },
+  "fontHelvetica": {
+    "message": "Helvetica"
+  },
+  "fontImpact": {
+    "message": "Impact"
+  },
+  "fontTimesNewRoman": {
+    "message": "Times New Roman"
+  },
+  "fontTrebuchetMs": {
+    "message": "Trebuchet MS"
+  },
+  "fontVerdana": {
+    "message": "Verdana"
+  },
+  "fontLato": {
+    "message": "Lato"
+  },
+  "fontLobster": {
+    "message": "Lobster"
+  },
+  "fontMerriweather": {
+    "message": "Merriweather"
+  },
+  "fontMontserrat": {
+    "message": "Montserrat"
+  },
+  "fontOpenSans": {
+    "message": "Open Sans"
+  },
+  "fontOswald": {
+    "message": "Oswald"
+  },
+  "fontPlayfairDisplay": {
+    "message": "Playfair Display"
+  },
+  "fontPoppins": {
+    "message": "Poppins"
+  },
+  "fontPtSans": {
+    "message": "PT Sans"
+  },
+  "fontPtSerif": {
+    "message": "PT Serif"
+  },
+  "fontRoboto": {
+    "message": "Roboto"
+  },
+  "fontRobotoCondensed": {
+    "message": "Roboto Condensed"
+  },
+  "fontRobotoMono": {
+    "message": "Roboto Mono (monospace)"
+  },
+  "fontRobotoSlab": {
+    "message": "Roboto Slab"
+  },
+  "fontUbuntu": {
+    "message": "Ubuntu"
+  },
+  "fontNotoSansJp": {
+    "message": "Noto Sans JP"
+  },
+  "fontMPlus1p": {
+    "message": "M PLUS 1p"
+  },
+  "fontMPlusRounded1c": {
+    "message": "M PLUS Rounded 1c (rounded gothic)"
+  },
+  "fontKosugi": {
+    "message": "Kosugi"
+  },
+  "fontKosugiMaru": {
+    "message": "Kosugi Maru (rounded gothic)"
+  },
+  "fontSawarabiGothic": {
+    "message": "Sawarabi Gothic"
+  },
+  "fontBizUdGothic": {
+    "message": "BIZ UDGothic"
+  },
+  "fontZenKakuGothicNew": {
+    "message": "Zen Kaku Gothic New"
+  },
+  "fontZenMaruGothic": {
+    "message": "Zen Maru Gothic (rounded gothic)"
+  },
+  "fontNotoSerifJp": {
+    "message": "Noto Serif JP"
+  },
+  "fontSawarabiMincho": {
+    "message": "Sawarabi Mincho"
+  },
+  "fontBizUdMincho": {
+    "message": "BIZ UDMincho"
+  },
+  "fontShipporiMincho": {
+    "message": "Shippori Mincho"
+  },
+  "fontKleeOne": {
+    "message": "Klee One (handwriting-style)"
+  },
+  "fontYomogi": {
+    "message": "Yomogi (handwriting-style)"
+  },
+  "fontYuseiMagic": {
+    "message": "Yusei Magic"
+  },
+  "fontHachiMaruPop": {
+    "message": "Hachi Maru Pop (pop style)"
+  },
+  "fontDelaGothicOne": {
+    "message": "Dela Gothic One (for headings)"
+  }
+}

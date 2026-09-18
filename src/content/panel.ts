@@ -7,6 +7,7 @@
  */
 import { isTogglePanelRequest, type OpenOptionsPageRequest } from '../core/messages';
 import { populateFontSelect } from '../shared/fontOptions';
+import { applyI18n, t } from '../shared/i18n';
 import { DEFAULT_SETTINGS, loadSettings, onSettingsChanged, saveSettings, type RubiSettings } from '../shared/settings';
 import { SIZE_PRESETS, nearestSizePreset } from '../shared/sizePresets';
 import type { ReadingServiceOptions } from '../core/types';
@@ -185,69 +186,69 @@ const PANEL_STYLE = `
 `;
 
 const PANEL_MARKUP = `
-  <div class="panel" role="dialog" aria-label="ルビふり">
+  <div class="panel" role="dialog" data-i18n-aria-label="panelDialogLabel">
     <div class="header" id="dragHandle">
       <span class="grip" aria-hidden="true">⠿</span>
-      <h1 class="title">ルビふり</h1>
-      <button type="button" class="closeBtn" id="closeBtn" aria-label="閉じる">×</button>
+      <h1 class="title" data-i18n="panelTitle"></h1>
+      <button type="button" class="closeBtn" id="closeBtn" data-i18n-aria-label="panelClose">×</button>
     </div>
     <div class="body">
       <div class="toggleRow">
-        <label for="enabled">ルビを表示</label>
+        <label for="enabled" data-i18n="toggleShowRuby"></label>
         <label class="switch">
           <input type="checkbox" id="enabled" />
           <span class="slider"></span>
         </label>
       </div>
 
-      <div class="sectionLabel">ルビの見た目</div>
+      <div class="sectionLabel" data-i18n="sectionAppearance"></div>
       <div class="grid">
-        <label>サイズ</label>
+        <label data-i18n="labelSize"></label>
         <div>
-          <div class="sizeGroup" id="sizeGroup" role="group" aria-label="ルビのサイズ">
-            <button type="button" class="sizeBtn" data-size="small">小</button>
-            <button type="button" class="sizeBtn" data-size="medium">中</button>
-            <button type="button" class="sizeBtn" data-size="large">大</button>
+          <div class="sizeGroup" id="sizeGroup" role="group" data-i18n-aria-label="sizeGroupAriaLabel">
+            <button type="button" class="sizeBtn" data-size="small" data-i18n="sizeSmall"></button>
+            <button type="button" class="sizeBtn" data-size="medium" data-i18n="sizeMedium"></button>
+            <button type="button" class="sizeBtn" data-size="large" data-i18n="sizeLarge"></button>
           </div>
           <div class="sizeHint" id="sizeHint" role="status"></div>
         </div>
-        <label for="fontFamily">フォント</label>
+        <label for="fontFamily" data-i18n="labelFont"></label>
         <select id="fontFamily"></select>
-        <label for="color">色</label>
+        <label for="color" data-i18n="labelColor"></label>
         <input type="color" id="color" />
-        <label for="gradeFilter">省く漢字</label>
+        <label for="gradeFilter" data-i18n="labelGradeFilter"></label>
         <select id="gradeFilter">
-          <option value="none">なし(すべてにルビ)</option>
-          <option value="1">小1までに習う漢字</option>
-          <option value="2">小2までに習う漢字</option>
-          <option value="3">小3までに習う漢字</option>
-          <option value="4">小4までに習う漢字</option>
-          <option value="5">小5までに習う漢字</option>
-          <option value="6">小6までに習う漢字</option>
+          <option value="none" data-i18n="gradeFilterNone"></option>
+          <option value="1" data-i18n-grade="1"></option>
+          <option value="2" data-i18n-grade="2"></option>
+          <option value="3" data-i18n-grade="3"></option>
+          <option value="4" data-i18n-grade="4"></option>
+          <option value="5" data-i18n-grade="5"></option>
+          <option value="6" data-i18n-grade="6"></option>
         </select>
       </div>
 
-      <div class="sectionLabel">スライドに書き込む</div>
+      <div class="sectionLabel" data-i18n="sectionWrite"></div>
       <div class="btnRow">
-        <button type="button" class="primary" id="writeCurrentSlide">このスライド</button>
-        <button type="button" class="primary" id="writeAllSlides">全スライド</button>
+        <button type="button" class="primary" id="writeCurrentSlide" data-i18n="btnCurrentSlide"></button>
+        <button type="button" class="primary" id="writeAllSlides" data-i18n="btnAllSlides"></button>
       </div>
       <label class="checkRow">
         <input type="checkbox" id="groupWithOriginal" />
-        元のテキストとグループ化
+        <span data-i18n="labelGroupWithOriginal"></span>
       </label>
       <div id="writeStatus" role="status"></div>
 
       <div id="deleteSection" hidden>
-        <div class="sectionLabel">書き込んだルビを削除</div>
+        <div class="sectionLabel" data-i18n="sectionDelete"></div>
         <div class="btnRow">
-          <button type="button" class="secondary" id="deleteCurrentSlide">このスライド</button>
-          <button type="button" class="secondary" id="deleteAllSlides">全スライド</button>
+          <button type="button" class="secondary" id="deleteCurrentSlide" data-i18n="btnCurrentSlide"></button>
+          <button type="button" class="secondary" id="deleteAllSlides" data-i18n="btnAllSlides"></button>
         </div>
       </div>
 
       <div class="footer">
-        <a href="#" id="openOptions">ユーザー辞書を編集</a>
+        <a href="#" id="openOptions" data-i18n="linkEditUserDict"></a>
       </div>
     </div>
   </div>
@@ -283,6 +284,12 @@ export function initPanel(deps: PanelDeps): void {
   const wrapper = document.createElement('div');
   wrapper.innerHTML = PANEL_MARKUP;
   shadow.appendChild(wrapper);
+
+  applyI18n(shadow);
+  for (const el of shadow.querySelectorAll<HTMLOptionElement>('[data-i18n-grade]')) {
+    const grade = el.dataset.i18nGrade;
+    if (grade) el.textContent = t('gradeFilterGrade', grade);
+  }
 
   let visible = false;
 
@@ -439,7 +446,7 @@ export function initPanel(deps: PanelDeps): void {
         if (token !== sizeCheckToken) return; // 別の操作で上書き済み
         const after = measureRubyFontSizes();
         if (after !== null && sameFontSizes(before, after)) {
-          showSizeHint(increased ? 'これ以上大きくできません' : 'これ以上小さくできません');
+          showSizeHint(increased ? t('sizeCannotIncrease') : t('sizeCannotDecrease'));
         }
       }, 800);
     });
@@ -478,7 +485,7 @@ export function initPanel(deps: PanelDeps): void {
 
   writeBtn.addEventListener('click', () => {
     void withButtonsDisabled(async () => {
-      setWriteStatus('書き込み中…', 'info');
+      setWriteStatus(t('statusWriting'), 'info');
       try {
         const settings = deps.getSettings();
         const readingOptions = await deps.buildReadingOptions();
@@ -494,8 +501,8 @@ export function initPanel(deps: PanelDeps): void {
             await deps.onWriteSuccess(result.writtenCount);
             deleteSectionEl.hidden = false;
           }
-          const suffix = result.writtenCount > 0 ? '(表示はOFFにしました)' : '';
-          setWriteStatus(`${result.writtenCount}件を書き込みました${suffix}`, 'success');
+          const suffix = result.writtenCount > 0 ? t('statusDisplayTurnedOff') : '';
+          setWriteStatus(`${t('statusWriteSuccessCurrent', String(result.writtenCount))}${suffix}`, 'success');
         } else {
           setWriteStatus(result.message, 'error');
         }
@@ -508,13 +515,13 @@ export function initPanel(deps: PanelDeps): void {
   writeAllBtn.addEventListener('click', () => {
     if (
       !confirm(
-        '全スライドに書き込みます。スライドを1枚ずつ切り替えながら処理するため、枚数によっては時間がかかります。よろしいですか？'
+        t('confirmWriteAll')
       )
     ) {
       return;
     }
     void withButtonsDisabled(async () => {
-      setWriteStatus('全スライドに書き込み中…', 'info');
+      setWriteStatus(t('statusWritingAll'), 'info');
       try {
         const settings = deps.getSettings();
         const readingOptions = await deps.buildReadingOptions();
@@ -530,8 +537,11 @@ export function initPanel(deps: PanelDeps): void {
             await deps.onWriteSuccess(result.writtenCount);
             deleteSectionEl.hidden = false;
           }
-          const suffix = result.writtenCount > 0 ? '(表示はOFFにしました)' : '';
-          setWriteStatus(`${result.slideCount}枚に${result.writtenCount}件を書き込みました${suffix}`, 'success');
+          const suffix = result.writtenCount > 0 ? t('statusDisplayTurnedOff') : '';
+          setWriteStatus(
+            `${t('statusWriteSuccessAll', [String(result.slideCount), String(result.writtenCount)])}${suffix}`,
+            'success'
+          );
         } else {
           setWriteStatus(result.message, 'error');
         }
@@ -543,11 +553,11 @@ export function initPanel(deps: PanelDeps): void {
 
   const runDelete = (scope: 'current' | 'all'): void => {
     void withButtonsDisabled(async () => {
-      setWriteStatus('削除中…', 'info');
+      setWriteStatus(t('statusDeleting'), 'info');
       try {
         const result = await deleteRuby(scope);
         if (result.ok) {
-          setWriteStatus(`${result.deletedCount}件を削除しました`, 'success');
+          setWriteStatus(t('statusDeleteSuccess', String(result.deletedCount)), 'success');
           if (scope === 'all') deleteSectionEl.hidden = true;
         } else {
           setWriteStatus(result.message, 'error');
@@ -560,6 +570,6 @@ export function initPanel(deps: PanelDeps): void {
 
   deleteCurrentBtn.addEventListener('click', () => runDelete('current'));
   deleteAllBtn.addEventListener('click', () => {
-    if (confirm('全スライドからルビを削除します。よろしいですか？')) runDelete('all');
+    if (confirm(t('confirmDeleteAll'))) runDelete('all');
   });
 }

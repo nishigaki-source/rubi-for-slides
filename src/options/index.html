@@ -211,86 +211,83 @@
     </style>
   </head>
   <body>
-    <h1>ルビふり 詳細設定</h1>
-    <p class="lead">
-      特定の単語だけ読みを直したい、見た目(フォント・色・サイズ)を変えたい場合はここでユーザー辞書に登録してください。ユーザー辞書は学年フィルタより優先され、モード A(画面表示)・モード
-      B(スライドへの書き込み)の両方に反映されます。
-    </p>
+    <h1 data-i18n="optionsHeading"></h1>
+    <p class="lead" data-i18n="optionsLead"></p>
 
-    <h2>登録済みの単語</h2>
+    <h2 data-i18n="headingRegisteredWords"></h2>
     <table>
       <thead>
         <tr>
-          <th>表層形</th>
-          <th>読み</th>
-          <th>見た目</th>
+          <th data-i18n="colSurface"></th>
+          <th data-i18n="colReading"></th>
+          <th data-i18n="colStyle"></th>
           <th></th>
         </tr>
       </thead>
       <tbody id="entryList">
         <tr id="emptyRow">
-          <td colspan="4">まだ登録された単語はありません</td>
+          <td colspan="4" data-i18n="emptyDictRow"></td>
         </tr>
       </tbody>
     </table>
 
-    <h2 id="formTitle">単語を追加</h2>
+    <h2 id="formTitle" data-i18n="headingAddWord"></h2>
     <form id="entryForm">
       <div class="field">
-        <label for="surface">表層形(スライド上の表記。漢字を1文字以上含める)</label>
-        <input type="text" id="surface" placeholder="例: 麻雀" />
+        <label for="surface" data-i18n="labelSurface"></label>
+        <input type="text" id="surface" data-i18n-placeholder="placeholderSurface" />
       </div>
 
       <div class="field-row" style="margin-bottom: 12px">
         <input type="checkbox" id="readingEnabled" />
-        <label for="readingEnabled" class="checkbox-label" style="margin-bottom: 0">読みを上書きする</label>
+        <label for="readingEnabled" class="checkbox-label" style="margin-bottom: 0" data-i18n="labelReadingOverride"></label>
       </div>
       <div class="field" id="readingField" hidden>
-        <label for="reading">読み(ひらがな)</label>
-        <input type="text" id="reading" placeholder="例: まーじゃん" />
+        <label for="reading" data-i18n="labelReading"></label>
+        <input type="text" id="reading" data-i18n-placeholder="placeholderReading" />
       </div>
 
       <div class="field-row" style="margin-bottom: 4px">
         <input type="checkbox" id="styleEnabled" />
-        <label for="styleEnabled" class="checkbox-label" style="margin-bottom: 0">見た目を個別設定する</label>
+        <label for="styleEnabled" class="checkbox-label" style="margin-bottom: 0" data-i18n="labelStyleOverride"></label>
       </div>
       <div class="style-sub" id="styleFields" hidden>
         <div class="field-row">
           <input type="checkbox" id="fontFamilyEnabled" />
-          <label for="fontFamilyEnabled" class="checkbox-label" style="margin-bottom: 0">フォント</label>
+          <label for="fontFamilyEnabled" class="checkbox-label" style="margin-bottom: 0" data-i18n="labelFont"></label>
           <select id="fontFamily" disabled></select>
         </div>
         <div class="field-row">
           <input type="checkbox" id="colorEnabled" />
-          <label for="colorEnabled" class="checkbox-label" style="margin-bottom: 0">色</label>
+          <label for="colorEnabled" class="checkbox-label" style="margin-bottom: 0" data-i18n="labelColor"></label>
           <input type="color" id="color" disabled />
         </div>
         <div class="field-row">
           <input type="checkbox" id="sizeRatioEnabled" />
-          <label for="sizeRatioEnabled" class="checkbox-label" style="margin-bottom: 0">サイズ</label>
+          <label for="sizeRatioEnabled" class="checkbox-label" style="margin-bottom: 0" data-i18n="labelSize"></label>
         </div>
         <div class="sizeGroup" id="sizeGroup">
-          <button type="button" class="sizeBtn" data-size="small" disabled>小</button>
-          <button type="button" class="sizeBtn" data-size="medium" disabled>中</button>
-          <button type="button" class="sizeBtn" data-size="large" disabled>大</button>
+          <button type="button" class="sizeBtn" data-size="small" data-i18n="sizeSmall" disabled></button>
+          <button type="button" class="sizeBtn" data-size="medium" data-i18n="sizeMedium" disabled></button>
+          <button type="button" class="sizeBtn" data-size="large" data-i18n="sizeLarge" disabled></button>
         </div>
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="primary" id="saveBtn">追加する</button>
-        <button type="button" id="cancelEditBtn" hidden>編集をキャンセル</button>
+        <button type="submit" class="primary" id="saveBtn" data-i18n="btnAdd"></button>
+        <button type="button" id="cancelEditBtn" data-i18n="btnCancelEdit" hidden></button>
       </div>
       <div id="formStatus"></div>
     </form>
 
-    <h2>バックアップ</h2>
+    <h2 data-i18n="headingBackup"></h2>
     <div class="import-export">
-      <button id="exportBtn">エクスポート(JSONファイルを保存)</button>
-      <button id="importBtn">インポート(JSONファイルを読み込み)</button>
+      <button id="exportBtn" data-i18n="btnExport"></button>
+      <button id="importBtn" data-i18n="btnImport"></button>
       <input type="file" id="importFile" accept="application/json" hidden />
     </div>
     <div id="importExportStatus"></div>
-    <p class="hint">インポートすると現在のユーザー辞書は<strong>丸ごと置き換わります</strong>(マージではありません)。</p>
+    <p class="hint" data-i18n-html="hintImportReplaces"></p>
 
     <script type="module" src="./main.ts"></script>
   </body>

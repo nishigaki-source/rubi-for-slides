@@ -14,6 +14,37 @@ export interface UserDictEntryInput {
   style?: RubyStyleOverride;
 }
 
+export type UserDictErrorCode =
+  | 'sizeRatioPositive'
+  | 'surfaceRequired'
+  | 'surfaceNeedsKanji'
+  | 'readingHiragana'
+  | 'readingOrStyleRequired'
+  | 'invalidJson'
+  | 'invalidDictFormat'
+  | 'invalidEntryFormat'
+  | 'readingNotString'
+  | 'invalidStyleFormat'
+  | 'fontFamilyNotString'
+  | 'colorNotString'
+  | 'sizeRatioNotNumber';
+
+/**
+ * core/ は DOM・chrome API に依存しない設計(単体テストの主対象)のため、
+ * ここではローカライズ済みの文言そのものではなく、UI 側(options/main.ts)が
+ * `chrome.i18n` で表示文言に変換するための「エラーコード + 対象の表層形」だけを持つ。
+ */
+export class UserDictError extends Error {
+  readonly code: UserDictErrorCode;
+  readonly surface?: string;
+
+  constructor(code: UserDictErrorCode, surface?: string) {
+    super(surface ? `${code}: ${surface}` : code);
+    this.code = code;
+    this.surface = surface;
+  }
+}
+
 const HIRAGANA_PATTERN = /^[぀-ゟー]+$/;
 
 function normalizeStyle(style: RubyStyleOverride | undefined): RubyStyleOverride | undefined {
@@ -23,7 +54,7 @@ function normalizeStyle(style: RubyStyleOverride | undefined): RubyStyleOverride
   if (style.color && style.color.trim().length > 0) next.color = style.color.trim();
   if (style.sizeRatio !== undefined) {
     if (!Number.isFinite(style.sizeRatio) || style.sizeRatio <= 0) {
-      throw new Error('サイズ比は正の数で入力してください');
+      throw new UserDictError('sizeRatioPositive');
     }
     next.sizeRatio = style.sizeRatio;
   }
@@ -40,13 +71,13 @@ export function upsertEntry(dict: UserDictionary, entry: UserDictEntryInput): Us
   const reading = entry.reading?.trim();
 
   if (surface.length === 0) {
-    throw new Error('表層形を入力してください');
+    throw new UserDictError('surfaceRequired');
   }
   if (!hasKanji(surface)) {
-    throw new Error('表層形には漢字を 1 文字以上含めてください');
+    throw new UserDictError('surfaceNeedsKanji');
   }
   if (reading !== undefined && reading.length > 0 && !HIRAGANA_PATTERN.test(reading)) {
-    throw new Error('読みはひらがなで入力してください');
+    throw new UserDictError('readingHiragana');
   }
 
   const style = normalizeStyle(entry.style);
@@ -55,7 +86,7 @@ export function upsertEntry(dict: UserDictionary, entry: UserDictEntryInput): Us
   if (style) nextEntry.style = style;
 
   if (!nextEntry.reading && !nextEntry.style) {
-    throw new Error('読みまたは見た目の上書きのどちらかを入力してください');
+    throw new UserDictError('readingOrStyleRequired');
   }
 
   return { ...dict, [surface]: nextEntry };
@@ -78,47 +109,47 @@ export function importUserDict(json: string): UserDictionary {
   try {
     parsed = JSON.parse(json);
   } catch {
-    throw new Error('JSON の形式が正しくありません');
+    throw new UserDictError('invalidJson');
   }
   if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new Error('ユーザー辞書の形式が正しくありません');
+    throw new UserDictError('invalidDictFormat');
   }
   const result: UserDictionary = {};
   for (const [surface, value] of Object.entries(parsed as Record<string, unknown>)) {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-      throw new Error(`"${surface}" のエントリの形式が正しくありません`);
+      throw new UserDictError('invalidEntryFormat', surface);
     }
     const raw = value as Record<string, unknown>;
     const entry: UserDictEntry = {};
 
     if (raw.reading !== undefined) {
       if (typeof raw.reading !== 'string') {
-        throw new Error(`"${surface}" の読みが文字列ではありません`);
+        throw new UserDictError('readingNotString', surface);
       }
       entry.reading = raw.reading;
     }
 
     if (raw.style !== undefined) {
       if (typeof raw.style !== 'object' || raw.style === null || Array.isArray(raw.style)) {
-        throw new Error(`"${surface}" の見た目指定の形式が正しくありません`);
+        throw new UserDictError('invalidStyleFormat', surface);
       }
       const rawStyle = raw.style as Record<string, unknown>;
       const style: RubyStyleOverride = {};
       if (rawStyle.fontFamily !== undefined) {
         if (typeof rawStyle.fontFamily !== 'string') {
-          throw new Error(`"${surface}" の fontFamily が文字列ではありません`);
+          throw new UserDictError('fontFamilyNotString', surface);
         }
         style.fontFamily = rawStyle.fontFamily;
       }
       if (rawStyle.color !== undefined) {
         if (typeof rawStyle.color !== 'string') {
-          throw new Error(`"${surface}" の color が文字列ではありません`);
+          throw new UserDictError('colorNotString', surface);
         }
         style.color = rawStyle.color;
       }
       if (rawStyle.sizeRatio !== undefined) {
         if (typeof rawStyle.sizeRatio !== 'number') {
-          throw new Error(`"${surface}" の sizeRatio が数値ではありません`);
+          throw new UserDictError('sizeRatioNotNumber', surface);
         }
         style.sizeRatio = rawStyle.sizeRatio;
       }

@@ -5,6 +5,7 @@
  * 増やさないための方針。PLAN.md 3.2節・非機能要件を参照)。
  */
 import { sanitizeGradeTable } from '../core/gradeFilter';
+import { t } from '../shared/i18n';
 import type { KanjiGradeTable } from '../core/types';
 
 let cached: KanjiGradeTable | null = null;
@@ -14,7 +15,7 @@ export async function getGradeTable(): Promise<KanjiGradeTable> {
   const url = chrome.runtime.getURL('data/kanji-grades.sample.json');
   const res = await fetch(url);
   if (!res.ok) {
-    throw new Error(`学年別漢字配当表の読み込みに失敗しました (status: ${res.status})`);
+    throw new Error(t('errorGradeTableLoadFailed', String(res.status)));
   }
   const raw: unknown = await res.json();
   cached = sanitizeGradeTable(raw);

@@ -1,0 +1,495 @@
+{
+  "extName": {
+    "message": "ルビふり for Googleスライド"
+  },
+  "extDescription": {
+    "message": "Googleスライドの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。"
+  },
+  "panelDialogLabel": {
+    "message": "ルビふり"
+  },
+  "panelTitle": {
+    "message": "ルビふり"
+  },
+  "panelClose": {
+    "message": "閉じる"
+  },
+  "toggleShowRuby": {
+    "message": "ルビを表示"
+  },
+  "sectionAppearance": {
+    "message": "ルビの見た目"
+  },
+  "labelSize": {
+    "message": "サイズ"
+  },
+  "sizeGroupAriaLabel": {
+    "message": "ルビのサイズ"
+  },
+  "sizeSmall": {
+    "message": "小"
+  },
+  "sizeMedium": {
+    "message": "中"
+  },
+  "sizeLarge": {
+    "message": "大"
+  },
+  "labelFont": {
+    "message": "フォント"
+  },
+  "labelColor": {
+    "message": "色"
+  },
+  "labelGradeFilter": {
+    "message": "省く漢字"
+  },
+  "gradeFilterNone": {
+    "message": "なし(すべてにルビ)"
+  },
+  "gradeFilterGrade": {
+    "message": "小$GRADE$までに習う漢字",
+    "placeholders": {
+      "GRADE": {
+        "content": "$1"
+      }
+    }
+  },
+  "sectionWrite": {
+    "message": "スライドに書き込む"
+  },
+  "btnCurrentSlide": {
+    "message": "このスライド"
+  },
+  "btnAllSlides": {
+    "message": "全スライド"
+  },
+  "labelGroupWithOriginal": {
+    "message": "元のテキストとグループ化"
+  },
+  "sectionDelete": {
+    "message": "書き込んだルビを削除"
+  },
+  "linkEditUserDict": {
+    "message": "ユーザー辞書を編集"
+  },
+  "statusWriting": {
+    "message": "書き込み中…"
+  },
+  "statusWritingAll": {
+    "message": "全スライドに書き込み中…"
+  },
+  "statusDeleting": {
+    "message": "削除中…"
+  },
+  "statusWriteSuccessCurrent": {
+    "message": "$COUNT$件を書き込みました",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusWriteSuccessAll": {
+    "message": "$SLIDES$枚に$COUNT$件を書き込みました",
+    "placeholders": {
+      "SLIDES": {
+        "content": "$1"
+      },
+      "COUNT": {
+        "content": "$2"
+      }
+    }
+  },
+  "statusDisplayTurnedOff": {
+    "message": "(表示はOFFにしました)"
+  },
+  "statusDeleteSuccess": {
+    "message": "$COUNT$件を削除しました",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "confirmWriteAll": {
+    "message": "全スライドに書き込みます。スライドを1枚ずつ切り替えながら処理するため、枚数によっては時間がかかります。よろしいですか？"
+  },
+  "confirmDeleteAll": {
+    "message": "全スライドからルビを削除します。よろしいですか？"
+  },
+  "sizeCannotIncrease": {
+    "message": "これ以上大きくできません"
+  },
+  "sizeCannotDecrease": {
+    "message": "これ以上小さくできません"
+  },
+  "errorNoPageContainer": {
+    "message": "スライドの表示領域が見つかりませんでした。編集画面で実行してください。"
+  },
+  "errorCannotIdentifySlide": {
+    "message": "このページの URL からスライドを特定できませんでした。"
+  },
+  "errorAllSlidesFailed": {
+    "message": "すべてのスライドで処理に失敗しました。"
+  },
+  "errorFetchPresentationFailed": {
+    "message": "プレゼンテーションの取得に失敗しました (status: $STATUS$)",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorPageNotFound": {
+    "message": "ページが見つかりません (pageObjectId: $PAGE_ID$)",
+    "placeholders": {
+      "PAGE_ID": {
+        "content": "$1"
+      }
+    }
+  },
+  "errorSlideUpdateFailed": {
+    "message": "スライドの更新に失敗しました (status: $STATUS$) $BODY$",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      },
+      "BODY": {
+        "content": "$2"
+      }
+    }
+  },
+  "errorGradeTableLoadFailed": {
+    "message": "学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
+  "optionsPageTitle": {
+    "message": "ルビふり 詳細設定"
+  },
+  "optionsHeading": {
+    "message": "ルビふり 詳細設定"
+  },
+  "optionsLead": {
+    "message": "特定の単語だけ読みを直したい、見た目(フォント・色・サイズ)を変えたい場合はここでユーザー辞書に登録してください。ユーザー辞書は学年フィルタより優先され、モード A(画面表示)・モード B(スライドへの書き込み)の両方に反映されます。"
+  },
+  "headingRegisteredWords": {
+    "message": "登録済みの単語"
+  },
+  "colSurface": {
+    "message": "表層形"
+  },
+  "colReading": {
+    "message": "読み"
+  },
+  "colStyle": {
+    "message": "見た目"
+  },
+  "emptyDictRow": {
+    "message": "まだ登録された単語はありません"
+  },
+  "headingAddWord": {
+    "message": "単語を追加"
+  },
+  "labelSurface": {
+    "message": "表層形(スライド上の表記。漢字を1文字以上含める)"
+  },
+  "placeholderSurface": {
+    "message": "例: 麻雀"
+  },
+  "labelReadingOverride": {
+    "message": "読みを上書きする"
+  },
+  "labelReading": {
+    "message": "読み(ひらがな)"
+  },
+  "placeholderReading": {
+    "message": "例: まーじゃん"
+  },
+  "labelStyleOverride": {
+    "message": "見た目を個別設定する"
+  },
+  "btnAdd": {
+    "message": "追加する"
+  },
+  "btnSaveEdit": {
+    "message": "保存する"
+  },
+  "btnCancelEdit": {
+    "message": "編集をキャンセル"
+  },
+  "btnEdit": {
+    "message": "編集"
+  },
+  "btnDelete": {
+    "message": "削除"
+  },
+  "headingBackup": {
+    "message": "バックアップ"
+  },
+  "btnExport": {
+    "message": "エクスポート(JSONファイルを保存)"
+  },
+  "btnImport": {
+    "message": "インポート(JSONファイルを読み込み)"
+  },
+  "hintImportReplaces": {
+    "message": "インポートすると現在のユーザー辞書は<strong>丸ごと置き換わります</strong>(マージではありません)。"
+  },
+  "readingFallback": {
+    "message": "(kuromojiのまま)"
+  },
+  "styleFallback": {
+    "message": "(全体設定のまま)"
+  },
+  "formTitleEdit": {
+    "message": "「$SURFACE$」を編集",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusUpdated": {
+    "message": "更新しました。"
+  },
+  "statusAdded": {
+    "message": "追加しました。"
+  },
+  "statusExported": {
+    "message": "エクスポートしました。"
+  },
+  "statusImported": {
+    "message": "$COUNT$件のエントリをインポートしました。",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusImportReadError": {
+    "message": "ファイルの読み込みに失敗しました。"
+  },
+  "confirmDeleteWord": {
+    "message": "「$SURFACE$」をユーザー辞書から削除します。よろしいですか？",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errSizeRatioPositive": {
+    "message": "サイズ比は正の数で入力してください"
+  },
+  "errSurfaceRequired": {
+    "message": "表層形を入力してください"
+  },
+  "errSurfaceNeedsKanji": {
+    "message": "表層形には漢字を 1 文字以上含めてください"
+  },
+  "errReadingHiragana": {
+    "message": "読みはひらがなで入力してください"
+  },
+  "errReadingOrStyleRequired": {
+    "message": "読みまたは見た目の上書きのどちらかを入力してください"
+  },
+  "errInvalidJson": {
+    "message": "JSON の形式が正しくありません"
+  },
+  "errInvalidDictFormat": {
+    "message": "ユーザー辞書の形式が正しくありません"
+  },
+  "errInvalidEntryFormat": {
+    "message": "\"$SURFACE$\" のエントリの形式が正しくありません",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errReadingNotString": {
+    "message": "\"$SURFACE$\" の読みが文字列ではありません",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errInvalidStyleFormat": {
+    "message": "\"$SURFACE$\" の見た目指定の形式が正しくありません",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errFontFamilyNotString": {
+    "message": "\"$SURFACE$\" の fontFamily が文字列ではありません",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errColorNotString": {
+    "message": "\"$SURFACE$\" の color が文字列ではありません",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "errSizeRatioNotNumber": {
+    "message": "\"$SURFACE$\" の sizeRatio が数値ではありません",
+    "placeholders": {
+      "SURFACE": {
+        "content": "$1"
+      }
+    }
+  },
+  "fontGroupStandard": {
+    "message": "定番(欧文)"
+  },
+  "fontGroupGoogleLatin": {
+    "message": "Google Fonts(欧文)"
+  },
+  "fontGroupJapaneseGothic": {
+    "message": "日本語 - ゴシック体"
+  },
+  "fontGroupJapaneseOther": {
+    "message": "日本語 - 明朝体・手書き風など"
+  },
+  "fontArial": {
+    "message": "Arial(既定・ゴシック体)"
+  },
+  "fontArialBlack": {
+    "message": "Arial Black"
+  },
+  "fontComicSansMs": {
+    "message": "Comic Sans MS(手書き風)"
+  },
+  "fontCourierNew": {
+    "message": "Courier New(等幅)"
+  },
+  "fontGeorgia": {
+    "message": "Georgia(明朝体風)"
+  },
+  "fontHelvetica": {
+    "message": "Helvetica"
+  },
+  "fontImpact": {
+    "message": "Impact"
+  },
+  "fontTimesNewRoman": {
+    "message": "Times New Roman"
+  },
+  "fontTrebuchetMs": {
+    "message": "Trebuchet MS"
+  },
+  "fontVerdana": {
+    "message": "Verdana"
+  },
+  "fontLato": {
+    "message": "Lato"
+  },
+  "fontLobster": {
+    "message": "Lobster"
+  },
+  "fontMerriweather": {
+    "message": "Merriweather"
+  },
+  "fontMontserrat": {
+    "message": "Montserrat"
+  },
+  "fontOpenSans": {
+    "message": "Open Sans"
+  },
+  "fontOswald": {
+    "message": "Oswald"
+  },
+  "fontPlayfairDisplay": {
+    "message": "Playfair Display"
+  },
+  "fontPoppins": {
+    "message": "Poppins"
+  },
+  "fontPtSans": {
+    "message": "PT Sans"
+  },
+  "fontPtSerif": {
+    "message": "PT Serif"
+  },
+  "fontRoboto": {
+    "message": "Roboto"
+  },
+  "fontRobotoCondensed": {
+    "message": "Roboto Condensed"
+  },
+  "fontRobotoMono": {
+    "message": "Roboto Mono(等幅)"
+  },
+  "fontRobotoSlab": {
+    "message": "Roboto Slab"
+  },
+  "fontUbuntu": {
+    "message": "Ubuntu"
+  },
+  "fontNotoSansJp": {
+    "message": "Noto Sans JP"
+  },
+  "fontMPlus1p": {
+    "message": "M PLUS 1p"
+  },
+  "fontMPlusRounded1c": {
+    "message": "M PLUS Rounded 1c(丸ゴシック)"
+  },
+  "fontKosugi": {
+    "message": "Kosugi"
+  },
+  "fontKosugiMaru": {
+    "message": "Kosugi Maru(丸ゴシック)"
+  },
+  "fontSawarabiGothic": {
+    "message": "Sawarabi Gothic"
+  },
+  "fontBizUdGothic": {
+    "message": "BIZ UDGothic"
+  },
+  "fontZenKakuGothicNew": {
+    "message": "Zen Kaku Gothic New"
+  },
+  "fontZenMaruGothic": {
+    "message": "Zen Maru Gothic(丸ゴシック)"
+  },
+  "fontNotoSerifJp": {
+    "message": "Noto Serif JP"
+  },
+  "fontSawarabiMincho": {
+    "message": "Sawarabi Mincho"
+  },
+  "fontBizUdMincho": {
+    "message": "BIZ UDMincho"
+  },
+  "fontShipporiMincho": {
+    "message": "Shippori Mincho"
+  },
+  "fontKleeOne": {
+    "message": "Klee One(手書き風)"
+  },
+  "fontYomogi": {
+    "message": "Yomogi(手書き風)"
+  },
+  "fontYuseiMagic": {
+    "message": "Yusei Magic"
+  },
+  "fontHachiMaruPop": {
+    "message": "Hachi Maru Pop(ポップ体)"
+  },
+  "fontDelaGothicOne": {
+    "message": "Dela Gothic One(見出し向け)"
+  }
+}

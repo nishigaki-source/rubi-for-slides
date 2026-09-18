@@ -2,11 +2,43 @@
  * ユーザー辞書編集 UI。表層形ごとの読み・見た目(フォント・色・サイズ比)の
  * 上書きを登録・編集・削除でき、JSON でのバックアップ(エクスポート/インポート)にも対応する。
  */
-import { removeEntry, upsertEntry, exportUserDict, importUserDict, type UserDictEntryInput } from '../core/userDict';
+import {
+  removeEntry,
+  upsertEntry,
+  exportUserDict,
+  importUserDict,
+  UserDictError,
+  type UserDictEntryInput,
+} from '../core/userDict';
 import type { RubyStyleOverride, UserDictionary } from '../core/types';
 import { FONT_OPTIONS, populateFontSelect } from '../shared/fontOptions';
+import { applyI18n, t } from '../shared/i18n';
 import { SIZE_PRESETS, nearestSizePreset } from '../shared/sizePresets';
 import { loadUserDict, saveUserDict } from '../shared/userDictStorage';
+
+const USER_DICT_ERROR_KEYS: Record<UserDictError['code'], string> = {
+  sizeRatioPositive: 'errSizeRatioPositive',
+  surfaceRequired: 'errSurfaceRequired',
+  surfaceNeedsKanji: 'errSurfaceNeedsKanji',
+  readingHiragana: 'errReadingHiragana',
+  readingOrStyleRequired: 'errReadingOrStyleRequired',
+  invalidJson: 'errInvalidJson',
+  invalidDictFormat: 'errInvalidDictFormat',
+  invalidEntryFormat: 'errInvalidEntryFormat',
+  readingNotString: 'errReadingNotString',
+  invalidStyleFormat: 'errInvalidStyleFormat',
+  fontFamilyNotString: 'errFontFamilyNotString',
+  colorNotString: 'errColorNotString',
+  sizeRatioNotNumber: 'errSizeRatioNotNumber',
+};
+
+function describeError(err: unknown): string {
+  if (err instanceof UserDictError) {
+    const key = USER_DICT_ERROR_KEYS[err.code];
+    return err.surface ? t(key, err.surface) : t(key);
+  }
+  return err instanceof Error ? err.message : String(err);
+}
 
 function qs<T extends HTMLElement>(id: string): T {
   const el = document.getElementById(id);
@@ -21,12 +53,12 @@ let editingSurface: string | null = null;
 let currentSizeRatio = SIZE_PRESETS[1]!.value;
 
 function describeStyle(style: RubyStyleOverride | undefined): string {
-  if (!style) return '(全体設定のまま)';
+  if (!style) return t('styleFallback');
   const parts: string[] = [];
   if (style.fontFamily) parts.push(style.fontFamily);
   if (style.color) parts.push(style.color);
-  if (style.sizeRatio !== undefined) parts.push(nearestSizePreset(style.sizeRatio).label);
-  return parts.length > 0 ? parts.join(' / ') : '(全体設定のまま)';
+  if (style.sizeRatio !== undefined) parts.push(t(nearestSizePreset(style.sizeRatio).labelKey));
+  return parts.length > 0 ? parts.join(' / ') : t('styleFallback');
 }
 
 function setSizeButtonsActive(sizeRatio: number): void {
@@ -45,7 +77,10 @@ function renderList(): void {
   if (entries.length === 0) {
     const row = document.createElement('tr');
     row.id = 'emptyRow';
-    row.innerHTML = '<td colspan="4">まだ登録された単語はありません</td>';
+    const cell = document.createElement('td');
+    cell.colSpan = 4;
+    cell.textContent = t('emptyDictRow');
+    row.appendChild(cell);
     tbody.appendChild(row);
     return;
   }
@@ -58,7 +93,7 @@ function renderList(): void {
     row.appendChild(surfaceCell);
 
     const readingCell = document.createElement('td');
-    readingCell.textContent = entry.reading ?? '(kuromojiのまま)';
+    readingCell.textContent = entry.reading ?? t('readingFallback');
     row.appendChild(readingCell);
 
     const styleCell = document.createElement('td');
@@ -70,14 +105,14 @@ function renderList(): void {
 
     const editBtn = document.createElement('button');
     editBtn.type = 'button';
-    editBtn.textContent = '編集';
+    editBtn.textContent = t('btnEdit');
     editBtn.addEventListener('click', () => startEdit(surface));
     actionsCell.appendChild(editBtn);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'danger';
-    deleteBtn.textContent = '削除';
+    deleteBtn.textContent = t('btnDelete');
     deleteBtn.addEventListener('click', () => void handleDelete(surface));
     actionsCell.appendChild(deleteBtn);
 
@@ -104,8 +139,8 @@ function resetForm(): void {
   editingSurface = null;
   qs<HTMLFormElement>('entryForm').reset();
   qs<HTMLInputElement>('surface').disabled = false;
-  qs<HTMLHeadingElement>('formTitle').textContent = '単語を追加';
-  qs<HTMLButtonElement>('saveBtn').textContent = '追加する';
+  qs<HTMLHeadingElement>('formTitle').textContent = t('headingAddWord');
+  qs<HTMLButtonElement>('saveBtn').textContent = t('btnAdd');
   qs<HTMLButtonElement>('cancelEditBtn').hidden = true;
   currentSizeRatio = SIZE_PRESETS[1]!.value;
   setSizeButtonsActive(currentSizeRatio);
@@ -118,8 +153,8 @@ function startEdit(surface: string): void {
   if (!entry) return;
 
   editingSurface = surface;
-  qs<HTMLHeadingElement>('formTitle').textContent = `「${surface}」を編集`;
-  qs<HTMLButtonElement>('saveBtn').textContent = '保存する';
+  qs<HTMLHeadingElement>('formTitle').textContent = t('formTitleEdit', surface);
+  qs<HTMLButtonElement>('saveBtn').textContent = t('btnSaveEdit');
   qs<HTMLButtonElement>('cancelEditBtn').hidden = false;
 
   const surfaceEl = qs<HTMLInputElement>('surface');
@@ -155,7 +190,7 @@ function startEdit(surface: string): void {
 }
 
 async function handleDelete(surface: string): Promise<void> {
-  if (!confirm(`「${surface}」をユーザー辞書から削除します。よろしいですか？`)) return;
+  if (!confirm(t('confirmDeleteWord', surface))) return;
   dict = removeEntry(dict, surface);
   await saveUserDict(dict);
   renderList();
@@ -232,11 +267,11 @@ function setupForm(): void {
       }
       void saveUserDict(dict).then(() => {
         renderList();
-        setFormStatus(editingSurface ? '更新しました。' : '追加しました。', 'success');
+        setFormStatus(editingSurface ? t('statusUpdated') : t('statusAdded'), 'success');
         resetForm();
       });
     } catch (err) {
-      setFormStatus(err instanceof Error ? err.message : String(err), 'error');
+      setFormStatus(describeError(err), 'error');
     }
   });
 
@@ -253,7 +288,7 @@ function setupImportExport(): void {
     a.download = 'rubi-user-dict.json';
     a.click();
     URL.revokeObjectURL(url);
-    setImportExportStatus('エクスポートしました。', 'success');
+    setImportExportStatus(t('statusExported'), 'success');
   });
 
   const importFileEl = qs<HTMLInputElement>('importFile');
@@ -269,16 +304,16 @@ function setupImportExport(): void {
         dict = importUserDict(text);
         void saveUserDict(dict).then(() => {
           renderList();
-          setImportExportStatus(`${Object.keys(dict).length}件のエントリをインポートしました。`, 'success');
+          setImportExportStatus(t('statusImported', String(Object.keys(dict).length)), 'success');
         });
       } catch (err) {
-        setImportExportStatus(err instanceof Error ? err.message : String(err), 'error');
+        setImportExportStatus(describeError(err), 'error');
       } finally {
         importFileEl.value = '';
       }
     };
     reader.onerror = () => {
-      setImportExportStatus('ファイルの読み込みに失敗しました。', 'error');
+      setImportExportStatus(t('statusImportReadError'), 'error');
       importFileEl.value = '';
     };
     reader.readAsText(file);
@@ -286,6 +321,10 @@ function setupImportExport(): void {
 }
 
 async function init(): Promise<void> {
+  document.title = t('optionsPageTitle');
+  document.documentElement.lang = chrome.i18n.getUILanguage();
+  applyI18n(document);
+
   dict = await loadUserDict().catch(() => ({}));
   renderList();
   setupForm();

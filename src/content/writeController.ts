@@ -23,6 +23,7 @@ import {
 import { findMatchingShapeObjectId } from '../core/shapeMatcher';
 import type { RecenterCorrection, RubyWriteItem } from '../core/slidesRequests';
 import { parseSlidesUrl } from '../core/slidesUrl';
+import { t } from '../shared/i18n';
 import type { ReadingServiceOptions } from '../core/types';
 import { domRectToRect, type Rect } from './geometry';
 import { computeParagraphPlan } from './rubyPlan';
@@ -200,7 +201,7 @@ async function writeRubyToPage(
 ): Promise<WriteResult> {
   const pageEl = getPageContainerElement(document, pageObjectId);
   if (!pageEl) {
-    return { ok: false, message: 'スライドの表示領域が見つかりませんでした。編集画面で実行してください。' };
+    return { ok: false, message: t('errorNoPageContainer') };
   }
   const pageContainerPx = domRectToRect(pageEl.getBoundingClientRect());
 
@@ -283,7 +284,7 @@ async function writeRubyToPage(
 export async function writeRubyToCurrentSlide(options: WriteOptions): Promise<WriteResult> {
   const parsed = parseSlidesUrl(location.href);
   if (!parsed) {
-    return { ok: false, message: 'このページの URL からスライドを特定できませんでした。' };
+    return { ok: false, message: t('errorCannotIdentifySlide') };
   }
   return writeRubyToPage(parsed.presentationId, parsed.pageObjectId, options);
 }
@@ -298,7 +299,7 @@ export async function writeRubyToCurrentSlide(options: WriteOptions): Promise<Wr
 export async function writeRubyToAllSlides(options: WriteOptions): Promise<WriteAllResult> {
   const parsed = parseSlidesUrl(location.href);
   if (!parsed) {
-    return { ok: false, message: 'このページの URL からスライドを特定できませんでした。' };
+    return { ok: false, message: t('errorCannotIdentifySlide') };
   }
   const originalPageObjectId = parsed.pageObjectId;
 
@@ -333,7 +334,7 @@ export async function writeRubyToAllSlides(options: WriteOptions): Promise<Write
   await navigateToSlide(originalPageObjectId);
 
   if (failedSlideCount === pageObjectIds.length && pageObjectIds.length > 0) {
-    return { ok: false, message: 'すべてのスライドで処理に失敗しました。' };
+    return { ok: false, message: t('errorAllSlidesFailed') };
   }
 
   return { ok: true, writtenCount: totalWritten, slideCount: pageObjectIds.length, failedSlideCount };
@@ -343,7 +344,7 @@ export async function writeRubyToAllSlides(options: WriteOptions): Promise<Write
 export async function deleteRuby(scope: 'current' | 'all'): Promise<DeleteResult> {
   const parsed = parseSlidesUrl(location.href);
   if (!parsed) {
-    return { ok: false, message: 'このページの URL からスライドを特定できませんでした。' };
+    return { ok: false, message: t('errorCannotIdentifySlide') };
   }
 
   const req: DeleteRubyRequest = {

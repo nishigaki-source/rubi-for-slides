@@ -27,6 +27,12 @@ async function installChromeStub(page: Page): Promise<void> {
     }
 
     (window as unknown as { chrome: unknown }).chrome = {
+      i18n: {
+        // 実際のメッセージカタログは読み込まず、キーをそのまま返す(パネルのUI文言は
+        // このe2eテストの検証対象外のため)。
+        getMessage: (key: string) => key,
+        getUILanguage: () => 'ja',
+      },
       runtime: {
         getManifest: () => ({ version: 'e2e-test' }),
         onInstalled: { addListener: () => {} },

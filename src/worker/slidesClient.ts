@@ -4,6 +4,7 @@
  * このファイルは「HTTP でどう送るか」だけに専念する。
  */
 import { isRubyDescription } from '../core/slidesRequests';
+import { t } from '../shared/i18n';
 import { getAuthToken, revokeAuthToken } from './auth';
 
 const API_BASE = 'https://slides.googleapis.com/v1';
@@ -69,7 +70,7 @@ async function authorizedFetch(url: string, init: RequestInit = {}, retryOn401 =
 async function getPresentationRaw(presentationId: string): Promise<SlidesApiPresentation> {
   const res = await authorizedFetch(`${API_BASE}/presentations/${presentationId}`);
   if (!res.ok) {
-    throw new Error(`プレゼンテーションの取得に失敗しました (status: ${res.status})`);
+    throw new Error(t('errorFetchPresentationFailed', String(res.status)));
   }
   return (await res.json()) as SlidesApiPresentation;
 }
@@ -121,7 +122,7 @@ export async function getPageInfo(presentationId: string, pageObjectId: string):
   };
   const page = (presentation.slides ?? []).find((s) => s.objectId === pageObjectId);
   if (!page) {
-    throw new Error(`ページが見つかりません (pageObjectId: ${pageObjectId})`);
+    throw new Error(t('errorPageNotFound', pageObjectId));
   }
 
   const shapes: RemoteShapeInfo[] = [];
@@ -173,7 +174,7 @@ export async function batchUpdate(presentationId: string, requests: unknown[]): 
   });
   if (!res.ok) {
     const bodyText = await res.text().catch(() => '');
-    throw new Error(`スライドの更新に失敗しました (status: ${res.status}) ${bodyText}`.trim());
+    throw new Error(t('errorSlideUpdateFailed', [String(res.status), bodyText]).trim());
   }
   return { appliedRequestCount: requests.length };
 }

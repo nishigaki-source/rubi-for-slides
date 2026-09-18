@@ -8,14 +8,14 @@
  */
 export interface SizePreset {
   key: 'small' | 'medium' | 'large';
-  label: string;
+  labelKey: string;
   value: number;
 }
 
 export const SIZE_PRESETS: SizePreset[] = [
-  { key: 'small', label: '小', value: 0.35 },
-  { key: 'medium', label: '中', value: 0.5 },
-  { key: 'large', label: '大', value: 0.65 },
+  { key: 'small', labelKey: 'sizeSmall', value: 0.35 },
+  { key: 'medium', labelKey: 'sizeMedium', value: 0.5 },
+  { key: 'large', labelKey: 'sizeLarge', value: 0.65 },
 ];
 
 /** インポートされた辞書等、プリセット外の値が保存されている場合に備え、最も近いプリセットを返す。 */

@@ -13,96 +13,104 @@
  * ルビ(ふりがな)の用途上、日本語 Web フォントも一通り選べるようにしている。
  * ただし Web フォントは、そのスライド上でまだ一度も使われていない場合、
  * ブラウザ側(モード A)ではフォントファイルが未読み込みのため代替フォントで
- * 表示されることがある(エラーにはならず、見た目が既定フォントになるだけ)。
+ * 表示されることがある(エラーにはならず、見た目が既定フォントになるだけ。
+ * `content/webFontLoader.ts` で Google Fonts から動的に読み込んで解消している)。
+ *
+ * `value` は Slides API にもそのまま送る実在のフォント名なので翻訳しない。
+ * `labelKey` は表示用ラベル(フォント名+簡単な説明)の `chrome.i18n` キーで、
+ * 実際の文言は `scripts/build-locales.mjs` -> `public/_locales/{ja,en}/messages.json`
+ * にある。
  */
+import { t } from './i18n';
+
 export interface FontOption {
   value: string;
-  label: string;
+  labelKey: string;
 }
 
 export interface FontOptionGroup {
-  label: string;
+  labelKey: string;
   options: FontOption[];
 }
 
 export const FONT_GROUPS: FontOptionGroup[] = [
   {
-    label: '定番(欧文)',
+    labelKey: 'fontGroupStandard',
     options: [
-      { value: 'Arial', label: 'Arial(既定・ゴシック体)' },
-      { value: 'Arial Black', label: 'Arial Black' },
-      { value: 'Comic Sans MS', label: 'Comic Sans MS(手書き風)' },
-      { value: 'Courier New', label: 'Courier New(等幅)' },
-      { value: 'Georgia', label: 'Georgia(明朝体風)' },
-      { value: 'Helvetica', label: 'Helvetica' },
-      { value: 'Impact', label: 'Impact' },
-      { value: 'Times New Roman', label: 'Times New Roman' },
-      { value: 'Trebuchet MS', label: 'Trebuchet MS' },
-      { value: 'Verdana', label: 'Verdana' },
+      { value: 'Arial', labelKey: 'fontArial' },
+      { value: 'Arial Black', labelKey: 'fontArialBlack' },
+      { value: 'Comic Sans MS', labelKey: 'fontComicSansMs' },
+      { value: 'Courier New', labelKey: 'fontCourierNew' },
+      { value: 'Georgia', labelKey: 'fontGeorgia' },
+      { value: 'Helvetica', labelKey: 'fontHelvetica' },
+      { value: 'Impact', labelKey: 'fontImpact' },
+      { value: 'Times New Roman', labelKey: 'fontTimesNewRoman' },
+      { value: 'Trebuchet MS', labelKey: 'fontTrebuchetMs' },
+      { value: 'Verdana', labelKey: 'fontVerdana' },
     ],
   },
   {
-    label: 'Google Fonts(欧文)',
+    labelKey: 'fontGroupGoogleLatin',
     options: [
-      { value: 'Lato', label: 'Lato' },
-      { value: 'Lobster', label: 'Lobster' },
-      { value: 'Merriweather', label: 'Merriweather' },
-      { value: 'Montserrat', label: 'Montserrat' },
-      { value: 'Open Sans', label: 'Open Sans' },
-      { value: 'Oswald', label: 'Oswald' },
-      { value: 'Playfair Display', label: 'Playfair Display' },
-      { value: 'Poppins', label: 'Poppins' },
-      { value: 'PT Sans', label: 'PT Sans' },
-      { value: 'PT Serif', label: 'PT Serif' },
-      { value: 'Roboto', label: 'Roboto' },
-      { value: 'Roboto Condensed', label: 'Roboto Condensed' },
-      { value: 'Roboto Mono', label: 'Roboto Mono(等幅)' },
-      { value: 'Roboto Slab', label: 'Roboto Slab' },
-      { value: 'Ubuntu', label: 'Ubuntu' },
+      { value: 'Lato', labelKey: 'fontLato' },
+      { value: 'Lobster', labelKey: 'fontLobster' },
+      { value: 'Merriweather', labelKey: 'fontMerriweather' },
+      { value: 'Montserrat', labelKey: 'fontMontserrat' },
+      { value: 'Open Sans', labelKey: 'fontOpenSans' },
+      { value: 'Oswald', labelKey: 'fontOswald' },
+      { value: 'Playfair Display', labelKey: 'fontPlayfairDisplay' },
+      { value: 'Poppins', labelKey: 'fontPoppins' },
+      { value: 'PT Sans', labelKey: 'fontPtSans' },
+      { value: 'PT Serif', labelKey: 'fontPtSerif' },
+      { value: 'Roboto', labelKey: 'fontRoboto' },
+      { value: 'Roboto Condensed', labelKey: 'fontRobotoCondensed' },
+      { value: 'Roboto Mono', labelKey: 'fontRobotoMono' },
+      { value: 'Roboto Slab', labelKey: 'fontRobotoSlab' },
+      { value: 'Ubuntu', labelKey: 'fontUbuntu' },
     ],
   },
   {
-    label: '日本語 - ゴシック体',
+    labelKey: 'fontGroupJapaneseGothic',
     options: [
-      { value: 'Noto Sans JP', label: 'Noto Sans JP' },
-      { value: 'M PLUS 1p', label: 'M PLUS 1p' },
-      { value: 'M PLUS Rounded 1c', label: 'M PLUS Rounded 1c(丸ゴシック)' },
-      { value: 'Kosugi', label: 'Kosugi' },
-      { value: 'Kosugi Maru', label: 'Kosugi Maru(丸ゴシック)' },
-      { value: 'Sawarabi Gothic', label: 'Sawarabi Gothic' },
-      { value: 'BIZ UDGothic', label: 'BIZ UDGothic' },
-      { value: 'Zen Kaku Gothic New', label: 'Zen Kaku Gothic New' },
-      { value: 'Zen Maru Gothic', label: 'Zen Maru Gothic(丸ゴシック)' },
+      { value: 'Noto Sans JP', labelKey: 'fontNotoSansJp' },
+      { value: 'M PLUS 1p', labelKey: 'fontMPlus1p' },
+      { value: 'M PLUS Rounded 1c', labelKey: 'fontMPlusRounded1c' },
+      { value: 'Kosugi', labelKey: 'fontKosugi' },
+      { value: 'Kosugi Maru', labelKey: 'fontKosugiMaru' },
+      { value: 'Sawarabi Gothic', labelKey: 'fontSawarabiGothic' },
+      { value: 'BIZ UDGothic', labelKey: 'fontBizUdGothic' },
+      { value: 'Zen Kaku Gothic New', labelKey: 'fontZenKakuGothicNew' },
+      { value: 'Zen Maru Gothic', labelKey: 'fontZenMaruGothic' },
     ],
   },
   {
-    label: '日本語 - 明朝体・手書き風など',
+    labelKey: 'fontGroupJapaneseOther',
     options: [
-      { value: 'Noto Serif JP', label: 'Noto Serif JP' },
-      { value: 'Sawarabi Mincho', label: 'Sawarabi Mincho' },
-      { value: 'BIZ UDMincho', label: 'BIZ UDMincho' },
-      { value: 'Shippori Mincho', label: 'Shippori Mincho' },
-      { value: 'Klee One', label: 'Klee One(手書き風)' },
-      { value: 'Yomogi', label: 'Yomogi(手書き風)' },
-      { value: 'Yusei Magic', label: 'Yusei Magic' },
-      { value: 'Hachi Maru Pop', label: 'Hachi Maru Pop(ポップ体)' },
-      { value: 'Dela Gothic One', label: 'Dela Gothic One(見出し向け)' },
+      { value: 'Noto Serif JP', labelKey: 'fontNotoSerifJp' },
+      { value: 'Sawarabi Mincho', labelKey: 'fontSawarabiMincho' },
+      { value: 'BIZ UDMincho', labelKey: 'fontBizUdMincho' },
+      { value: 'Shippori Mincho', labelKey: 'fontShipporiMincho' },
+      { value: 'Klee One', labelKey: 'fontKleeOne' },
+      { value: 'Yomogi', labelKey: 'fontYomogi' },
+      { value: 'Yusei Magic', labelKey: 'fontYuseiMagic' },
+      { value: 'Hachi Maru Pop', labelKey: 'fontHachiMaruPop' },
+      { value: 'Dela Gothic One', labelKey: 'fontDelaGothicOne' },
     ],
   },
 ];
 
-/** グループ分けを気にしない用途(バリデーション等)向けのフラットな一覧。 */
+/** グループ分けを気にしない用途(既定値の取得等)向けのフラットな一覧。 */
 export const FONT_OPTIONS: FontOption[] = FONT_GROUPS.flatMap((group) => group.options);
 
 /** `<select>` にグループ分けされたフォント選択肢を追加する(パネル・options ページ共通)。 */
 export function populateFontSelect(select: HTMLSelectElement): void {
   for (const group of FONT_GROUPS) {
     const optgroup = document.createElement('optgroup');
-    optgroup.label = group.label;
+    optgroup.label = t(group.labelKey);
     for (const font of group.options) {
       const option = document.createElement('option');
       option.value = font.value;
-      option.textContent = font.label;
+      option.textContent = t(font.labelKey);
       optgroup.appendChild(option);
     }
     select.appendChild(optgroup);
