@@ -16,7 +16,7 @@ FONT_INDEX_BOLD = 2  # Hiragino Sans GB W6(太字)
 MASTER_SIZE = 512
 BG_COLOR = (0, 0, 0, 255)  # 黒
 KANJI_COLOR = (255, 255, 255, 255)
-RUBY_COLOR = (255, 202, 40, 255)  # 琥珀色。背景の青に対して視認性が高い
+RUBY_COLOR = (255, 255, 255, 255)  # 白
 
 
 def build_master() -> Image.Image:
