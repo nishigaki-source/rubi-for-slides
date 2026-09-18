@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parent.parent
 FONT_PATH = "/System/Library/Fonts/Hiragino Sans GB.ttc"
 FONT_INDEX_BOLD = 2  # Hiragino Sans GB W6(太字)
 MASTER_SIZE = 512
-BG_COLOR = (26, 115, 232, 255)  # #1a73e8。パネル・options ページのアクセント色と揃えている
+BG_COLOR = (0, 0, 0, 255)  # 黒
 KANJI_COLOR = (255, 255, 255, 255)
 RUBY_COLOR = (255, 202, 40, 255)  # 琥珀色。背景の青に対して視認性が高い
 
