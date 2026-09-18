@@ -9,7 +9,7 @@
 - **拡張機能名**: ルビふり for Googleスライド(`manifest.json` の `__MSG_extName__` から自動取得されるので、ダッシュボードでの入力は基本不要)
 - **カテゴリ**: 生産性(Productivity)。「教育」(Education)でも当てはまるが、Googleスライド上で動く実務ツールという性質上、生産性を第一候補として推奨
 - **言語**: 日本語(主)。英語の掲載文も下に用意した(ストアの「追加言語」機能で登録可能)
-- **プライバシーポリシーURL**: <https://nishigaki-source.github.io/rubi-for-slides/>
+- **プライバシーポリシーURL**: <https://rubi.rocketdone.com/>(カスタムドメイン。DNS反映前は <https://nishigaki-source.github.io/rubi-for-slides/> でも同じ内容が見られる)
 
 ## 概要(短い説明、132文字以内)
 
