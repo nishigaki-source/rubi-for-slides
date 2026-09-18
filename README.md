@@ -118,6 +118,22 @@ manclgmnopghllchmkjenfbigakkamjm
 7. Googleスライドの編集画面を開き、拡張機能アイコンをクリックしてパネルを開き、「このスライド」を押す。
    初回は Google の同意画面が表示されるので、許可する。
 
+### 【重要・実機で発見】Chromeウェブストアへの提出時は `key` フィールドが使えない
+
+`manifest.json` に上記の `key`(固定ID用の公開鍵)が入ったまま zip をアップロードすると、
+Developer Dashboard が「マニフェストでは key フィールドを使用できません」というエラーで
+アップロード自体を拒否する。ストア側は初回公開時に独自の拡張機能IDを発行する仕組みのため。
+
+ローカルの動作確認(`chrome://extensions` の「パッケージ化されていない拡張機能を読み込む」)は
+固定IDのままにしておきたいので、`npm run build:store-zip` で `dist/` はそのままに
+`dist-store/`(`key` を除去したコピー)を作り、そちらから `rubi-for-slides.zip` を生成する
+(`scripts/build-store-zip.mjs`)。
+
+ストアが初回公開時に発行する新しい拡張機能IDは、OAuthクライアントの
+「アプリケーションID」(手順4)には反映されていないため、**公開後に Google Cloud Console で
+アプリケーションIDを新しいIDに更新する**(または新しいIDで別のOAuthクライアントを
+作成し、ストア公開用ビルドの `oauth2.client_id` だけ差し替える)必要がある。
+
 ## セットアップ
 
 ```bash
