@@ -129,10 +129,19 @@ Developer Dashboard が「マニフェストでは key フィールドを使用�
 `dist-store/`(`key` を除去したコピー)を作り、そちらから `rubi-for-slides.zip` を生成する
 (`scripts/build-store-zip.mjs`)。
 
-ストアが初回公開時に発行する新しい拡張機能IDは、OAuthクライアントの
-「アプリケーションID」(手順4)には反映されていないため、**公開後に Google Cloud Console で
-アプリケーションIDを新しいIDに更新する**(または新しいIDで別のOAuthクライアントを
-作成し、ストア公開用ビルドの `oauth2.client_id` だけ差し替える)必要がある。
+ストアが初回公開時に発行した拡張機能ID(`boccgohdphepnoaenacpckicbdinihoc`)は、
+ローカル用の固定ID(`key` 由来)とは別物で、OAuthクライアントIDは拡張機能IDと紐づく。
+そのため公開版専用の OAuth クライアント(Cloud Console で「Chrome 拡張機能」タイプ、
+アイテムID = ストアのID)を別に作成し、`scripts/build-store-zip.mjs` が
+ストア用 zip の `oauth2.client_id` だけをそのIDに差し替える(ローカル用の `dist/` は
+開発用クライアントのまま)。開発用クライアントは削除しないこと。
+
+### OAuth 同意画面は「テスト中」のまま(要対応)
+
+同意画面の公開ステータスが「テスト中」の間は、テストユーザーに登録したアカウントしか
+「スライドへの書き込み」を認可できない(画面表示のみのモード A は OAuth 不要なので誰でも使える)。
+一般ユーザーに使ってもらうには、ブランディング設定を完了して「本番」に公開し、機密性の高い
+スコープ(`presentations`)についての Google のアプリ確認を受ける必要がある。
 
 ## セットアップ
 
