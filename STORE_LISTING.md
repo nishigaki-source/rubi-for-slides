@@ -128,5 +128,5 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
 - [x] 審査通過・公開(拡張機能ID `boccgohdphepnoaenacpckicbdinihoc`)
 - [x] 紹介LPを公開: <https://rocketdone.com/products/rubi-for-slides>
 - [x] 公開版専用の OAuth クライアントを作成し、ストア用ビルドに反映(v0.5.1)
-- [ ] v0.5.1 を「新しいパッケージ」としてアップロードし、審査に提出(公開版の書き込み機能が動くようになる)
-- [ ] OAuth 同意画面をブランディング設定 → 「本番」に公開 → スコープの確認申請(README.md 参照)
+- [x] v0.5.1 をアップロードし、審査通過(公開版の書き込み機能が動く)
+- [x] OAuth 同意画面を本番に公開し、ブランディング検証済み。スコープ(presentations)の確認申請を提出済み(2026-09-20)。結果待ち — 詳細は OAUTH_VERIFICATION.md

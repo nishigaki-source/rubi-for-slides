@@ -160,6 +160,9 @@
       }
     }
   },
+  "errorFileAccessDenied": {
+    "message": "このスライドへのアクセスが許可されませんでした。もう一度お試しいただき、表示された画面でスライドを選んでください。"
+  },
   "errorGradeTableLoadFailed": {
     "message": "学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)",
     "placeholders": {

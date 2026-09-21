@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<title>ルビふり for Googleスライド - Access / アクセスの許可</title>
+<style>
+  body { font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; margin: 0; padding: 32px 24px; color: #1f1f1f; background: #fff; }
+  main { max-width: 560px; margin: 0 auto; text-align: center; }
+  h1 { font-size: 18px; margin: 0 0 12px; }
+  p { font-size: 14px; line-height: 1.7; color: #444; margin: 0 0 8px; }
+  button { margin-top: 16px; padding: 10px 20px; font-size: 14px; border: 0; border-radius: 6px; background: #1a73e8; color: #fff; cursor: pointer; }
+  button[hidden] { display: none; }
+  #status { margin-top: 20px; font-size: 13px; color: #666; }
+  #status.error { color: #b3261e; }
+</style>
+</head>
+<body>
+<main>
+  <h1 data-ja="スライドへのアクセスを許可してください" data-en="Allow access to your presentation">スライドへのアクセスを許可してください</h1>
+  <p data-ja="ルビふりが、いま開いているスライドだけを読み書きできるようにします。表示された画面でスライドを選び、「選択」を押してください。" data-en="This lets Furigana read and write only the presentation you have open. Select it in the dialog and click Select.">
+    ルビふりが、いま開いているスライドだけを読み書きできるようにします。表示された画面でスライドを選び、「選択」を押してください。
+  </p>
+  <p data-ja="ほかのファイルには一切アクセスしません。" data-en="No other files are accessed.">ほかのファイルには一切アクセスしません。</p>
+  <button id="retry" hidden data-ja="もう一度開く" data-en="Open again">もう一度開く</button>
+  <div id="status" role="status"></div>
+</main>
+
+<script>
+// 公開してよい値: API キーは Picker 専用に制限(Google Picker API のみ・このドメインからのみ)してある。
+// Cloud プロジェクトの番号は、drive.file のアクセス許可をこのアプリに紐づけるために Picker に渡す。
+var PICKER_API_KEY = 'AIzaSyB9pyTT1X-FG_28inTdVrFqhRDtdzPJ8iE';
+var CLOUD_PROJECT_NUMBER = '665117522331';
+
+var params = new URLSearchParams(location.search);
+var extId = params.get('ext');
+var fileId = params.get('fileId');
+var lang = (navigator.language || 'en').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'en';
+
+document.documentElement.lang = lang;
+document.querySelectorAll('[data-ja]').forEach(function (el) {
+  el.textContent = el.getAttribute('data-' + lang);
+});
+
+var statusEl = document.getElementById('status');
+var retryBtn = document.getElementById('retry');
+
+function setStatus(text, isError) {
+  statusEl.textContent = text;
+  statusEl.className = isError ? 'error' : '';
+}
+
+function msg(ja, en) {
+  return lang === 'ja' ? ja : en;
+}
+
+function sendToExtension(message) {
+  return new Promise(function (resolve, reject) {
+    if (!window.chrome || !chrome.runtime || !chrome.runtime.sendMessage) {
+      reject(new Error(msg('拡張機能と通信できません。拡張機能から開いてください。', 'Cannot reach the extension. Please open this from the extension.')));
+      return;
+    }
+    chrome.runtime.sendMessage(extId, message, function (response) {
+      if (chrome.runtime.lastError) {
+        reject(new Error(chrome.runtime.lastError.message));
+        return;
+      }
+      resolve(response);
+    });
+  });
+}
+
+function finish(granted) {
+  // 拡張機能がこのウィンドウを閉じる。通知に失敗した場合はユーザーが閉じる。
+  sendToExtension({ type: 'rubi/picker-result', presentationId: fileId, granted: granted }).catch(function () {});
+}
+
+function loadPickerLibrary() {
+  return new Promise(function (resolve, reject) {
+    var script = document.createElement('script');
+    script.src = 'https://apis.google.com/js/api.js';
+    script.onload = function () {
+      gapi.load('picker', { callback: resolve, onerror: reject });
+    };
+    script.onerror = reject;
+    document.head.appendChild(script);
+  });
+}
+
+function openPicker(token) {
+  var view = new google.picker.DocsView().setFileIds(fileId).setMode(google.picker.DocsViewMode.LIST);
+  var picker = new google.picker.PickerBuilder()
+    .addView(view)
+    .setOAuthToken(token)
+    .setDeveloperKey(PICKER_API_KEY)
+    .setAppId(CLOUD_PROJECT_NUMBER)
+    .setOrigin(location.protocol + '//' + location.host)
+    .setLocale(lang)
+    .setTitle(msg('スライドを選択', 'Select the presentation'))
+    .setCallback(function (data) {
+      var action = data[google.picker.Response.ACTION];
+      if (action === google.picker.Action.PICKED) {
+        var docs = data[google.picker.Response.DOCUMENTS] || [];
+        var granted = docs.some(function (d) { return d[google.picker.Document.ID] === fileId; });
+        if (granted) {
+          setStatus(msg('許可されました。このウィンドウは自動で閉じます。', 'Access granted. This window will close automatically.'));
+          finish(true);
+        } else {
+          setStatus(msg('いま開いているスライドを選んでください。', 'Please select the presentation you have open.'), true);
+          retryBtn.hidden = false;
+        }
+      } else if (action === google.picker.Action.CANCEL) {
+        finish(false);
+      }
+    })
+    .build();
+  picker.setVisible(true);
+}
+
+async function start() {
+  retryBtn.hidden = true;
+  if (!extId || !fileId) {
+    setStatus(msg('拡張機能から開いてください。', 'Please open this page from the extension.'), true);
+    return;
+  }
+  setStatus(msg('準備しています…', 'Getting ready…'));
+  try {
+    await loadPickerLibrary();
+    var res = await sendToExtension({ type: 'rubi/picker-get-token' });
+    if (!res || !res.ok || !res.token) {
+      throw new Error((res && res.message) || msg('アクセス許可を取得できませんでした。', 'Could not get authorization.'));
+    }
+    setStatus('');
+    openPicker(res.token);
+  } catch (err) {
+    setStatus(String((err && err.message) || err), true);
+    retryBtn.hidden = false;
+  }
+}
+
+retryBtn.addEventListener('click', start);
+start();
+</script>
+</body>
+</html>

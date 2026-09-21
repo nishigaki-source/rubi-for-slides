@@ -97,7 +97,8 @@ manclgmnopghllchmkjenfbigakkamjm
 3. 「APIとサービス」→「OAuth同意画面」を設定する。
    - User Type は「外部」を選択（Google Workspace アカウントでない場合）。
    - アプリ名・サポートメール等を入力する。
-   - スコープの追加で `https://www.googleapis.com/auth/presentations` を追加する。
+   - スコープの追加で `https://www.googleapis.com/auth/drive.file` を追加する(非機密スコープ。
+     `presentations` は機密スコープで Google の確認が必要になり、`drive.file` に変えるよう求められた。下記参照)。
    - 公開ステータスは「テスト」のままでよい（自分や少人数で使う分には審査不要。
      不特定多数に配布する場合は Google の審査が必要になる。PLAN.md 3.2節参照）。
    - 「テストユーザー」に自分の Google アカウントのメールアドレスを追加する
@@ -110,7 +111,7 @@ manclgmnopghllchmkjenfbigakkamjm
 ```json
 "oauth2": {
   "client_id": "ここに実際のクライアントIDを貼り付け.apps.googleusercontent.com",
-  "scopes": ["https://www.googleapis.com/auth/presentations"]
+  "scopes": ["https://www.googleapis.com/auth/drive.file"]
 }
 ```
 
@@ -136,12 +137,31 @@ Developer Dashboard が「マニフェストでは key フィールドを使用�
 ストア用 zip の `oauth2.client_id` だけをそのIDに差し替える(ローカル用の `dist/` は
 開発用クライアントのまま)。開発用クライアントは削除しないこと。
 
-### OAuth 同意画面は「テスト中」のまま(要対応)
+### スコープは `drive.file`(+ Google Picker)
 
-同意画面の公開ステータスが「テスト中」の間は、テストユーザーに登録したアカウントしか
-「スライドへの書き込み」を認可できない(画面表示のみのモード A は OAuth 不要なので誰でも使える)。
-一般ユーザーに使ってもらうには、ブランディング設定を完了して「本番」に公開し、機密性の高い
-スコープ(`presentations`)についての Google のアプリ確認を受ける必要がある。
+当初は `presentations` スコープで申請したが、Google の審査で「`drive.file` で足りるはず」と
+差し戻された(機密スコープは必要最小限でなければならない)。そのため v0.6.0 から `drive.file` に移行した。
+
+`drive.file` は、ユーザーが Google Picker で選んだファイルにしか触れない。この拡張機能は次のように動く。
+
+1. 「スライドへ書き込み」で Slides API を呼ぶ。未許可のスライドなら 403/404 が返る
+   (`src/core/fileAccess.ts` の `FileAccessRequiredError`)。
+2. service worker が Picker 用ポップアップ(`docs/picker.html` = <https://rubi.rocketdone.com/picker.html>)
+   を開く(`src/worker/filePicker.ts`)。Picker は拡張機能の画面では CSP で読み込めないため、自ドメインの静的ページに置いている。
+3. ページは `externally_connectable` 経由でアクセストークンを受け取り、`setFileIds(スライドID)` で
+   「いま開いているスライド」を選択済みの状態で Picker を出す。ユーザーが「選択」を押すと許可が付き、
+   元の操作を1回だけ再試行する。許可は Google 側に保存され、同じスライドでは以降ピッカーは出ない。
+
+Picker を動かすのに必要な設定(Cloud Console、プロジェクト `rubi-for-slides`):
+
+- **Google Picker API** と **Google Drive API** を有効化。
+- **API キー**を作成し、API の制限を「Google Picker API」のみ、ウェブサイトの制限を
+  `https://rubi.rocketdone.com/*` にする。キーは `docs/picker.html` の `PICKER_API_KEY` に書く
+  (制限つきなので公開して問題ない)。
+- Picker の `setAppId` には Cloud プロジェクト番号(`665117522331`)を渡す。
+
+同意画面は「本番」で、`drive.file` は非機密スコープなので Google のアプリ確認は不要
+(「未確認のアプリ」の警告も 100 人の上限もない)。旧 `presentations` の確認申請は取り下げること。
 
 ## セットアップ
 

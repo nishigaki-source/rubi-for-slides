@@ -22,7 +22,10 @@ import {
   type TokenizeResponse,
   type WriteRubyResponse,
 } from '../core/messages';
+import { FileAccessDeniedError, FileAccessRequiredError, withFileAccess } from '../core/fileAccess';
 import { buildCreateRubyRequests, buildDeleteRequests, buildGroupRequests, buildRecenterRequests, planGroups } from '../core/slidesRequests';
+import { t } from '../shared/i18n';
+import { requestFileAccess, handlePickerExternalMessage } from './filePicker';
 import { getGradeTable } from './gradeTable';
 import { batchUpdate, getPageInfo, getPresentationPages, getRubyObjectIds } from './slidesClient';
 import { tokenize, warmUpTokenizer } from './tokenizer';
@@ -34,6 +37,27 @@ chrome.runtime.onInstalled.addListener(() => {
   // インストール直後に辞書ロードを開始しておき、初回のルビ表示を速くする。
   warmUpTokenizer();
 });
+
+/**
+ * Slides API の呼び出しを、drive.file のアクセス許可付きで実行する。
+ * 未許可のスライドなら Picker で許可を求め、許可されたら 1 回だけ再試行する。
+ */
+function withAccess<T>(presentationId: string, run: () => Promise<T>): Promise<T> {
+  return withFileAccess(run, () => requestFileAccess(presentationId));
+}
+
+/** エラーを利用者向けのメッセージにする(アクセス未許可は専用の文言)。 */
+function describeError(err: unknown): string {
+  if (err instanceof FileAccessDeniedError || err instanceof FileAccessRequiredError) {
+    return t('errorFileAccessDenied');
+  }
+  return err instanceof Error ? err.message : String(err);
+}
+
+// Picker ページ(rubi.rocketdone.com)からのメッセージ。送信元の検証は handlePickerExternalMessage 内で行う。
+chrome.runtime.onMessageExternal.addListener((message: unknown, sender, sendResponse) =>
+  handlePickerExternalMessage(message, sender, sendResponse)
+);
 
 let groupIdCounter = 0;
 function generateObjectId(prefix: string): string {
@@ -100,7 +124,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 
   if (isPageInfoRequest(message)) {
     const { requestId, presentationId, pageObjectId } = message;
-    getPageInfo(presentationId, pageObjectId)
+    withAccess(presentationId, () => getPageInfo(presentationId, pageObjectId))
       .then(({ pageSizeEmu, shapes }) => {
         const response: PageInfoResponse = {
           type: 'rubi/get-page-info-result',
@@ -114,7 +138,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         const response: PageInfoResponse = {
           type: 'rubi/get-page-info-error',
           requestId,
-          message: err instanceof Error ? err.message : String(err),
+          message: describeError(err),
         };
         sendResponse(response);
       });
@@ -123,7 +147,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 
   if (isPresentationPagesRequest(message)) {
     const { requestId, presentationId } = message;
-    getPresentationPages(presentationId)
+    withAccess(presentationId, () => getPresentationPages(presentationId))
       .then((pageObjectIds) => {
         const response: PresentationPagesResponse = {
           type: 'rubi/get-presentation-pages-result',
@@ -136,7 +160,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         const response: PresentationPagesResponse = {
           type: 'rubi/get-presentation-pages-error',
           requestId,
-          message: err instanceof Error ? err.message : String(err),
+          message: describeError(err),
         };
         sendResponse(response);
       });
@@ -145,14 +169,14 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 
   if (isWriteRubyRequest(message)) {
     const { requestId, presentationId, pageObjectId, items, groupWithOriginal } = message;
-    (async () => {
+    withAccess(presentationId, async () => {
       const createRequests = buildCreateRubyRequests(pageObjectId, items);
       const groupRequests = groupWithOriginal
         ? buildGroupRequests(planGroups(items, () => generateObjectId('rubi-group')))
         : [];
       await batchUpdate(presentationId, [...createRequests, ...groupRequests]);
       return items.length;
-    })()
+    })
       .then((writtenCount) => {
         const response: WriteRubyResponse = { type: 'rubi/write-ruby-result', requestId, writtenCount };
         sendResponse(response);
@@ -161,7 +185,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         const response: WriteRubyResponse = {
           type: 'rubi/write-ruby-error',
           requestId,
-          message: err instanceof Error ? err.message : String(err),
+          message: describeError(err),
         };
         sendResponse(response);
       });
@@ -170,7 +194,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 
   if (isRecenterRubyRequest(message)) {
     const { requestId, presentationId, corrections } = message;
-    batchUpdate(presentationId, buildRecenterRequests(corrections))
+    withAccess(presentationId, () => batchUpdate(presentationId, buildRecenterRequests(corrections)))
       .then(() => {
         const response: RecenterRubyResponse = { type: 'rubi/recenter-ruby-result', requestId, ok: true };
         sendResponse(response);
@@ -180,7 +204,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
           type: 'rubi/recenter-ruby-result',
           requestId,
           ok: false,
-          message: err instanceof Error ? err.message : String(err),
+          message: describeError(err),
         };
         sendResponse(response);
       });
@@ -189,12 +213,12 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
 
   if (isDeleteRubyRequest(message)) {
     const { requestId, presentationId, pageObjectId } = message;
-    (async () => {
+    withAccess(presentationId, async () => {
       const objectIds = await getRubyObjectIds(presentationId, pageObjectId);
       if (objectIds.length === 0) return 0;
       await batchUpdate(presentationId, buildDeleteRequests(objectIds));
       return objectIds.length;
-    })()
+    })
       .then((deletedCount) => {
         const response: DeleteRubyResponse = { type: 'rubi/delete-ruby-result', requestId, deletedCount };
         sendResponse(response);
@@ -203,7 +227,7 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
         const response: DeleteRubyResponse = {
           type: 'rubi/delete-ruby-error',
           requestId,
-          message: err instanceof Error ? err.message : String(err),
+          message: describeError(err),
         };
         sendResponse(response);
       });

@@ -239,3 +239,40 @@ export function nextRequestId(): string {
   counter += 1;
   return `${Date.now().toString(36)}-${counter}-${Math.random().toString(36).slice(2, 8)}`;
 }
+
+// --- Google Picker(drive.file でスライドへのアクセス許可を得る)関連 ---
+// Picker は拡張機能の画面では読み込めない(外部スクリプトが CSP で禁止される)ため、
+// 自ドメインの静的ページ(docs/picker.html)をポップアップで開き、そのページと
+// externally_connectable 経由で通信する。以下は「ページ → 拡張機能」の外部メッセージ。
+
+/** Picker ページが置かれているオリジン。外部メッセージの送信元チェックに使う。 */
+export const PICKER_ORIGIN = 'https://rubi.rocketdone.com';
+export const PICKER_PAGE_URL = `${PICKER_ORIGIN}/picker.html`;
+
+/** Picker ページがアクセストークン(drive.file)を要求する。 */
+export interface PickerGetTokenRequest {
+  type: 'rubi/picker-get-token';
+}
+
+/** Picker ページが、ユーザーの選択結果(許可された/されなかった)を通知する。 */
+export interface PickerResultMessage {
+  type: 'rubi/picker-result';
+  presentationId: string;
+  granted: boolean;
+}
+
+export function isPickerGetTokenRequest(msg: unknown): msg is PickerGetTokenRequest {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    (msg as { type?: unknown }).type === 'rubi/picker-get-token'
+  );
+}
+
+export function isPickerResultMessage(msg: unknown): msg is PickerResultMessage {
+  if (typeof msg !== 'object' || msg === null) return false;
+  const m = msg as { type?: unknown; presentationId?: unknown; granted?: unknown };
+  return (
+    m.type === 'rubi/picker-result' && typeof m.presentationId === 'string' && typeof m.granted === 'boolean'
+  );
+}

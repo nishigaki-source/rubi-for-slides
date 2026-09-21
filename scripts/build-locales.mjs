@@ -88,6 +88,11 @@ const ENTRIES = [
     ['STATUS', 'BODY'],
   ],
   [
+    'errorFileAccessDenied',
+    'このスライドへのアクセスが許可されませんでした。もう一度お試しいただき、表示された画面でスライドを選んでください。',
+    'Access to this presentation was not granted. Please try again and select the presentation in the dialog.',
+  ],
+  [
     'errorGradeTableLoadFailed',
     '学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)',
     'Failed to load the kanji grade table (status: $STATUS$)',

@@ -160,6 +160,9 @@
       }
     }
   },
+  "errorFileAccessDenied": {
+    "message": "Access to this presentation was not granted. Please try again and select the presentation in the dialog."
+  },
   "errorGradeTableLoadFailed": {
     "message": "Failed to load the kanji grade table (status: $STATUS$)",
     "placeholders": {

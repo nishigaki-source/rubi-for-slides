@@ -3,6 +3,7 @@
  * 認証は auth.ts、リクエスト内容の組み立ては core/slidesRequests.ts が担当し、
  * このファイルは「HTTP でどう送るか」だけに専念する。
  */
+import { FileAccessRequiredError, isFileAccessStatus } from '../core/fileAccess';
 import { isRubyDescription } from '../core/slidesRequests';
 import { t } from '../shared/i18n';
 import { getAuthToken, revokeAuthToken } from './auth';
@@ -70,6 +71,8 @@ async function authorizedFetch(url: string, init: RequestInit = {}, retryOn401 =
 async function getPresentationRaw(presentationId: string): Promise<SlidesApiPresentation> {
   const res = await authorizedFetch(`${API_BASE}/presentations/${presentationId}`);
   if (!res.ok) {
+    // drive.file では、未許可のスライドは 403/404 になる。呼び出し側が Picker で許可を求めて再試行する。
+    if (isFileAccessStatus(res.status)) throw new FileAccessRequiredError(res.status);
     throw new Error(t('errorFetchPresentationFailed', String(res.status)));
   }
   return (await res.json()) as SlidesApiPresentation;
@@ -173,6 +176,7 @@ export async function batchUpdate(presentationId: string, requests: unknown[]): 
     body: JSON.stringify({ requests }),
   });
   if (!res.ok) {
+    if (isFileAccessStatus(res.status)) throw new FileAccessRequiredError(res.status);
     const bodyText = await res.text().catch(() => '');
     throw new Error(t('errorSlideUpdateFailed', [String(res.status), bodyText]).trim());
   }
