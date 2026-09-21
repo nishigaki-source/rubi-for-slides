@@ -48,8 +48,9 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 ・漢字が読めない相手にも配慮したスライドを作りたい方
 
 ■ 権限について
-・Googleスライドへのアクセス: 現在開いているスライドの内容を読み取り、
-  ルビ用テキストボックスの追加・削除を行うために使用します
+・Googleスライドへのアクセス: 「スライドへの書き込み」を使うとき、あなたが選択したスライドだけを
+  対象に、内容の読み取りとルビ用テキストボックスの追加・削除を行います(選択していないファイルには
+  アクセスしません)
 ・保存された設定・辞書データは、ご自身のChromeアカウント(chrome.storage.sync)
   にのみ保存され、開発者のサーバーには一切送信されません
 
@@ -77,8 +78,8 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 - Anyone who wants their slides to be readable by people who can't read certain kanji
 
 ■ Permissions
-- Google Slides access: used to read the currently open slide's text and to add/remove
-  the furigana text boxes it creates
+- Google Slides access: when you use "Write to slide", the extension reads and adds/removes
+  furigana text boxes only in the presentation you select (it cannot access any other file)
 - Your settings and dictionary are stored only in your own Chrome account
   (chrome.storage.sync) and are never sent to a developer-run server
 
@@ -104,7 +105,7 @@ To display and write hiragana furigana over kanji in Google Slides presentations
 | 権限 | 理由(日本語) | Reason (English) |
 |---|---|---|
 | `storage` | ルビの表示設定・ユーザー辞書をChromeの同期ストレージに保存するため | To store display settings and the user dictionary in Chrome's sync storage |
-| `identity` | Google Slides APIを呼び出すためのOAuth認可(スライドへの書き込み機能)に使用 | For OAuth authorization to call the Google Slides API (write-to-slide feature) |
+| `identity` | Google Slides APIを呼び出すためのOAuth認可(`drive.file` スコープ。ユーザーが選んだスライドのみ)に使用 | For OAuth authorization (`drive.file` scope; only the presentation the user selects) to call the Google Slides API |
 | `activeTab` | 現在開いているタブがGoogleスライドかどうかを判定するために使用 | To detect whether the current tab is a Google Slides page |
 | ホスト権限(`docs.google.com`, `slides.googleapis.com`) | Googleスライドの編集画面へのルビ表示・Slides APIとの通信のために必要 | Needed to display furigana in the Slides editor and to communicate with the Slides API |
 
@@ -130,3 +131,6 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
 - [x] 公開版専用の OAuth クライアントを作成し、ストア用ビルドに反映(v0.5.1)
 - [x] v0.5.1 をアップロードし、審査通過(公開版の書き込み機能が動く)
 - [x] OAuth 同意画面を本番に公開し、ブランディング検証済み。スコープ(presentations)の確認申請を提出済み(2026-09-20)。結果待ち — 詳細は OAUTH_VERIFICATION.md
+- [x] Google の審査で `presentations` → `drive.file` への変更を求められ、v0.6.0 で移行(Picker 経由で許可、実機確認済み)
+- [ ] v0.6.0 のストア用 zip をアップロードし、審査に提出
+- [ ] v0.6.0 公開後: Cloud Console から `presentations` スコープを外し、審査メールに「Confirming narrower scopes」と返信

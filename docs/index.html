@@ -26,7 +26,7 @@
 <body>
 
 <h1>ルビふり for Googleスライド</h1>
-<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-09-18</p>
+<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-09-21</p>
 <p class="lang-toggle"><a href="#ja">日本語</a> / <a href="#en">English</a></p>
 
 <section id="ja">
@@ -53,10 +53,17 @@
   </li>
   <li>
     <strong>Googleスライドの内容(Google Slides API)</strong><br />
-    「スライドへの書き込み」機能を使う際、利用者の明示的な操作とGoogleアカウントでの認可(OAuth)に基づき、
-    現在開いているプレゼンテーションのテキスト内容の取得、およびルビ用テキストボックスの追加・削除を行います。
+    「スライドへの書き込み」機能を使う際、利用者の明示的な操作とGoogleアカウントでの認可(OAuth、
+    <code>drive.file</code> スコープ)に基づき、利用者がGoogle Pickerで選択したプレゼンテーションに限って、
+    テキスト内容の取得、およびルビ用テキストボックスの追加・削除を行います。選択していないファイルにはアクセスしません。
     この通信は利用者のブラウザとGoogle自身のサーバー(<code>slides.googleapis.com</code>)の間で直接行われ、
     開発者がこの内容を閲覧・収集・保存することはありません。
+  </li>
+  <li>
+    <strong>Google Picker(ファイル選択画面)</strong><br />
+    アクセスを許可するスライドを選ぶため、当サイトの静的ページ(<code>rubi.rocketdone.com/picker.html</code>)で
+    Google Picker(<code>apis.google.com</code>)を表示します。このページは選択結果を拡張機能に返すだけで、
+    スライドの内容や識別情報を開発者のサーバーに送信・保存することはありません。
   </li>
   <li>
     <strong>Googleフォント(Google Fonts)</strong><br />
@@ -68,7 +75,7 @@
 <h2>権限について</h2>
 <ul>
   <li><code>storage</code>: 上記の表示設定・ユーザー辞書の保存に使用します。</li>
-  <li><code>identity</code>: Google Slides APIを利用するためのOAuth認可(ログイン済みのGoogleアカウントでの許可)に使用します。</li>
+  <li><code>identity</code>: Google Slides APIを利用するためのOAuth認可(ログイン済みのGoogleアカウントでの許可。<code>drive.file</code> スコープ)に使用します。</li>
   <li><code>activeTab</code> / Googleスライドへのホスト権限: 現在開いているGoogleスライドの編集画面でのみ動作するために使用します。</li>
 </ul>
 
@@ -128,10 +135,18 @@
   </li>
   <li>
     <strong>Google Slides content (Google Slides API)</strong><br />
-    When you use the "write to slide" feature, based on your explicit action and Google account authorization (OAuth),
-    the extension reads the text content of the currently open presentation and adds/removes ruby text boxes.
+    When you use the "write to slide" feature, based on your explicit action and Google account authorization (OAuth,
+    the <code>drive.file</code> scope), the extension reads the text content of, and adds/removes ruby text boxes in,
+    only the presentation you selected in Google Picker. It cannot access any file you have not selected.
     This communication happens directly between your browser and Google's own servers (<code>slides.googleapis.com</code>);
     the developer never views, collects, or stores this content.
+  </li>
+  <li>
+    <strong>Google Picker (file selection dialog)</strong><br />
+    To let you choose which presentation to grant access to, a static page on this site
+    (<code>rubi.rocketdone.com/picker.html</code>) shows Google Picker (<code>apis.google.com</code>).
+    The page only returns your selection to the extension; it does not send or store the content or identity of your
+    presentation on any server operated by the developer.
   </li>
   <li>
     <strong>Google Fonts</strong><br />
@@ -143,7 +158,7 @@
 <h2>Permissions</h2>
 <ul>
   <li><code>storage</code>: used to store the display settings and user dictionary described above.</li>
-  <li><code>identity</code>: used for OAuth authorization to call the Google Slides API using your already-signed-in Google account.</li>
+  <li><code>identity</code>: used for OAuth authorization (the <code>drive.file</code> scope) to call the Google Slides API using your already-signed-in Google account.</li>
   <li><code>activeTab</code> / host permission for Google Slides: used so the extension only runs on the currently open Google Slides editor.</li>
 </ul>
 
