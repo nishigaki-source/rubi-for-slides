@@ -132,5 +132,5 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
 - [x] v0.5.1 をアップロードし、審査通過(公開版の書き込み機能が動く)
 - [x] OAuth 同意画面を本番に公開し、ブランディング検証済み。スコープ(presentations)の確認申請を提出済み(2026-09-20)。結果待ち — 詳細は OAUTH_VERIFICATION.md
 - [x] Google の審査で `presentations` → `drive.file` への変更を求められ、v0.6.0 で移行(Picker 経由で許可、実機確認済み)
-- [ ] v0.6.0 のストア用 zip をアップロードし、審査に提出
-- [ ] v0.6.0 公開後: Cloud Console から `presentations` スコープを外し、審査メールに「Confirming narrower scopes」と返信
+- [x] v0.6.0 のストア用 zip をアップロードし、審査通過(drive.file 化、実機で書き込み・削除を確認済み)
+- [x] Cloud Console から `presentations` スコープを削除。検証センターは「検証は必要ありません」の状態に。審査メールへの返信は不要と判断(下記参照)
