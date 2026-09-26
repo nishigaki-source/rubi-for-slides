@@ -94,6 +94,8 @@ export function getGroupContainer(textEl: SVGTextElement): Element {
  * (選び方は DOM に依存しない `choosePageRoot` に切り出して単体テストしている)。
  */
 const PAGE_ROOT_ID_PREFIX = 'editor-';
+/** ページ背景(=スライド本体の枠)の要素の id は、ページルートの id + この接尾辞 */
+const PAGE_BACKGROUND_ID_SUFFIX = '-bg';
 
 export function pageRootIdFor(pageObjectId: string): string {
   return `${PAGE_ROOT_ID_PREFIX}${pageObjectId}`;
@@ -125,6 +127,7 @@ function isRenderedSvg(svg: SVGSVGElement): boolean {
 }
 
 interface PageRootElement extends PageRootCandidate {
+  el: Element;
   svg: SVGSVGElement;
 }
 
@@ -134,16 +137,29 @@ function collectPageRoots(root: ParentNode): PageRootElement[] {
     if (isInThumbnail(el)) continue;
     if (el.parentElement?.closest(`[id^="${PAGE_ROOT_ID_PREFIX}"]`)) continue; // シェイプ・背景など、ページ内の要素
     const svg = el.closest('svg');
-    if (svg) roots.push({ id: el.id, rendered: isRenderedSvg(svg), svg });
+    if (svg) roots.push({ id: el.id, rendered: isRenderedSvg(svg), el, svg });
   }
   return roots;
 }
 
-export function getPageContainerElement(
-  root: ParentNode = document,
-  pageObjectId?: string
-): SVGSVGElement | null {
-  return choosePageRoot(collectPageRoots(root), pageObjectId)?.svg ?? null;
+/**
+ * スライド1枚分の「枠」を表す要素を返す。モード B で画面上の px をスライドの EMU に換算する基準になる。
+ *
+ * 【重要・2026-09-26 実機で発見】ページルートを包む `<svg>` は、スライド本体ではなく周りのグレーの余白を
+ * 含む編集領域全体の大きさを持つことがある(実測: svg 1145×531px に対しスライド本体 884×497px)。
+ * これを基準にすると横と縦で別々の倍率で換算がずれ、書き込んだルビが左上ほど大きく・下の行ほど下に
+ * ずれ、文字も小さくなった(ユーザー報告)。スライド本体の枠はページ背景の要素
+ * `editor-<objectId>-bg` が正確に持っているので、それを使う。見つからない場合だけ従来どおり svg を使う。
+ */
+export function getPageContainerElement(root: ParentNode = document, pageObjectId?: string): Element | null {
+  const page = choosePageRoot(collectPageRoots(root), pageObjectId);
+  if (!page) return null;
+  const bg = Array.from(page.el.querySelectorAll(`[id="${page.id}${PAGE_BACKGROUND_ID_SUFFIX}"]`))[0];
+  if (bg) {
+    const rect = bg.getBoundingClientRect();
+    if (rect.width > 0 && rect.height > 0) return bg;
+  }
+  return page.svg;
 }
 
 /**

@@ -220,3 +220,72 @@ describe('buildRubyTokens: ユーザー辞書の表層形がトークン境界�
     expect(results[0]?.rubyRanges).toEqual([{ start: 0, end: 2, kana: 'がっこう' }]);
   });
 });
+
+describe('buildRubyToken: 漢字ごとのルビ(rubyMode: per-kanji)', () => {
+  const kanjiReadings = { 始: ['し', 'はじ'], 業: ['ぎょう', 'ごう'], 式: ['しき'], 学: ['がく'], 校: ['こう'], 今: ['こん', 'いま'], 日: ['にち', 'ひ', 'か'], 食: ['しょく', 'た'], 物: ['ぶつ', 'もつ', 'もの'] };
+  const perKanji = { rubyMode: 'per-kanji' as const, kanjiReadings };
+
+  it('始業式 -> 始=し, 業=ぎょう, 式=しき(要望の例)', () => {
+    expect(buildRubyToken({ surface: '始業式', reading: 'シギョウシキ' }, perKanji).rubyRanges).toEqual([
+      { start: 0, end: 1, kana: 'し' },
+      { start: 1, end: 2, kana: 'ぎょう' },
+      { start: 2, end: 3, kana: 'しき' },
+    ]);
+  });
+
+  it('促音化した読みも分けられる(学校 -> がっ/こう)', () => {
+    expect(buildRubyToken({ surface: '学校', reading: 'ガッコウ' }, perKanji).rubyRanges).toEqual([
+      { start: 0, end: 1, kana: 'がっ' },
+      { start: 1, end: 2, kana: 'こう' },
+    ]);
+  });
+
+  it('熟字訓(今日)は熟語ルビのまま', () => {
+    expect(buildRubyToken({ surface: '今日', reading: 'キョウ' }, perKanji).rubyRanges).toEqual([
+      { start: 0, end: 2, kana: 'きょう' },
+    ]);
+  });
+
+  it('送り仮名の処理と組み合わせても動く(食べ物)', () => {
+    expect(buildRubyToken({ surface: '食べ物', reading: 'タベモノ' }, perKanji).rubyRanges).toEqual([
+      { start: 0, end: 1, kana: 'た' },
+      { start: 2, end: 3, kana: 'もの' },
+    ]);
+  });
+
+  it('熟語ごと(既定)なら従来どおりまとめて振る', () => {
+    expect(buildRubyToken({ surface: '始業式', reading: 'シギョウシキ' }, { kanjiReadings }).rubyRanges).toEqual([
+      { start: 0, end: 3, kana: 'しぎょうしき' },
+    ]);
+  });
+
+  it('ユーザー辞書の「|」区切りで分け方を指定できる(読みの表に無い漢字でも)', () => {
+    const userDict = { 雀魂: { reading: 'じゃん|たま' } };
+    expect(buildRubyToken({ surface: '雀魂', reading: '*' }, { ...perKanji, userDict }).rubyRanges).toEqual([
+      { start: 0, end: 1, kana: 'じゃん' },
+      { start: 1, end: 2, kana: 'たま' },
+    ]);
+  });
+
+  it('「|」区切りは熟語ごとのときは無視し、まとめて振る', () => {
+    const userDict = { 雀魂: { reading: 'じゃん|たま' } };
+    expect(buildRubyToken({ surface: '雀魂', reading: '*' }, { userDict }).rubyRanges).toEqual([
+      { start: 0, end: 2, kana: 'じゃんたま' },
+    ]);
+  });
+
+  it('「|」の数が漢字の数と合わなければ、その部分は熟語ルビにする', () => {
+    const userDict = { 始業式: { reading: 'し|ぎょうしき' } };
+    expect(buildRubyToken({ surface: '始業式', reading: 'シギョウシキ' }, { ...perKanji, userDict }).rubyRanges).toEqual([
+      { start: 0, end: 3, kana: 'しぎょうしき' },
+    ]);
+  });
+
+  it('ユーザー辞書の見た目の上書きは、分けた各区間に引き継ぐ', () => {
+    const style = { color: '#ff0000' };
+    const userDict = { 始業式: { reading: 'し|ぎょう|しき', style } };
+    const ranges = buildRubyToken({ surface: '始業式', reading: 'シギョウシキ' }, { ...perKanji, userDict }).rubyRanges;
+    expect(ranges).toHaveLength(3);
+    expect(ranges.every((r) => r.style === style)).toBe(true);
+  });
+});

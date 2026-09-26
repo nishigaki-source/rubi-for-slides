@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeRubyBoxAboveBody, computeRubyFontSize, pickUniformRubyFontSize } from '@content/rubyLayout';
+import { computeRubyBoxAboveBody, computeRubyFontSize, pickUniformRubyFontSize, groupAdjacentBoxes, resolveRubyCenters } from '@content/rubyLayout';
 
 describe('computeRubyFontSize', () => {
   it('ルビが本文の幅に十分収まる場合は高さ基準のサイズを使う', () => {
@@ -92,5 +92,60 @@ describe('computeRubyBoxAboveBody', () => {
     const bodyBox = { x: 0, y: 100, width: 40, height: 20 };
     const box = computeRubyBoxAboveBody(bodyBox, 10, 2);
     expect(box.y + box.height).toBeLessThan(bodyBox.y);
+  });
+});
+
+describe('groupAdjacentBoxes', () => {
+  const box = (x: number, y = 0, w = 20, h = 20) => ({ x, y, width: w, height: h });
+
+  it('同じ行ですき間なく並ぶ本文(始|業|式)を1つにまとめる', () => {
+    expect(groupAdjacentBoxes([box(0), box(20), box(40)])).toEqual([[0, 1, 2]]);
+  });
+
+  it('かなを挟んで離れている(食べ物の「食」と「物」)ものは別のまとまり', () => {
+    expect(groupAdjacentBoxes([box(0), box(40)])).toEqual([[0], [1]]);
+  });
+
+  it('行が変われば別のまとまり', () => {
+    expect(groupAdjacentBoxes([box(0), box(20, 30)])).toEqual([[0], [1]]);
+  });
+
+  it('空なら空', () => {
+    expect(groupAdjacentBoxes([])).toEqual([]);
+  });
+});
+
+describe('resolveRubyCenters', () => {
+  it('重ならなければ本来の中心のまま', () => {
+    expect(resolveRubyCenters([{ center: 10, width: 10 }, { center: 30, width: 10 }], 2)).toEqual([10, 30]);
+  });
+
+  it('幅の広いルビ(業=ぎょう)が隣を左右に押し広げ、重ならなくなる', () => {
+    const fs = 10; // ルビのフォントサイズ。本文は1文字20px
+    const items = [
+      { center: 10, width: 1 * fs }, // 始: し
+      { center: 30, width: 3 * fs }, // 業: ぎょう
+      { center: 50, width: 2 * fs }, // 式: しき
+    ];
+    const gap = 2;
+    const centers = resolveRubyCenters(items, gap);
+    for (let i = 1; i < items.length; i++) {
+      const leftEdgeOfCur = (centers[i] as number) - (items[i] as { width: number }).width / 2;
+      const rightEdgeOfPrev = (centers[i - 1] as number) + (items[i - 1] as { width: number }).width / 2;
+      expect(leftEdgeOfCur - rightEdgeOfPrev).toBeGreaterThanOrEqual(gap - 1e-9);
+    }
+    // 並び順は保たれ、真ん中のルビは本来の位置から大きくずれない
+    expect(centers[0]).toBeLessThan(centers[1] as number);
+    expect(Math.abs((centers[1] as number) - 30)).toBeLessThan(5);
+  });
+
+  it('全体の位置の平均はなるべく保つ(左右どちらか一方にだけ寄らない)', () => {
+    const centers = resolveRubyCenters([{ center: 10, width: 20 }, { center: 20, width: 20 }], 0);
+    expect(centers[0]).toBeCloseTo(5);
+    expect(centers[1]).toBeCloseTo(25);
+  });
+
+  it('空なら空', () => {
+    expect(resolveRubyCenters([], 2)).toEqual([]);
   });
 });

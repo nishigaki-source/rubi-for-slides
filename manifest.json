@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "__MSG_extName__",
-  "version": "0.6.1",
+  "version": "0.7.0",
   "description": "__MSG_extDescription__",
   "default_locale": "ja",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAu2aG1mPmUCYuILubjGS5QCSAfPPxP/FVKMWYf4zUl/7llK2h+70gqR5nLBXj8Yjih14QZqVp4XspRFxwvlcC2d7t1YqWuy9wOjq1b9MYpb7VQsiNjxD1Lay41eNi7H3grDLKhw3TChGNr39oM584HEkBkePmX5LRJBTn/xJif9Uev2jIXPRoA/iPlPyKtkvxUL3/J7aLbFKP/KzIAmmg90v0Jl2fMUDZ5QjSTppT65iV8s3SYDvqOsDunheBVXirIP6AmrIb/ykwXhFotuShEGpIcFtCyJyoRQ5ElLmHCSMLrfpsJMeuIthQSfxZnHq3756KWww7C3cUx1AMPinTNwIDAQAB",
@@ -18,6 +18,10 @@
     }
   },
   "options_page": "src/options/index.html",
+  "side_panel": {
+    "default_path": "src/sidepanel/index.html"
+  },
+  "minimum_chrome_version": "116",
   "background": {
     "service_worker": "src/worker/index.ts",
     "type": "module"
@@ -29,7 +33,7 @@
       "run_at": "document_idle"
     }
   ],
-  "permissions": ["storage", "identity", "activeTab"],
+  "permissions": ["storage", "identity", "activeTab", "sidePanel"],
   "host_permissions": [
     "https://docs.google.com/presentation/*",
     "https://slides.googleapis.com/*"

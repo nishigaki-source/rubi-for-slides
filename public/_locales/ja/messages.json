@@ -5,20 +5,26 @@
   "extDescription": {
     "message": "Googleスライドの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。"
   },
-  "panelDialogLabel": {
-    "message": "ルビふり"
-  },
   "panelTitle": {
     "message": "ルビふり"
-  },
-  "panelClose": {
-    "message": "閉じる"
   },
   "toggleShowRuby": {
     "message": "ルビを表示"
   },
   "sectionAppearance": {
     "message": "ルビの見た目"
+  },
+  "labelRubyMode": {
+    "message": "振り方"
+  },
+  "rubyModeGroupAriaLabel": {
+    "message": "ルビの振り方"
+  },
+  "rubyModePerKanji": {
+    "message": "漢字ごと"
+  },
+  "rubyModePerWord": {
+    "message": "熟語ごと"
   },
   "labelSize": {
     "message": "サイズ"
@@ -72,6 +78,18 @@
   },
   "linkEditUserDict": {
     "message": "ユーザー辞書を編集"
+  },
+  "sidePanelNotSlides": {
+    "message": "Googleスライドの編集画面を開くと、スライドへの書き込み・削除ができます。"
+  },
+  "errorReloadSlidesTab": {
+    "message": "スライドのタブと通信できませんでした。スライドのページを再読み込みしてから、もう一度お試しください。"
+  },
+  "btnConfirmRun": {
+    "message": "実行する"
+  },
+  "btnCancelConfirm": {
+    "message": "キャンセル"
   },
   "statusWriting": {
     "message": "書き込み中…"
@@ -163,6 +181,14 @@
   "errorFileAccessDenied": {
     "message": "このスライドへのアクセスが許可されませんでした。もう一度お試しいただき、表示された画面でスライドを選んでください。"
   },
+  "errorKanjiReadingsLoadFailed": {
+    "message": "漢字の読みデータの読み込みに失敗しました (status: $STATUS$)",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
   "errorGradeTableLoadFailed": {
     "message": "学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)",
     "placeholders": {
@@ -211,7 +237,7 @@
     "message": "読み(ひらがな)"
   },
   "placeholderReading": {
-    "message": "例: まーじゃん"
+    "message": "例: まーじゃん / し|ぎょう|しき"
   },
   "labelStyleOverride": {
     "message": "見た目を個別設定する"
@@ -295,7 +321,7 @@
     "message": "表層形には漢字を 1 文字以上含めてください"
   },
   "errReadingHiragana": {
-    "message": "読みはひらがなで入力してください"
+    "message": "読みはひらがなで入力してください(漢字ごとに分けるときは「し|ぎょう|しき」のように「|」で区切ります)"
   },
   "errReadingOrStyleRequired": {
     "message": "読みまたは見た目の上書きのどちらかを入力してください"

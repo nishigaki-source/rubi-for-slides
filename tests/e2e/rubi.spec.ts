@@ -56,6 +56,15 @@ async function installChromeStub(page: Page): Promise<void> {
           if (message.type === 'rubi/get-grade-table') {
             return { type: 'rubi/get-grade-table-result', requestId: message.requestId, gradeTable: {} };
           }
+          if (message.type === 'rubi/get-kanji-readings') {
+            // 本物の拡張機能と同じデータ(KANJIDIC2 由来)を返す。形式は worker の parseKanjiReadingTable と同じ
+            const raw = (await (await fetch('/public/data/kanji-readings.json')).json()) as {
+              readings: Record<string, string>;
+            };
+            const kanjiReadings: Record<string, string[]> = {};
+            for (const [k, v] of Object.entries(raw.readings)) kanjiReadings[k] = v.split(',');
+            return { type: 'rubi/get-kanji-readings-result', requestId: message.requestId, kanjiReadings };
+          }
           throw new Error('unhandled message type in e2e chrome stub: ' + message.type);
         },
       },
@@ -142,12 +151,48 @@ test.beforeEach(async ({ page }) => {
 });
 
 test.describe('ルビの表示', () => {
-  test('送り仮名・熟語混じりの文にルビが正しく表示される(段落1)', async ({ page }) => {
+  test('送り仮名・熟語混じりの文にルビが正しく表示される(段落1、既定の漢字ごと)', async ({ page }) => {
     await expect(async () => {
       const spans = await getOverlaySpans(page);
       expect(spans.map((s) => s.text)).toEqual(
-        expect.arrayContaining(['た', 'がっこう', 'せいかつ', 'たの'])
+        expect.arrayContaining(['た', 'がっ', 'こう', 'せい', 'かつ', 'たの'])
       );
+    }).toPass({ timeout: 15_000 });
+  });
+
+  test('漢字ごとのルビは各漢字の真上に乗り、隣のルビと重ならない(学校 → がっ/こう)', async ({ page }) => {
+    await expect(async () => {
+      const spans = await getOverlaySpans(page);
+      const gat = spans.find((s) => s.text === 'がっ');
+      const kou = spans.find((s) => s.text === 'こう');
+      expect(gat, 'ルビ「がっ」が見つかること').toBeTruthy();
+      expect(kou, 'ルビ「こう」が見つかること').toBeTruthy();
+
+      const gakuX = await getCharCenterX(page, 'editor-i0-paragraph-0', '学');
+      const kouX = await getCharCenterX(page, 'editor-i0-paragraph-0', '校');
+      expect(Math.abs(gat!.left - gakuX)).toBeLessThan(10);
+      expect(Math.abs(kou!.left - kouX)).toBeLessThan(10);
+
+      // 描画された span の矩形どうしが重ならない
+      const overlap = await page.evaluate(() => {
+        const spansEl = Array.from(document.querySelectorAll('#rubi-for-slides-overlay-root span'));
+        const a = spansEl.find((s) => s.textContent === 'がっ')!.getBoundingClientRect();
+        const b = spansEl.find((s) => s.textContent === 'こう')!.getBoundingClientRect();
+        return a.right - b.left;
+      });
+      expect(overlap).toBeLessThanOrEqual(0);
+    }).toPass({ timeout: 15_000 });
+  });
+
+  test('振り方を「熟語ごと」にすると従来どおり熟語全体に振る(段落1)', async ({ page }) => {
+    await page.evaluate(async () => {
+      const w = window as unknown as { chrome: { storage: { sync: { set: (i: object) => Promise<void> } } } };
+      await w.chrome.storage.sync.set({ rubiSettings: { rubyMode: 'per-word' } });
+    });
+    await expect(async () => {
+      const spans = await getOverlaySpans(page);
+      expect(spans.map((s) => s.text)).toEqual(expect.arrayContaining(['た', 'がっこう', 'せいかつ', 'たの']));
+      expect(spans.map((s) => s.text)).not.toContain('がっ');
     }).toPass({ timeout: 15_000 });
   });
 
@@ -254,7 +299,7 @@ test.describe('ユーザー辞書による単語ごとの見た目上書き(PLAN
     // 初回描画が完了するまで待つ
     await expect(async () => {
       const spans = await getOverlaySpans(page);
-      expect(spans.map((s) => s.text)).toContain('がっこう');
+      expect(spans.map((s) => s.text)).toContain('がっ');
     }).toPass({ timeout: 15_000 });
 
     // 「学校」にだけ色・フォントの個別上書きを設定する
@@ -275,14 +320,17 @@ test.describe('ユーザー辞書による単語ごとの見た目上書き(PLAN
 
     await expect(async () => {
       const styles = await getOverlaySpanStyles(page);
-      const gakkou = styles.find((s) => s.text === 'がっこう');
+      // 既定の「漢字ごと」では「学校」のルビは「がっ」「こう」の2つに分かれる
+      const gakkouParts = styles.filter((s) => s.text === 'がっ' || s.text === 'こう');
       const tano = styles.find((s) => s.text === 'たの');
-      expect(gakkou, 'ルビ「がっこう」が見つかること').toBeTruthy();
+      expect(gakkouParts, 'ルビ「がっ」「こう」が見つかること').toHaveLength(2);
       expect(tano, 'ルビ「たの」が見つかること').toBeTruthy();
 
-      // 個別上書きした単語は指定した色・フォントになる
-      expect(gakkou!.color).toBe('rgb(255, 0, 0)');
-      expect(gakkou!.fontFamily).toBe('Georgia');
+      // 個別上書きした単語は、分かれたすべてのルビが指定した色・フォントになる
+      for (const part of gakkouParts) {
+        expect(part.color).toBe('rgb(255, 0, 0)');
+        expect(part.fontFamily).toBe('Georgia');
+      }
 
       // 上書きしていない単語は全体設定の既定値のまま
       expect(tano!.color).not.toBe('rgb(255, 0, 0)');

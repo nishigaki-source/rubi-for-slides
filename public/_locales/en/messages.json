@@ -5,20 +5,26 @@
   "extDescription": {
     "message": "Displays and writes hiragana furigana over kanji in Google Slides."
   },
-  "panelDialogLabel": {
-    "message": "Furigana"
-  },
   "panelTitle": {
     "message": "Furigana"
-  },
-  "panelClose": {
-    "message": "Close"
   },
   "toggleShowRuby": {
     "message": "Show furigana"
   },
   "sectionAppearance": {
     "message": "Furigana appearance"
+  },
+  "labelRubyMode": {
+    "message": "Placement"
+  },
+  "rubyModeGroupAriaLabel": {
+    "message": "How furigana is placed"
+  },
+  "rubyModePerKanji": {
+    "message": "Per kanji"
+  },
+  "rubyModePerWord": {
+    "message": "Per word"
   },
   "labelSize": {
     "message": "Size"
@@ -72,6 +78,18 @@
   },
   "linkEditUserDict": {
     "message": "Edit user dictionary"
+  },
+  "sidePanelNotSlides": {
+    "message": "Open a presentation in the Google Slides editor to write or delete furigana."
+  },
+  "errorReloadSlidesTab": {
+    "message": "Couldn't reach the slide's tab. Please reload the Google Slides page and try again."
+  },
+  "btnConfirmRun": {
+    "message": "Run"
+  },
+  "btnCancelConfirm": {
+    "message": "Cancel"
   },
   "statusWriting": {
     "message": "Writing…"
@@ -163,6 +181,14 @@
   "errorFileAccessDenied": {
     "message": "Access to this presentation was not granted. Please try again and select the presentation in the dialog."
   },
+  "errorKanjiReadingsLoadFailed": {
+    "message": "Failed to load the kanji reading data (status: $STATUS$)",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      }
+    }
+  },
   "errorGradeTableLoadFailed": {
     "message": "Failed to load the kanji grade table (status: $STATUS$)",
     "placeholders": {
@@ -211,7 +237,7 @@
     "message": "Reading (hiragana)"
   },
   "placeholderReading": {
-    "message": "e.g. まーじゃん"
+    "message": "e.g. まーじゃん / し|ぎょう|しき"
   },
   "labelStyleOverride": {
     "message": "Customize appearance"
@@ -295,7 +321,7 @@
     "message": "The word must contain at least one kanji character"
   },
   "errReadingHiragana": {
-    "message": "Please enter the reading in hiragana"
+    "message": "Please enter the reading in hiragana (to split it per kanji, separate with \"|\", e.g. し|ぎょう|しき)"
   },
   "errReadingOrStyleRequired": {
     "message": "Please provide either a reading override or a style override"

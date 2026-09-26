@@ -10,7 +10,7 @@ Googleスライドの日本語テキスト中の漢字に、ひらがなのル�
 - ✅ ReadingService（`src/core/`）: 送り仮名分離・グループルビ・学年フィルタ・ユーザー辞書（読み＋見た目の個別上書き）
 - ✅ Tokenizer host（`src/worker/`）: kuromoji 統合。fetch ベースの XHR シムで MV3 service worker 上で動作
 - ✅ TextExtractor / OverlayRenderer / DomWatcher（`src/content/`）: SVG からのテキスト抽出、オーバーレイ描画、DOM 監視
-- ✅ フローティングパネル: ルビの ON/OFF・サイズ(小/中/大)・フォント・色・学年フィルタ・書き込み/削除操作（`src/content/panel.ts`）。拡張機能アイコンのクリックでスライド編集画面内に開閉し、ドラッグで自由な位置に動かせる（ツールバー固定の旧 popup を置き換え。理由は [PLAN.md](PLAN.md) Phase 3 節を参照）
+- ✅ 設定パネル(Chrome のサイドパネル、v0.7.0〜): ルビの ON/OFF・振り方(漢字ごと/熟語ごと)・サイズ(小/中/大)・フォント・色・学年フィルタ・書き込み/削除操作（`src/sidepanel/`）。拡張機能アイコンのクリックでスライドの横に開き、スライド全体が隠れない。書き込み・削除は開いているタブの content script に依頼する（`src/content/panelBridge.ts`）。経緯は [PLAN.md](PLAN.md) Phase 3 節を参照
 - ✅ 詳細設定ページ（`src/options/`）: ユーザー辞書の追加・編集・削除、読み/フォント/色/サイズの個別上書き、JSON インポート・エクスポート
 - ✅ **実際の Chrome + 実サンプルプレゼンテーションで動作確認済み**（全12枚のスライドで確認。発見した不具合は修正済み。詳細は [PLAN.md](PLAN.md) の Phase 1 節を参照）
 - ✅ 発表モードの検証 — **完了・対応不可能と判明**。発表モードは文字を `<text>` ではなく `<path>`(輪郭図形)として描画しており、この拡張の表示方式では原理的にルビを重ねられない。詳細は [PLAN.md](PLAN.md) 3.8節を参照。発表・印刷にルビを出すには Phase 2 のスライドへの書き込み機能が必須
@@ -200,10 +200,11 @@ src/
   content/   # content script(スライド編集画面に注入される側)
              #   selectors(DOMセレクタ集約) / textExtractor / overlayRenderer / geometry(純粋関数)
              #   domWatcher / rubyPipeline(オーケストレーション) / tokenizeClient / gradeTableClient
-             #   panel(設定パネルUI、Shadow DOM) / webFontLoader(Google Fontsの動的読み込み)
+             #   panelBridge(サイドパネルからの書き込み・削除の依頼を実行) / webFontLoader(Google Fontsの動的読み込み)
   worker/    # service worker
              #   xhrShim(kuromoji用fetchシム) / tokenizer(kuromoji統合) / gradeTable / index(メッセージハンドラ)
-             #   アイコンクリック(chrome.action.onClicked)を受けてcontent scriptにパネル開閉を依頼する
+             #   アイコンクリックでサイドパネルを開く(chrome.sidePanel.setPanelBehavior)
+  sidepanel/ # 設定パネル(Chrome のサイドパネル)。表示設定は storage に直接保存、書き込み・削除は content script に依頼
   options/   # 詳細設定ページ(ユーザー辞書の追加・編集・削除、インポート/エクスポート、実装済み)
   shared/    # content/optionsで共有する設定・ユーザー辞書のstorage I/O・フォント/サイズの選択肢
 public/
@@ -227,7 +228,26 @@ tests/e2e/   # Playwrightによるe2eテスト。fixtures/(固定HTML)、kuromoj
    漢字の連続ごとにルビを割り当てる(グループルビ)。整合が取れない場合は単語全体を
    1つのグループルビにフォールバックする
 
-既定値は「学年フィルタなし(全漢字にルビ)」「グループルビ」(PLAN.md の決定事項)。
+既定値は「学年フィルタなし(全漢字にルビ)」。
+
+### 漢字ごとのルビ(v0.7.0〜、既定)
+
+利用者から「始業式が『しぎょうしき』とまとめて中央に振られると、どの漢字をどう読むかがわからない」という
+要望があり、漢字1文字ごとにルビを振れるようにした(パネルの「振り方:漢字ごと/熟語ごと」で切り替え。既定は漢字ごと)。
+
+- 5 の結果のうち、漢字が2文字以上続く区間を `src/core/kanjiSplit.ts` の `splitKanjiReading` で1文字ずつに分ける。
+  漢字ごとの音読み・訓読みの表(`public/data/kanji-readings.json`)で読みを先頭から埋める分け方を探し、
+  連濁(本棚 ほん+だな)・促音化(学校 がっ+こう)・「々」(人々 ひと+びと)も扱う。
+- ★熟字訓(今日・大人・明日)など分けられない語、分け方が1通りに決まらない語は、熟語ルビのまま(誤った分け方を見せない)。
+- ユーザー辞書の読みは「し|ぎょう|しき」のように `|` で区切ると、分け方を指定できる(熟語ごとのときは `|` を無視)。
+- 配置(`src/content/rubyLayout.ts`): 同じ行ですき間なく隣り合うルビは1つのまとまりとして扱い、
+  文字サイズはまとまりの幅で決める(「業」の上の「ぎょう」のせいで段落全体が小さくならないように)。
+  位置は `resolveRubyCenters` で、本来の中心から最小限だけずらして隣と重ならないようにする。
+  表示(モードA)・書き込み(モードB)の両方が同じ結果(`RubyPlacement.centerX`)を使う。
+
+読みの表は KANJIDIC2(EDRDG、CC BY-SA 4.0)から `scripts/build-kanji-readings.mjs` で生成している
+(元の XML は約15MBあるためリポジトリには含めない。再生成の手順はスクリプト冒頭のコメント参照)。
+出典はプライバシーポリシーのページ(`docs/index.html`)にも記載している。
 
 ## 既知の注意点(未解決/Phase 1 残タスクに引き継ぎ)
 

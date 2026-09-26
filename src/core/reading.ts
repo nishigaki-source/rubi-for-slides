@@ -13,9 +13,14 @@
  * このアルゴリズムは「全部漢字のトークン」（例: 学校）と
  * 「送り仮名混じりのトークン」（例: 食べる、打ち合わせ、自由が丘）の
  * どちらも同じロジックで正しく扱える（Phase 0 で実例により確認済み）。
+ *
+ *   4. ルビの振り方が「漢字ごと」(rubyMode: 'per-kanji')のときは、2文字以上の漢字の
+ *      連続(例: 始業式)を、漢字ごとの読みの表で1文字ずつに分ける(src/core/kanjiSplit.ts)。
+ *      分けられない語は 1〜3 の結果(熟語ルビ)のまま。
  */
 
 import { hasKanji, isKanji, katakanaToHiragana } from './kana';
+import { splitKanjiReading, type KanjiReadingTable } from './kanjiSplit';
 import type {
   GradeFilterOptions,
   ReadingServiceOptions,
@@ -110,6 +115,77 @@ function isAllKanjiWithinGrade(surface: string, filter: GradeFilterOptions): boo
   return true;
 }
 
+/** ユーザー辞書の読みで、漢字ごとの区切りに使う記号(例: 「し|ぎょう|しき」)。 */
+const READING_BREAK = '|';
+
+/** 漢字だけが2文字以上続く区間を、漢字ごとの区間に分ける(分けられない区間はそのまま)。 */
+function splitRangesPerKanji(surface: string, ranges: RubyRange[], table: KanjiReadingTable): RubyRange[] {
+  const chars = Array.from(surface);
+  const out: RubyRange[] = [];
+  for (const range of ranges) {
+    const runChars = chars.slice(range.start, range.end);
+    const parts =
+      runChars.length >= 2 && runChars.every((c) => isKanji(c))
+        ? splitKanjiReading(runChars.join(''), range.kana, table)
+        : null;
+    if (!parts) {
+      out.push(range);
+      continue;
+    }
+    parts.forEach((kana, i) => {
+      out.push({ start: range.start + i, end: range.start + i + 1, kana, ...(range.style ? { style: range.style } : {}) });
+    });
+  }
+  return out;
+}
+
+/**
+ * 「|」で漢字ごとの区切りを指定した読み(ユーザー辞書)から、ルビ区間を作る。
+ * 送り仮名は通常どおり読みと突き合わせ、漢字の連続の中は「|」の位置で1文字ずつに分ける。
+ * 区切りの数が漢字の数と合わない連続は、その連続だけ熟語ルビにする。整合が取れなければ null。
+ */
+function rangesFromBrokenReading(surface: string, reading: string): RubyRange[] | null {
+  const parts = reading.split(READING_BREAK);
+  const plain = parts.join('');
+  const segments = segmentSurface(surface);
+  const aligned = alignSegments(segments, plain);
+  if (!aligned) return null;
+
+  const breaks = new Set<number>();
+  let acc = 0;
+  for (const part of parts.slice(0, -1)) {
+    acc += part.length;
+    breaks.add(acc);
+  }
+
+  const out: RubyRange[] = [];
+  let pos = 0; // plain 内の位置
+  let rangeIndex = 0;
+  for (const seg of segments) {
+    if (seg.type === 'other') {
+      pos += seg.text.length;
+      continue;
+    }
+    const range = aligned[rangeIndex++] as RubyRange;
+    const pieces: string[] = [];
+    let pieceStart = 0;
+    for (let i = 1; i < range.kana.length; i++) {
+      if (breaks.has(pos + i)) {
+        pieces.push(range.kana.slice(pieceStart, i));
+        pieceStart = i;
+      }
+    }
+    pieces.push(range.kana.slice(pieceStart));
+    if (pieces.length === range.end - range.start && pieces.length > 1) {
+      pieces.forEach((kana, i) => out.push({ start: range.start + i, end: range.start + i + 1, kana }));
+    } else {
+      out.push(range);
+    }
+    pos += range.kana.length;
+  }
+  return out;
+}
+
 /**
  * 1 トークンに対してルビ区間を組み立てる。
  */
@@ -127,11 +203,24 @@ export function buildRubyToken(
   // (読み・見た目のどちらであっても、ユーザーが個別設定した意図を尊重する)。
   const userEntry = options.userDict?.[surface];
 
-  // 読みの上書きが指定されている場合は、常に単語全体へのグループルビとして扱う。
+  // 読みの上書きが指定されている場合、熟語ごとなら単語全体へのグループルビとして扱う(従来の動作)。
+  // 漢字ごとなら、「|」の区切り(あれば)か漢字ごとの読みの表で1文字ずつに分ける。
   if (userEntry?.reading) {
+    const plainReading = userEntry.reading.split(READING_BREAK).join('');
+    const whole: RubyRange[] = [{ start: 0, end: surface.length, kana: plainReading, style: userEntry.style }];
+    if (options.rubyMode !== 'per-kanji') return { surface, rubyRanges: whole };
+
+    let ranges: RubyRange[] | null;
+    if (userEntry.reading.includes(READING_BREAK)) {
+      ranges = rangesFromBrokenReading(surface, userEntry.reading);
+    } else {
+      const aligned = alignSegments(segmentSurface(surface), plainReading);
+      ranges = aligned && options.kanjiReadings ? splitRangesPerKanji(surface, aligned, options.kanjiReadings) : aligned;
+    }
+    if (!ranges) return { surface, rubyRanges: whole };
     return {
       surface,
-      rubyRanges: [{ start: 0, end: surface.length, kana: userEntry.reading, style: userEntry.style }],
+      rubyRanges: userEntry.style ? ranges.map((r) => ({ ...r, style: userEntry.style })) : ranges,
     };
   }
 
@@ -149,7 +238,10 @@ export function buildRubyToken(
   const aligned = alignSegments(segments, readingHira);
 
   // フォールバック: 整合が取れない場合は単語全体を 1 つのグループルビにする。
-  const rubyRanges = aligned ?? [{ start: 0, end: surface.length, kana: readingHira }];
+  let rubyRanges = aligned ?? [{ start: 0, end: surface.length, kana: readingHira }];
+  if (options.rubyMode === 'per-kanji' && options.kanjiReadings) {
+    rubyRanges = splitRangesPerKanji(surface, rubyRanges, options.kanjiReadings);
+  }
 
   // 見た目だけの上書き(読みは kuromoji のまま)が指定されている場合、
   // その単語から得られた全区間に適用する。

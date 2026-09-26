@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   domRectToRect,
   groupIndicesByLine,
+  remapRectBetweenFrames,
   transformPoint,
   transformRect,
   unionRects,
@@ -101,5 +102,29 @@ describe('domRectToRect', () => {
   it('x/y/width/heightだけを取り出す', () => {
     const fake = { x: 1, y: 2, width: 3, height: 4, top: 2, left: 1, right: 4, bottom: 6 };
     expect(domRectToRect(fake)).toEqual({ x: 1, y: 2, width: 3, height: 4 });
+  });
+});
+
+describe('remapRectBetweenFrames', () => {
+  it('スライドが画面上で上に動いたら、同じだけ上に移す(相対位置を保つ)', () => {
+    const before = { x: 367, y: 151, width: 884, height: 497 };
+    const after = { x: 367, y: 126, width: 884, height: 497 }; // 下部に案内が出て 25px 上に動いた
+    expect(remapRectBetweenFrames({ x: 400, y: 300, width: 20, height: 10 }, before, after)).toEqual({
+      x: 400,
+      y: 275,
+      width: 20,
+      height: 10,
+    });
+  });
+
+  it('ズームで枠の大きさが変わったら、位置と大きさを同じ比率で移す', () => {
+    const before = { x: 0, y: 0, width: 800, height: 450 };
+    const after = { x: 100, y: 50, width: 400, height: 225 };
+    expect(remapRectBetweenFrames({ x: 400, y: 200, width: 40, height: 20 }, before, after)).toEqual({
+      x: 300,
+      y: 150,
+      width: 20,
+      height: 10,
+    });
   });
 });

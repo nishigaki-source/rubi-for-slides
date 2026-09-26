@@ -96,3 +96,19 @@ export function groupIndicesByLine(rects: Rect[]): number[][] {
   }
   return groups;
 }
+
+/**
+ * ある時点のスライドの枠 `from` を基準にした矩形 `r` を、別の時点の枠 `to` を基準にした位置へ移す。
+ * スライドが画面上で動いたり(下部に案内が出て編集領域が縮む等)、ズームが変わったりしても、
+ * スライドに対する相対位置が同じになる画面上の矩形を返す。
+ */
+export function remapRectBetweenFrames(r: Rect, from: Rect, to: Rect): Rect {
+  const sx = from.width > 0 ? to.width / from.width : 1;
+  const sy = from.height > 0 ? to.height / from.height : 1;
+  return {
+    x: to.x + (r.x - from.x) * sx,
+    y: to.y + (r.y - from.y) * sy,
+    width: r.width * sx,
+    height: r.height * sy,
+  };
+}

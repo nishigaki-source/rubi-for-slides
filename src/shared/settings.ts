@@ -2,6 +2,7 @@
  * 表示設定(ON/OFF・ルビのサイズ比・学年フィルタ)の chrome.storage.sync 経由での
  * 読み書き。content script と popup の両方から使われる共通モジュール。
  */
+import type { RubyMode } from '../core/types';
 
 export interface RubiSettings {
   /** ルビ表示の ON/OFF */
@@ -17,6 +18,11 @@ export interface RubiSettings {
   fontFamily: string;
   /** ルビの色(`#rrggbb`。全体設定の既定値。単語ごとにユーザー辞書で上書き可能) */
   color: string;
+  /**
+   * ルビの振り方。既定は漢字ごと(学習用途で「どの漢字をどう読むか」がわかるように。
+   * v0.7.0 で追加、利用者からの要望)。漢字ごとに分けられない語は熟語ルビになる。
+   */
+  rubyMode: RubyMode;
 }
 
 export const DEFAULT_SETTINGS: RubiSettings = {
@@ -25,6 +31,7 @@ export const DEFAULT_SETTINGS: RubiSettings = {
   gradeFilterMaxGrade: null,
   fontFamily: 'Arial',
   color: '#1a1a1a',
+  rubyMode: 'per-kanji',
 };
 
 const STORAGE_KEY = 'rubiSettings';

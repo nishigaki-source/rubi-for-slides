@@ -45,7 +45,11 @@ export class UserDictError extends Error {
   }
 }
 
-const HIRAGANA_PATTERN = /^[぀-ゟー]+$/;
+/**
+ * 読みはひらがな。漢字ごとの区切りを「|」で指定できる(例: 「始業式」→「し|ぎょう|しき」)。
+ * 区切りの前後が空になる書き方(「|し」「し||ぎょう」)は受け付けない。
+ */
+const HIRAGANA_PATTERN = /^[぀-ゟー]+(\|[぀-ゟー]+)*$/;
 
 function normalizeStyle(style: RubyStyleOverride | undefined): RubyStyleOverride | undefined {
   if (!style) return undefined;

@@ -16,11 +16,13 @@ const ENTRIES = [
   ],
 
   // --- panel: static labels ---
-  ['panelDialogLabel', 'ルビふり', 'Furigana'],
   ['panelTitle', 'ルビふり', 'Furigana'],
-  ['panelClose', '閉じる', 'Close'],
   ['toggleShowRuby', 'ルビを表示', 'Show furigana'],
   ['sectionAppearance', 'ルビの見た目', 'Furigana appearance'],
+  ['labelRubyMode', '振り方', 'Placement'],
+  ['rubyModeGroupAriaLabel', 'ルビの振り方', 'How furigana is placed'],
+  ['rubyModePerKanji', '漢字ごと', 'Per kanji'],
+  ['rubyModePerWord', '熟語ごと', 'Per word'],
   ['labelSize', 'サイズ', 'Size'],
   ['sizeGroupAriaLabel', 'ルビのサイズ', 'Furigana size'],
   ['sizeSmall', '小', 'Small'],
@@ -37,6 +39,18 @@ const ENTRIES = [
   ['labelGroupWithOriginal', '元のテキストとグループ化', 'Group with original text'],
   ['sectionDelete', '書き込んだルビを削除', 'Delete written furigana'],
   ['linkEditUserDict', 'ユーザー辞書を編集', 'Edit user dictionary'],
+  [
+    'sidePanelNotSlides',
+    'Googleスライドの編集画面を開くと、スライドへの書き込み・削除ができます。',
+    'Open a presentation in the Google Slides editor to write or delete furigana.',
+  ],
+  [
+    'errorReloadSlidesTab',
+    'スライドのタブと通信できませんでした。スライドのページを再読み込みしてから、もう一度お試しください。',
+    "Couldn't reach the slide's tab. Please reload the Google Slides page and try again.",
+  ],
+  ['btnConfirmRun', '実行する', 'Run'],
+  ['btnCancelConfirm', 'キャンセル', 'Cancel'],
 
   // --- panel: dynamic status/messages ---
   ['statusWriting', '書き込み中…', 'Writing…'],
@@ -93,6 +107,12 @@ const ENTRIES = [
     'Access to this presentation was not granted. Please try again and select the presentation in the dialog.',
   ],
   [
+    'errorKanjiReadingsLoadFailed',
+    '漢字の読みデータの読み込みに失敗しました (status: $STATUS$)',
+    'Failed to load the kanji reading data (status: $STATUS$)',
+    ['STATUS'],
+  ],
+  [
     'errorGradeTableLoadFailed',
     '学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)',
     'Failed to load the kanji grade table (status: $STATUS$)',
@@ -121,7 +141,7 @@ const ENTRIES = [
   ['placeholderSurface', '例: 麻雀', 'e.g. 麻雀'],
   ['labelReadingOverride', '読みを上書きする', 'Override reading'],
   ['labelReading', '読み(ひらがな)', 'Reading (hiragana)'],
-  ['placeholderReading', '例: まーじゃん', 'e.g. まーじゃん'],
+  ['placeholderReading', '例: まーじゃん / し|ぎょう|しき', 'e.g. まーじゃん / し|ぎょう|しき'],
   ['labelStyleOverride', '見た目を個別設定する', 'Customize appearance'],
   ['btnAdd', '追加する', 'Add'],
   ['btnSaveEdit', '保存する', 'Save'],
@@ -157,7 +177,11 @@ const ENTRIES = [
   ['errSizeRatioPositive', 'サイズ比は正の数で入力してください', 'Size ratio must be a positive number'],
   ['errSurfaceRequired', '表層形を入力してください', 'Please enter the word'],
   ['errSurfaceNeedsKanji', '表層形には漢字を 1 文字以上含めてください', 'The word must contain at least one kanji character'],
-  ['errReadingHiragana', '読みはひらがなで入力してください', 'Please enter the reading in hiragana'],
+  [
+    'errReadingHiragana',
+    '読みはひらがなで入力してください(漢字ごとに分けるときは「し|ぎょう|しき」のように「|」で区切ります)',
+    'Please enter the reading in hiragana (to split it per kanji, separate with "|", e.g. し|ぎょう|しき)',
+  ],
   [
     'errReadingOrStyleRequired',
     '読みまたは見た目の上書きのどちらかを入力してください',

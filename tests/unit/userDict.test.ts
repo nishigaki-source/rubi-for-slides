@@ -35,6 +35,18 @@ describe('upsertEntry', () => {
     expect(() => upsertEntry({}, { surface: '漢字', reading: 'kanji' })).toThrow();
   });
 
+  it('読みに「|」で漢字ごとの区切りを入れられる', () => {
+    expect(upsertEntry({}, { surface: '始業式', reading: 'し|ぎょう|しき' })).toEqual({
+      始業式: { reading: 'し|ぎょう|しき' },
+    });
+  });
+
+  it('区切りの前後が空になる「|」は例外', () => {
+    for (const reading of ['|し', 'し|', 'し||ぎょう', '|']) {
+      expect(() => upsertEntry({}, { surface: '始業', reading })).toThrow();
+    }
+  });
+
   it('元のdictを変更せず新しいオブジェクトを返す(イミュータブル)', () => {
     const original = { 既存: { reading: 'きそん' } };
     const next = upsertEntry(original, { surface: '生憎', reading: 'あいにく' });

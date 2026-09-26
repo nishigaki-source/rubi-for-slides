@@ -37,10 +37,11 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 ・「スライドへの書き込み」機能で、実際のテキストボックスとしてルビを書き込み
   → 発表モード・印刷・PDF書き出しにもルビを反映させたい場合はこちらを使用
 ・ルビのサイズ(小・中・大)、フォント、色を自由に設定
+・ルビは漢字1文字ずつに振るか(例: 始業式 → し/ぎょう/しき)、熟語ごとにまとめて振るかを選択可能
 ・学年別漢字配当表による自動フィルタ(指定した学年までに習う漢字は除外)
 ・ユーザー辞書で単語ごとに読み・見た目を個別上書き
   (例: 専門用語や固有名詞の読みを正しく設定、特定の単語だけ強調表示)
-・設定パネルはスライド編集画面内でドラッグして自由に移動可能
+・設定パネルはスライドの横(Chrome のサイドパネル)に表示されるので、スライド全体を見ながら操作できる
 
 ■ こんな方におすすめ
 ・子ども向け・日本語学習者向けの教材をGoogleスライドで作っている方
@@ -67,10 +68,11 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 - "Write to slide" mode adds furigana as real text boxes
   → use this if you need furigana in presenter mode, printing, or PDF export
 - Choose furigana size (small/medium/large), font, and color
+- Furigana per kanji (e.g. 始業式 → し/ぎょう/しき) or per word, your choice
 - Automatic grade-level filtering (skip kanji taught by a given school grade)
 - Per-word overrides via a user dictionary (fix a reading, or customize the look
   of a specific word — handy for technical terms and proper nouns)
-- The settings panel can be dragged anywhere inside the slide editor
+- The settings panel opens in Chrome's side panel next to your slide, so the whole slide stays visible
 
 ■ Who this is for
 - Anyone building educational material or materials for Japanese learners in Google Slides
@@ -107,6 +109,7 @@ To display and write hiragana furigana over kanji in Google Slides presentations
 | `storage` | ルビの表示設定・ユーザー辞書をChromeの同期ストレージに保存するため | To store display settings and the user dictionary in Chrome's sync storage |
 | `identity` | Google Slides APIを呼び出すためのOAuth認可(`drive.file` スコープ。ユーザーが選んだスライドのみ)に使用 | For OAuth authorization (`drive.file` scope; only the presentation the user selects) to call the Google Slides API |
 | `activeTab` | 現在開いているタブがGoogleスライドかどうかを判定するために使用 | To detect whether the current tab is a Google Slides page |
+| `sidePanel` | 設定パネルを Chrome のサイドパネル(スライドの横)に表示するために使用 | To show the settings panel in Chrome's side panel next to the slide |
 | ホスト権限(`docs.google.com`, `slides.googleapis.com`) | Googleスライドの編集画面へのルビ表示・Slides APIとの通信のために必要 | Needed to display furigana in the Slides editor and to communicate with the Slides API |
 
 ## スクリーンショット

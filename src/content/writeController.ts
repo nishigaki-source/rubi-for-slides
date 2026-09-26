@@ -25,7 +25,7 @@ import type { RecenterCorrection, RubyWriteItem } from '../core/slidesRequests';
 import { parseSlidesUrl } from '../core/slidesUrl';
 import { t } from '../shared/i18n';
 import type { ReadingServiceOptions } from '../core/types';
-import { domRectToRect, type Rect } from './geometry';
+import { domRectToRect, remapRectBetweenFrames, type Rect } from './geometry';
 import { computeParagraphPlan } from './rubyPlan';
 import { computeRubyBoxAboveBody } from './rubyLayout';
 import { getPageContainerElement } from './selectors';
@@ -75,11 +75,23 @@ interface PendingRubyItem {
   objectId: string;
   /** 意図していたルビ自身のボックス(ビューポート px、EMU 変換前)。 */
   intendedBoxPx: Rect;
+  /** intendedBoxPx を測ったときのスライドの枠(ビューポート px)。 */
+  pageAtMeasurePx: Rect;
 }
 
-/** 実際にレンダリングされているルビと、意図した位置とのズレ(EMU)を1件分測定する。 */
+/**
+ * 実際にレンダリングされているルビと、意図した位置とのズレ(EMU)を1件分測定する。
+ *
+ * 【重要・2026-09-26 実機で発見】意図した位置はビューポート座標で持っているため、書き込みの前後で
+ * スライドが画面上で動くと(書き込み後に画面下部へ「このスライドをブラッシュアップ」の案内が出て
+ * 編集領域が縮み、スライドが上に動く等)、正しい位置に置かれたルビを「ずれている」と誤判定し、
+ * 動いた分だけ逆にずらしてしまっていた(ルビがどの行でも一律に約25px下にずれた。ユーザー報告)。
+ * 比較の直前にスライドの枠 `pageNowPx` を測り直し、意図した位置をスライドに対する相対位置が
+ * 同じになる現在の画面座標に移してから比べる。
+ */
 function measureRecenterCorrection(
   item: PendingRubyItem,
+  pageNowPx: Rect,
   scaleX: number,
   scaleY: number
 ): RecenterCorrection | null {
@@ -88,8 +100,9 @@ function measureRecenterCorrection(
   const actualRect = el.getBoundingClientRect();
   if (actualRect.width === 0 || actualRect.height === 0) return null;
 
-  const intendedCenterX = item.intendedBoxPx.x + item.intendedBoxPx.width / 2;
-  const intendedCenterY = item.intendedBoxPx.y + item.intendedBoxPx.height / 2;
+  const intended = remapRectBetweenFrames(item.intendedBoxPx, item.pageAtMeasurePx, pageNowPx);
+  const intendedCenterX = intended.x + intended.width / 2;
+  const intendedCenterY = intended.y + intended.height / 2;
   const actualCenterX = actualRect.x + actualRect.width / 2;
   const actualCenterY = actualRect.y + actualRect.height / 2;
   const deltaX = Math.round((intendedCenterX - actualCenterX) * scaleX);
@@ -121,21 +134,22 @@ function measureRecenterCorrection(
  */
 async function recenterByDom(
   pendingItems: PendingRubyItem[],
-  pageContainerPx: Rect,
+  measurePagePx: () => Rect | null,
   pageSizeEmu: { width: number; height: number },
   presentationId: string
 ): Promise<void> {
-  const scaleX = pageContainerPx.width > 0 ? pageSizeEmu.width / pageContainerPx.width : 0;
-  const scaleY = pageContainerPx.height > 0 ? pageSizeEmu.height / pageContainerPx.height : 0;
-  if (scaleX === 0 || scaleY === 0) return;
-
   for (const item of pendingItems) {
     await waitForRenderedElement(`editor-${item.objectId}`, 2000);
   }
 
   for (let pass = 0; pass < MAX_RECENTER_PASSES; pass++) {
+    // 補正のたびに測り直す(補正の batchUpdate や案内の表示でスライドが動くことがあるため)
+    const pageNowPx = measurePagePx();
+    if (!pageNowPx || pageNowPx.width === 0 || pageNowPx.height === 0) return;
+    const scaleX = pageSizeEmu.width / pageNowPx.width;
+    const scaleY = pageSizeEmu.height / pageNowPx.height;
     const corrections = pendingItems
-      .map((item) => measureRecenterCorrection(item, scaleX, scaleY))
+      .map((item) => measureRecenterCorrection(item, pageNowPx, scaleX, scaleY))
       .filter((c): c is RecenterCorrection => c !== null);
 
     if (corrections.length === 0) return;
@@ -199,11 +213,15 @@ async function writeRubyToPage(
   pageObjectId: string,
   options: WriteOptions
 ): Promise<WriteResult> {
-  const pageEl = getPageContainerElement(document, pageObjectId);
-  if (!pageEl) {
+  // スライドの枠(px→EMU 換算の基準)。スライドは画面上で動くことがあるため(下部の案内の表示等)、
+  // 文字の位置を測るのと同じタイミングで毎回測り直す。
+  const measurePagePx = (): Rect | null => {
+    const el = getPageContainerElement(document, pageObjectId);
+    return el ? domRectToRect(el.getBoundingClientRect()) : null;
+  };
+  if (!measurePagePx()) {
     return { ok: false, message: t('errorNoPageContainer') };
   }
-  const pageContainerPx = domRectToRect(pageEl.getBoundingClientRect());
 
   let pageInfo;
   try {
@@ -226,6 +244,9 @@ async function writeRubyToPage(
       continue; // トークン化に失敗した段落はスキップ(モードAと同じ方針)
     }
 
+    // 文字の位置(plan)とスライドの枠を、await を挟まずに続けて測る
+    const pageContainerPx = measurePagePx();
+    if (!pageContainerPx) return { ok: false, message: t('errorNoPageContainer') };
     const plan = computeParagraphPlan(paragraph, tokens, options.readingOptions, options.sizeRatio, {
       fontFamily: options.fontFamily,
       color: options.color,
@@ -240,11 +261,11 @@ async function writeRubyToPage(
 
     for (const placement of plan) {
       const kanaCharCount = Array.from(placement.kana).length;
-      const rubyBoxPx = computeRubyBoxAboveBody(placement.box, placement.fontSizePx, kanaCharCount);
+      const rubyBoxPx = computeRubyBoxAboveBody(placement.box, placement.fontSizePx, kanaCharCount, placement.centerX);
       const box = expandRectForDefaultInsets(pxRectToEmuRect(rubyBoxPx, pageContainerPx, pageInfo.pageSizeEmu));
       const fontSizePt = pxFontSizeToPoint(placement.fontSizePx, pageContainerPx, pageInfo.pageSizeEmu);
       const objectId = generateRubyObjectId();
-      pendingItems.push({ objectId, intendedBoxPx: rubyBoxPx });
+      pendingItems.push({ objectId, intendedBoxPx: rubyBoxPx, pageAtMeasurePx: pageContainerPx });
       items.push({
         objectId,
         box,
@@ -273,10 +294,7 @@ async function writeRubyToPage(
   if (writeRes.type === 'rubi/write-ruby-error') {
     return { ok: false, message: writeRes.message };
   }
-  // 書き込み完了までの間にスクロール等でビューポートが動いている可能性があるため、
-  // 補正の直前にページコンテナの位置を測り直す。
-  const pageContainerPxNow = domRectToRect(pageEl.getBoundingClientRect());
-  await recenterByDom(pendingItems, pageContainerPxNow, pageInfo.pageSizeEmu, presentationId);
+  await recenterByDom(pendingItems, measurePagePx, pageInfo.pageSizeEmu, presentationId);
   return { ok: true, writtenCount: writeRes.writtenCount };
 }
 

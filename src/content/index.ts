@@ -9,7 +9,8 @@ import { DEFAULT_SETTINGS, loadSettings, onSettingsChanged, saveSettings, type R
 import { loadUserDict } from '../shared/userDictStorage';
 import { startDomWatcher } from './domWatcher';
 import { getGradeTable } from './gradeTableClient';
-import { initPanel } from './panel';
+import { getKanjiReadings } from './kanjiReadingsClient';
+import { initPanelBridge } from './panelBridge';
 import { runRubyPipeline } from './rubyPipeline';
 
 let currentSettings: RubiSettings = DEFAULT_SETTINGS;
@@ -17,7 +18,16 @@ let rerenderInFlight: Promise<void> = Promise.resolve();
 
 async function buildReadingOptions(): Promise<ReadingServiceOptions> {
   const userDict = await loadUserDict();
-  const options: ReadingServiceOptions = { userDict };
+  const options: ReadingServiceOptions = { userDict, rubyMode: currentSettings.rubyMode };
+
+  if (currentSettings.rubyMode === 'per-kanji') {
+    try {
+      options.kanjiReadings = await getKanjiReadings();
+    } catch (err) {
+      // 読みの表が無くても、熟語ごとのルビ(従来の動作)で表示は続けられる
+      console.error('[ルビふり for Googleスライド] 漢字ごとの読みの表の取得に失敗しました。熟語ごとのルビで続行します。', err);
+    }
+  }
 
   if (currentSettings.gradeFilterMaxGrade !== null) {
     try {
@@ -78,7 +88,7 @@ async function main(): Promise<void> {
     scheduleRerender();
   });
 
-  initPanel({
+  initPanelBridge({
     getSettings: () => currentSettings,
     buildReadingOptions,
     onWriteSuccess: disableDisplayModeAfterWrite,

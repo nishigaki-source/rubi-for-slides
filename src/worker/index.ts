@@ -7,7 +7,7 @@
 import {
   isDeleteRubyRequest,
   isGradeTableRequest,
-  isOpenOptionsPageRequest,
+  isKanjiReadingsRequest,
   isPageInfoRequest,
   isPresentationPagesRequest,
   isRecenterRubyRequest,
@@ -15,10 +15,10 @@ import {
   isWriteRubyRequest,
   type DeleteRubyResponse,
   type GradeTableResponse,
+  type KanjiReadingsResponse,
   type PageInfoResponse,
   type PresentationPagesResponse,
   type RecenterRubyResponse,
-  type TogglePanelRequest,
   type TokenizeResponse,
   type WriteRubyResponse,
 } from '../core/messages';
@@ -27,6 +27,7 @@ import { buildCreateRubyRequests, buildDeleteRequests, buildGroupRequests, build
 import { t } from '../shared/i18n';
 import { requestFileAccess, handlePickerExternalMessage } from './filePicker';
 import { getGradeTable } from './gradeTable';
+import { getKanjiReadings } from './kanjiReadings';
 import { batchUpdate, getPageInfo, getPresentationPages, getRubyObjectIds } from './slidesClient';
 import { tokenize, warmUpTokenizer } from './tokenizer';
 
@@ -65,22 +66,13 @@ function generateObjectId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${groupIdCounter}`;
 }
 
-// action.default_popup を持たないため、アイコンをクリックすると
-// このイベントが発火する。対象タブの content script にパネルの開閉を
-// 依頼する(実際のパネル UI は src/content/panel.ts が画面内に描画する)。
-chrome.action.onClicked.addListener((tab) => {
-  if (!tab.id) return;
-  const req: TogglePanelRequest = { type: 'rubi/toggle-panel' };
-  chrome.tabs.sendMessage(tab.id, req).catch(() => {
-    // Google スライドの編集画面以外のタブでは content script が存在せず失敗する。無視してよい。
-  });
+// 拡張機能アイコンのクリックで設定パネル(Chrome のサイドパネル、src/sidepanel)を開く。
+// サイドパネルはスライドの横に固定されるので、スライド全体が隠れない。
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err: unknown) => {
+  console.error('[ルビふり for Googleスライド] サイドパネルの設定に失敗しました', err);
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
-  if (isOpenOptionsPageRequest(message)) {
-    chrome.runtime.openOptionsPage();
-    return undefined;
-  }
 
   if (isTokenizeRequest(message)) {
     const { requestId, text } = message;
@@ -114,6 +106,24 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
       .catch((err: unknown) => {
         const response: GradeTableResponse = {
           type: 'rubi/get-grade-table-error',
+          requestId,
+          message: err instanceof Error ? err.message : String(err),
+        };
+        sendResponse(response);
+      });
+    return true;
+  }
+
+  if (isKanjiReadingsRequest(message)) {
+    const { requestId } = message;
+    getKanjiReadings()
+      .then((kanjiReadings) => {
+        const response: KanjiReadingsResponse = { type: 'rubi/get-kanji-readings-result', requestId, kanjiReadings };
+        sendResponse(response);
+      })
+      .catch((err: unknown) => {
+        const response: KanjiReadingsResponse = {
+          type: 'rubi/get-kanji-readings-error',
           requestId,
           message: err instanceof Error ? err.message : String(err),
         };

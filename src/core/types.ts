@@ -5,6 +5,7 @@
  * 「形態素解析済みのトークン列」を入力とし、「ルビ割り当て結果」を出力する
  * 純粋なロジックだけを扱う（PLAN.md 3.4節を参照）。
  */
+import type { KanjiReadingTable } from './kanjiSplit';
 
 /** 1 形態素（トークン）。kuromoji の出力を想定しているが、この型自体は
  * kuromoji に依存しない（worker 層で変換してから core に渡す）。 */
@@ -86,9 +87,21 @@ export interface GradeFilterOptions {
   gradeTable: KanjiGradeTable;
 }
 
+/**
+ * ルビの振り方。
+ * - 'per-kanji': 漢字ごと(モノルビ)。「始業式」なら「始」に「し」、「業」に「ぎょう」、「式」に「しき」。
+ *   漢字ごとに分けられない語(熟字訓など)は熟語ルビにフォールバックする(src/core/kanjiSplit.ts)。
+ * - 'per-word': 熟語ごと(グループルビ)。「始業式」の上に「しぎょうしき」をまとめて振る(従来の動作)。
+ */
+export type RubyMode = 'per-kanji' | 'per-word';
+
 export interface ReadingServiceOptions {
   /** 学年フィルタ。省略時は全漢字にルビを振る（既定動作、PLAN.md 決定事項参照） */
   gradeFilter?: GradeFilterOptions;
   /** ユーザー辞書。学年フィルタより優先される。 */
   userDict?: UserDictionary;
+  /** ルビの振り方。省略時は 'per-word'(従来の動作) */
+  rubyMode?: RubyMode;
+  /** 漢字ごとの読みの表(rubyMode が 'per-kanji' のときに使う。無ければ熟語ルビのまま) */
+  kanjiReadings?: KanjiReadingTable;
 }

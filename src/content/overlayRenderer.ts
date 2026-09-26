@@ -13,7 +13,7 @@
  */
 import type { RubyStyleOverride } from '../core/types';
 import { domRectToRect, groupIndicesByLine, transformRect, unionRects, type Rect } from './geometry';
-import { computeRubyFontSize, pickUniformRubyFontSize } from './rubyLayout';
+import { computeRubyFontSize, groupAdjacentBoxes, pickUniformRubyFontSize, resolveRubyCenters } from './rubyLayout';
 import type { ExtractedChar } from './textExtractor';
 import { ensureWebFontLoaded } from './webFontLoader';
 
@@ -111,6 +111,7 @@ export function setOverlayVisible(visible: boolean): void {
 function createRubySpan(
   kana: string,
   box: { x: number; y: number; width: number; height: number },
+  centerX: number,
   fontSizePx: number,
   fontFamily: string,
   color: string
@@ -118,7 +119,7 @@ function createRubySpan(
   const span = document.createElement('span');
   span.textContent = kana;
   span.dataset.rubiForSlides = 'true';
-  const left = box.x + box.width / 2;
+  const left = centerX;
   const top = box.y - fontSizePx * 1.05; // 本文の少し上に配置
   span.setAttribute(
     'style',
@@ -148,7 +149,13 @@ function createRubySpan(
 
 export interface RubyPlacement {
   kana: string;
+  /** ルビを振る本文の矩形 */
   box: Rect;
+  /**
+   * ルビの水平方向の中心。基本は本文の中心だが、隣のルビと重なる場合は
+   * 左右にずらした位置になる(漢字ごとのルビで「業」の上の「ぎょう」が隣を押し広げる等)。
+   */
+  centerX: number;
   fontSizePx: number;
   fontFamily: string;
   color: string;
@@ -201,6 +208,7 @@ export function computeParagraphRubyPlan(
     color: string;
     /** sizeRatio が単語ごとに上書きされているか(段落内の統一サイズ計算から除外する) */
     hasSizeOverride: boolean;
+    sizeRatio: number;
   }
   const pending: Pending[] = [];
 
@@ -245,23 +253,83 @@ export function computeParagraphRubyPlan(
         Array.from(kanaSlice).length,
         effectiveSizeRatio
       );
-      pending.push({ kana: kanaSlice, box, naturalFontSize, fontFamily, color, hasSizeOverride });
+      pending.push({
+        kana: kanaSlice,
+        box,
+        naturalFontSize,
+        fontFamily,
+        color,
+        hasSizeOverride,
+        sizeRatio: effectiveSizeRatio,
+      });
     });
   }
 
   if (pending.length === 0) return [];
 
+  // 同じ行ですき間なく隣り合うルビ(漢字ごとのルビの「始|業|式」や、続けて書かれた熟語)は
+  // 1つのまとまりとして扱う。単語ごとにサイズを上書きしたルビは、まとまりに含めない。
+  const clusters: number[][] = [];
+  for (const group of groupAdjacentBoxes(pending.map((p) => p.box))) {
+    let run: number[] = [];
+    for (const i of group) {
+      if ((pending[i] as Pending).hasSizeOverride) {
+        if (run.length > 0) clusters.push(run);
+        clusters.push([i]);
+        run = [];
+      } else {
+        run.push(i);
+      }
+    }
+    if (run.length > 0) clusters.push(run);
+  }
+
+  // サイズ: まとまりの幅全体に、まとまりの読みの文字数が収まるかで判断する。1文字ずつに
+  // 判断すると、「業」の上の「ぎょう」(1文字に3文字)のせいで段落全体のルビが小さくなってしまう。
+  // 1件だけのまとまりは従来どおり(その本文の幅に収まるか)。
+  for (const cluster of clusters) {
+    if (cluster.length < 2) continue;
+    const items = cluster.map((i) => pending[i] as Pending);
+    const span = unionRects(items.map((p) => p.box));
+    const kanaCount = items.reduce((n, p) => n + Array.from(p.kana).length, 0);
+    const height = Math.max(...items.map((p) => p.box.height));
+    const clusterFontSize = computeRubyFontSize(span.width, height, kanaCount, (items[0] as Pending).sizeRatio);
+    for (const p of items) p.naturalFontSize = clusterFontSize;
+  }
+
   const uniformCandidates = pending.filter((p) => !p.hasSizeOverride).map((p) => p.naturalFontSize);
   const uniformFontSize = uniformCandidates.length > 0 ? pickUniformRubyFontSize(uniformCandidates) : 0;
+  const fontSizeOf = (p: Pending): number => (p.hasSizeOverride ? p.naturalFontSize : uniformFontSize);
 
-  return pending.map((p) => ({
+  // 位置: まとまりの中で、隣のルビと重ならないよう左右にずらす(重ならなければ本文の中心のまま)。
+  const centers = pending.map((p) => p.box.x + p.box.width / 2);
+  for (const cluster of clusters) {
+    if (cluster.length < 2) continue;
+    const fontSize = fontSizeOf(pending[cluster[0] as number] as Pending);
+    const resolved = resolveRubyCenters(
+      cluster.map((i) => {
+        const p = pending[i] as Pending;
+        return { center: centers[i] as number, width: Array.from(p.kana).length * fontSize };
+      }),
+      fontSize * RUBY_HORIZONTAL_GAP_FACTOR
+    );
+    cluster.forEach((i, k) => {
+      centers[i] = resolved[k] as number;
+    });
+  }
+
+  return pending.map((p, i) => ({
     kana: p.kana,
     box: p.box,
-    fontSizePx: p.hasSizeOverride ? p.naturalFontSize : uniformFontSize,
+    centerX: centers[i] as number,
+    fontSizePx: fontSizeOf(p),
     fontFamily: p.fontFamily,
     color: p.color,
   }));
 }
+
+/** 隣り合うルビどうしの最小のすき間(ルビのフォントサイズに対する比率)。 */
+const RUBY_HORIZONTAL_GAP_FACTOR = 0.2;
 
 /**
  * 1 段落分のルビを描画する。呼び出し側で段落ごとに呼ぶことを想定。
@@ -285,6 +353,6 @@ export function renderParagraphRuby(
     color: options.color,
   });
   for (const p of plan) {
-    root.appendChild(createRubySpan(p.kana, p.box, p.fontSizePx, p.fontFamily, p.color));
+    root.appendChild(createRubySpan(p.kana, p.box, p.centerX, p.fontSizePx, p.fontFamily, p.color));
   }
 }

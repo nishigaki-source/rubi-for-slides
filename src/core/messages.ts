@@ -5,6 +5,7 @@
 
 import type { ApiShapeInfo } from './shapeMatcher';
 import type { RecenterCorrection, RubyWriteItem } from './slidesRequests';
+import type { KanjiReadingTable } from './kanjiSplit';
 import type { KanjiGradeTable, TokenizedWord } from './types';
 
 export interface TokenizeRequest {
@@ -60,6 +61,33 @@ export function isGradeTableRequest(msg: unknown): msg is GradeTableRequest {
     typeof msg === 'object' &&
     msg !== null &&
     (msg as { type?: unknown }).type === 'rubi/get-grade-table'
+  );
+}
+
+export interface KanjiReadingsRequest {
+  type: 'rubi/get-kanji-readings';
+  requestId: string;
+}
+
+export interface KanjiReadingsSuccessResponse {
+  type: 'rubi/get-kanji-readings-result';
+  requestId: string;
+  kanjiReadings: KanjiReadingTable;
+}
+
+export interface KanjiReadingsErrorResponse {
+  type: 'rubi/get-kanji-readings-error';
+  requestId: string;
+  message: string;
+}
+
+export type KanjiReadingsResponse = KanjiReadingsSuccessResponse | KanjiReadingsErrorResponse;
+
+export function isKanjiReadingsRequest(msg: unknown): msg is KanjiReadingsRequest {
+  return (
+    typeof msg === 'object' &&
+    msg !== null &&
+    (msg as { type?: unknown }).type === 'rubi/get-kanji-readings'
   );
 }
 
@@ -205,32 +233,49 @@ export function isPresentationPagesRequest(msg: unknown): msg is PresentationPag
   );
 }
 
-// --- service worker(拡張機能アイコンのクリックを検知) -> content script ---
-// クリックされたタブの content script に送り、画面内のフローティングパネルの
-// 開閉を切り替えさせる(src/content/panel.ts 参照)。
+// --- サイドパネル(src/sidepanel) -> content script(開いているスライドのタブ) ---
+// 設定パネルは Chrome のサイドパネルに表示する(スライドの横に固定され、スライド全体が隠れない)。
+// スライドへの書き込み・削除はスライドの DOM を測る必要があるため、サイドパネルから
+// 開いているタブの content script に依頼し、結果を受け取る(src/content/panelBridge.ts)。
 
-export interface TogglePanelRequest {
-  type: 'rubi/toggle-panel';
+export type PanelCommand = 'write-current' | 'write-all' | 'delete-current' | 'delete-all';
+
+export interface PanelCommandRequest {
+  type: 'rubi/panel-command';
+  command: PanelCommand;
+  /** 書き込み時、元のテキストとルビをグループ化するか */
+  groupWithOriginal: boolean;
 }
 
-export function isTogglePanelRequest(msg: unknown): msg is TogglePanelRequest {
-  return typeof msg === 'object' && msg !== null && (msg as { type?: unknown }).type === 'rubi/toggle-panel';
+export type PanelCommandResponse =
+  | { ok: true; command: 'write-current'; writtenCount: number }
+  | { ok: true; command: 'write-all'; writtenCount: number; slideCount: number }
+  | { ok: true; command: 'delete-current' | 'delete-all'; deletedCount: number }
+  | { ok: false; message: string };
+
+/** 画面に表示中のルビのフォントサイズ一覧を返してもらう(「小・中・大」の効き具合の判定用)。 */
+export interface MeasureRubyRequest {
+  type: 'rubi/measure-ruby-font-sizes';
 }
 
-// --- content script(パネルの「詳細設定」リンク) -> service worker ---
-// `chrome.runtime.openOptionsPage()` は content script からは呼べないため、
-// service worker に依頼する。window.open + chrome-extension:// URL は
-// 一部の広告ブロッカー等に ERR_BLOCKED_BY_CLIENT としてブロックされることが
-// 実機で確認できたため、正規の API 経由に統一している。
+/** 表示中のルビが無ければ null。 */
+export type MeasureRubyResponse = { fontSizes: string[] | null };
 
-export interface OpenOptionsPageRequest {
-  type: 'rubi/open-options-page';
-}
+const PANEL_COMMANDS: readonly string[] = ['write-current', 'write-all', 'delete-current', 'delete-all'];
 
-export function isOpenOptionsPageRequest(msg: unknown): msg is OpenOptionsPageRequest {
+export function isPanelCommandRequest(msg: unknown): msg is PanelCommandRequest {
+  if (typeof msg !== 'object' || msg === null) return false;
+  const m = msg as { type?: unknown; command?: unknown; groupWithOriginal?: unknown };
   return (
-    typeof msg === 'object' && msg !== null && (msg as { type?: unknown }).type === 'rubi/open-options-page'
+    m.type === 'rubi/panel-command' &&
+    typeof m.command === 'string' &&
+    PANEL_COMMANDS.includes(m.command) &&
+    typeof m.groupWithOriginal === 'boolean'
   );
+}
+
+export function isMeasureRubyRequest(msg: unknown): msg is MeasureRubyRequest {
+  return typeof msg === 'object' && msg !== null && (msg as { type?: unknown }).type === 'rubi/measure-ruby-font-sizes';
 }
 
 let counter = 0;

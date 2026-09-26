@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title data-i18n="panelTitle"></title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: #fff;
+    font-family: system-ui, -apple-system, 'Hiragino Kaku Gothic ProN', sans-serif;
+    color: #202124;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px 16px 12px;
+    border-bottom: 1px solid #eee;
+  }
+  .header img { width: 22px; height: 22px; border-radius: 5px; }
+  .title { margin: 0; font-size: 15px; font-weight: 600; }
+  .body { padding: 4px 16px 16px; }
+
+  .notice {
+    margin: 12px 0 4px; padding: 10px 12px;
+    border-radius: 8px; background: #fef7e0; color: #5f4b00;
+    font-size: 12px;
+  }
+  .notice[hidden] { display: none; }
+
+  .toggleRow {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 0;
+    font-size: 14px; font-weight: 500;
+  }
+  .switch { position: relative; display: inline-block; width: 40px; height: 22px; flex: none; }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; inset: 0;
+    background: #bdc1c6; border-radius: 22px;
+    transition: 0.15s; cursor: pointer;
+  }
+  .slider::before {
+    content: ''; position: absolute;
+    width: 18px; height: 18px; left: 2px; top: 2px;
+    background: #fff; border-radius: 50%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    transition: 0.15s;
+  }
+  input:checked + .slider { background: #1a73e8; }
+  input:checked + .slider::before { transform: translateX(18px); }
+
+  .sectionLabel {
+    margin: 14px 0 8px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.04em;
+    color: #5f6368;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: 64px 1fr;
+    column-gap: 8px; row-gap: 10px;
+    align-items: center;
+  }
+  .grid > label { font-size: 12px; color: #3c4043; }
+  .grid > label.top { align-self: start; padding-top: 8px; }
+  select {
+    width: 100%; height: 32px;
+    padding: 0 6px;
+    border: 1px solid #dadce0; border-radius: 6px;
+    background: #fff; color: #202124;
+    font-size: 12px;
+  }
+  .segGroup { display: flex; gap: 6px; }
+  .segBtn {
+    flex: 1; height: 32px;
+    border: 1px solid #dadce0; border-radius: 6px;
+    background: #fff; color: #3c4043;
+    font-size: 12px; cursor: pointer;
+  }
+  .segBtn:hover:not(.active) { background: #f1f3f4; }
+  .segBtn.active { background: #1a73e8; border-color: #1a73e8; color: #fff; font-weight: 500; }
+  .sizeHint { min-height: 14px; margin-top: 4px; font-size: 11px; color: #5f6368; }
+  input[type='color'] {
+    width: 44px; height: 30px; padding: 2px;
+    border: 1px solid #dadce0; border-radius: 6px;
+    background: #fff; cursor: pointer;
+  }
+
+  .btnRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  button.primary {
+    height: 36px;
+    border: none; border-radius: 8px;
+    background: #1a73e8; color: #fff;
+    font-size: 13px; font-weight: 500;
+    cursor: pointer;
+  }
+  button.primary:hover { background: #1765cc; }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .checkRow {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 10px;
+    font-size: 12px; color: #3c4043;
+    cursor: pointer;
+  }
+  .checkRow input { margin: 0; accent-color: #1a73e8; }
+  button.secondary {
+    height: 34px;
+    border: 1px solid #dadce0; border-radius: 8px;
+    background: #fff; color: #c5221f;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  button.secondary:hover { background: #fce8e6; border-color: #f5c6c2; }
+  #deleteSection[hidden] { display: none; }
+
+  .confirmBox {
+    margin-top: 10px; padding: 10px 12px;
+    border: 1px solid #dadce0; border-radius: 8px; background: #f8f9fa;
+    font-size: 12px;
+  }
+  .confirmBox[hidden] { display: none; }
+  .confirmBox p { margin: 0 0 10px; white-space: pre-line; }
+  .confirmBox .btnRow button { height: 32px; font-size: 12px; }
+  button.plain {
+    border: 1px solid #dadce0; border-radius: 8px;
+    background: #fff; color: #3c4043; cursor: pointer;
+  }
+
+  #writeStatus { min-height: 16px; margin-top: 10px; font-size: 12px; color: #5f6368; }
+  #writeStatus.error { color: #c5221f; }
+  #writeStatus.success { color: #188038; }
+
+  .footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #eee; }
+  .footer a { font-size: 12px; color: #1a73e8; text-decoration: none; }
+  .footer a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+  <div class="header">
+    <img src="/icons/icon48.png" alt="" />
+    <h1 class="title" data-i18n="panelTitle"></h1>
+  </div>
+  <div class="body">
+    <div class="notice" id="notSlidesNotice" data-i18n="sidePanelNotSlides" hidden></div>
+
+    <div class="toggleRow">
+      <label for="enabled" data-i18n="toggleShowRuby"></label>
+      <label class="switch">
+        <input type="checkbox" id="enabled" />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="sectionLabel" data-i18n="sectionAppearance"></div>
+    <div class="grid">
+      <label data-i18n="labelRubyMode"></label>
+      <div class="segGroup" id="rubyModeGroup" role="group" data-i18n-aria-label="rubyModeGroupAriaLabel">
+        <button type="button" class="segBtn" data-mode="per-kanji" data-i18n="rubyModePerKanji"></button>
+        <button type="button" class="segBtn" data-mode="per-word" data-i18n="rubyModePerWord"></button>
+      </div>
+      <label class="top" data-i18n="labelSize"></label>
+      <div>
+        <div class="segGroup" id="sizeGroup" role="group" data-i18n-aria-label="sizeGroupAriaLabel">
+          <button type="button" class="segBtn" data-size="small" data-i18n="sizeSmall"></button>
+          <button type="button" class="segBtn" data-size="medium" data-i18n="sizeMedium"></button>
+          <button type="button" class="segBtn" data-size="large" data-i18n="sizeLarge"></button>
+        </div>
+        <div class="sizeHint" id="sizeHint" role="status"></div>
+      </div>
+      <label for="fontFamily" data-i18n="labelFont"></label>
+      <select id="fontFamily"></select>
+      <label for="color" data-i18n="labelColor"></label>
+      <input type="color" id="color" />
+      <label for="gradeFilter" data-i18n="labelGradeFilter"></label>
+      <select id="gradeFilter">
+        <option value="none" data-i18n="gradeFilterNone"></option>
+        <option value="1" data-i18n-grade="1"></option>
+        <option value="2" data-i18n-grade="2"></option>
+        <option value="3" data-i18n-grade="3"></option>
+        <option value="4" data-i18n-grade="4"></option>
+        <option value="5" data-i18n-grade="5"></option>
+        <option value="6" data-i18n-grade="6"></option>
+      </select>
+    </div>
+
+    <div class="sectionLabel" data-i18n="sectionWrite"></div>
+    <div class="btnRow">
+      <button type="button" class="primary" id="writeCurrentSlide" data-i18n="btnCurrentSlide"></button>
+      <button type="button" class="primary" id="writeAllSlides" data-i18n="btnAllSlides"></button>
+    </div>
+    <label class="checkRow">
+      <input type="checkbox" id="groupWithOriginal" />
+      <span data-i18n="labelGroupWithOriginal"></span>
+    </label>
+
+    <div id="deleteSection" hidden>
+      <div class="sectionLabel" data-i18n="sectionDelete"></div>
+      <div class="btnRow">
+        <button type="button" class="secondary" id="deleteCurrentSlide" data-i18n="btnCurrentSlide"></button>
+        <button type="button" class="secondary" id="deleteAllSlides" data-i18n="btnAllSlides"></button>
+      </div>
+    </div>
+
+    <div class="confirmBox" id="confirmBox" role="alertdialog" hidden>
+      <p id="confirmText"></p>
+      <div class="btnRow">
+        <button type="button" class="plain" id="confirmCancel" data-i18n="btnCancelConfirm"></button>
+        <button type="button" class="primary" id="confirmOk" data-i18n="btnConfirmRun"></button>
+      </div>
+    </div>
+
+    <div id="writeStatus" role="status"></div>
+
+    <div class="footer">
+      <a href="#" id="openOptions" data-i18n="linkEditUserDict"></a>
+    </div>
+  </div>
+  <script type="module" src="./main.ts"></script>
+</body>
+</html>
