@@ -74,51 +74,85 @@ export function getGroupContainer(textEl: SVGTextElement): Element {
  * スライド1ページ全体を表す SVG 要素を取得する(モード B の px→EMU 変換で、
  * 「編集画面の実測ピクセル寸法」の基準として使う。PLAN.md 3.5節参照)。
  *
- * 【重要】ページ全体のルート要素の id は固定の "editor-p" ではなく、
- * 実際には "editor-p<スライドのobjectId>"(例: "editor-p1")という形式である
- * ことが実機テストで判明した(Phase 0 で検証した際は新規作成した空の
- * プレゼンテーションだったため、たまたま単純な "editor-p" になっていた)。
- * さらに同じ prefix を持つ兄弟要素("editor-p1-bg" や "editor-p1_i2" など、
- * ページ内の背景・シェイプ)と区別する必要があるため、id が
- * "editor-p" の直後にハイフン・アンダースコアを含まずに終わるものだけを
- * ページルートとみなす。
+ * 【重要】ページ全体のルート要素の id は "editor-" + スライドの objectId
+ * (URL の `#slide=id.<objectId>` と同じ値)である。新規作成したスライドは
+ * objectId が "p"・"p1" なので "editor-p"・"editor-p1" になるが、複製・コピー・
+ * 取り込みで作られたスライドは objectId が "h273037817fe35b37_0_0" や
+ * "g2c3d4e5_0_12" のような形になり、ルートも "editor-h273037817fe35b37_0_0" になる
+ * (2026-09-26、実機でスライドを複製して確認)。以前は "editor-p" で始まり
+ * "-"・"_" を含まない id だけをルートとみなしていたため、コピーしたプレゼン
+ * テーションで「スライドの表示領域が見つかりませんでした」になっていた。
+ * id の形に頼らず、「id が "editor-" で始まり、祖先に "editor-" の id を持たない
+ * 要素」(ページ内のシェイプ・背景はすべてその子孫)をルートの候補とする。
  *
  * 【重要・全スライド対応で判明】スライド間を切り替えると、以前表示していた
  * ページの SVG ルートは DOM から削除されず `display:none` のまま残り続ける
  * (実機で `editor-p1`, `editor-p3`, `editor-p5` が同時に存在する状態を確認)。
  * そのため候補が複数見つかった場合は「最初にマッチしたもの」ではなく、
  * 呼び出し側が分かっていれば `pageObjectId` で厳密に一致するものを、
- * 分からなければ実際に画面に表示されている(サイズを持つ)ものを優先する。
+ * 分からなければ実際に画面に表示されている(サイズを持つ)ものを優先する
+ * (選び方は DOM に依存しない `choosePageRoot` に切り出して単体テストしている)。
  */
-const PAGE_ROOT_ID_PATTERN = /^editor-p[^-_]*$/;
+const PAGE_ROOT_ID_PREFIX = 'editor-';
+
+export function pageRootIdFor(pageObjectId: string): string {
+  return `${PAGE_ROOT_ID_PREFIX}${pageObjectId}`;
+}
+
+export interface PageRootCandidate {
+  id: string;
+  /** 画面に表示されている(サイズを持つ)か */
+  rendered: boolean;
+}
+
+/**
+ * ページルートの候補から対象を選ぶ。
+ * - pageObjectId があれば id が一致するもの(表示中かどうかは問わない)
+ * - 無い、または一致するものが無ければ、表示中のもの
+ * - それも無ければ先頭のもの
+ */
+export function choosePageRoot<T extends PageRootCandidate>(candidates: T[], pageObjectId?: string): T | null {
+  if (pageObjectId) {
+    const exact = candidates.find((c) => c.id === pageRootIdFor(pageObjectId));
+    if (exact) return exact;
+  }
+  return candidates.find((c) => c.rendered) ?? candidates[0] ?? null;
+}
 
 function isRenderedSvg(svg: SVGSVGElement): boolean {
   const rect = svg.getBoundingClientRect();
   return rect.width > 0 && rect.height > 0;
 }
 
+interface PageRootElement extends PageRootCandidate {
+  svg: SVGSVGElement;
+}
+
+function collectPageRoots(root: ParentNode): PageRootElement[] {
+  const roots: PageRootElement[] = [];
+  for (const el of Array.from(root.querySelectorAll<Element>(`[id^="${PAGE_ROOT_ID_PREFIX}"]`))) {
+    if (isInThumbnail(el)) continue;
+    if (el.parentElement?.closest(`[id^="${PAGE_ROOT_ID_PREFIX}"]`)) continue; // シェイプ・背景など、ページ内の要素
+    const svg = el.closest('svg');
+    if (svg) roots.push({ id: el.id, rendered: isRenderedSvg(svg), svg });
+  }
+  return roots;
+}
+
 export function getPageContainerElement(
   root: ParentNode = document,
   pageObjectId?: string
 ): SVGSVGElement | null {
-  const candidates = Array.from(root.querySelectorAll<Element>('[id^="editor-p"]')).filter((el) =>
-    PAGE_ROOT_ID_PATTERN.test(el.id)
-  );
+  return choosePageRoot(collectPageRoots(root), pageObjectId)?.svg ?? null;
+}
 
-  if (pageObjectId) {
-    const exact = candidates.find((el) => el.id === `editor-p${pageObjectId}`);
-    const svg = exact?.closest('svg') ?? null;
-    if (svg) return svg;
-  }
-
-  const visible = candidates
-    .map((el) => el.closest('svg'))
-    .find((svg): svg is SVGSVGElement => svg !== null && isRenderedSvg(svg));
-  if (visible) return visible;
-
-  for (const candidate of candidates) {
-    const svg = candidate.closest('svg');
-    if (svg) return svg;
-  }
-  return null;
+/**
+ * 指定した pageObjectId のページルート SVG だけを返す(見つからなければ null)。
+ * スライド切り替えの完了待ちに使うため、`getPageContainerElement` と違って
+ * 表示中の別ページへのフォールバックはしない(した場合、切り替え前のページを
+ * 「表示された」と誤判定してしまう)。
+ */
+export function findPageRootSvgById(root: ParentNode, pageObjectId: string): SVGSVGElement | null {
+  const id = pageRootIdFor(pageObjectId);
+  return collectPageRoots(root).find((r) => r.id === id)?.svg ?? null;
 }

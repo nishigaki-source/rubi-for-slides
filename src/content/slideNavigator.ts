@@ -9,7 +9,7 @@
  * サムネイル要素へ dispatchEvent すると、実際のマウスクリックと同じく
  * ページ切り替えが発生することを確認済み(`bubbles: true` が必須)。
  */
-import { getPageContainerElement } from './selectors';
+import { findPageRootSvgById } from './selectors';
 
 const THUMBNAIL_PAGE_ID_ATTR = 'data-slide-page-id';
 
@@ -47,7 +47,7 @@ async function waitForPageRendered(pageObjectId: string, timeoutMs: number): Pro
   const pollIntervalMs = 50;
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
-    const pageEl = getPageContainerElement(document, pageObjectId);
+    const pageEl = findPageRootSvgById(document, pageObjectId);
     if (pageEl) {
       const rect = pageEl.getBoundingClientRect();
       if (rect.width > 0 && rect.height > 0) return true;
