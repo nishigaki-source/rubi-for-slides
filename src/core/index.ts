@@ -2,5 +2,5 @@
 export * from './types';
 export * from './kana';
 export * from './reading';
-export * from './gradeFilter';
+export * from './knownKanji';
 export * from './userDict';

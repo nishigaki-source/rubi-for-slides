@@ -26,7 +26,7 @@
 <body>
 
 <h1>ルビふり for Googleスライド</h1>
-<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-09-26</p>
+<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-09-27</p>
 <p class="lang-toggle"><a href="#ja">日本語</a> / <a href="#en">English</a></p>
 
 <section id="ja">
@@ -47,7 +47,7 @@
 <ul>
   <li>
     <strong>表示設定・ユーザー辞書(<code>chrome.storage.sync</code>)</strong><br />
-    ルビの表示ON/OFF・サイズ・フォント・色・学年フィルタ、および利用者が登録した単語ごとの読み・見た目の設定を、
+    ルビの表示ON/OFF・サイズ・フォント・色・省く漢字(学年・JLPT)、および利用者が登録した単語ごとの読み・見た目の設定を、
     Chromeの同期ストレージに保存します。これは利用者ご自身のGoogleアカウントに紐づくChromeの同期機能であり、
     開発者のサーバーには一切送信されません。
   </li>
@@ -78,6 +78,11 @@
 <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project">KANJIDIC2</a>
 (Electronic Dictionary Research and Development Group)を
 <a href="https://www.edrdg.org/edrdg/licence.html">CC BY-SA 4.0</a> のもとで使用し、常用漢字・人名用漢字の音読み・訓読みを抜き出したものです。
+「省く漢字」に使う小学校の学年のデータも、KANJIDIC2 から抜き出したものです。
+JLPT のレベルのデータは、Jonathan Waller 氏の
+<a href="https://www.tanos.co.uk/jlpt/">JLPT Resources(tanos.co.uk)</a>の漢字リストを
+<a href="https://www.tanos.co.uk/jlpt/sharing/">Creative Commons BY</a> のもとで使用しています
+(JLPT の公式の漢字リストは公表されていないため、学習者に広く使われているこのリストを採用しています)。
 </p>
 
 <h2>権限について</h2>
@@ -138,7 +143,7 @@
 <ul>
   <li>
     <strong>Display settings and user dictionary (<code>chrome.storage.sync</code>)</strong><br />
-    Ruby display on/off, size, font, color, grade filter, and per-word reading/style overrides you register are stored
+    Ruby display on/off, size, font, color, skipped kanji (school grade or JLPT level), and per-word reading/style overrides you register are stored
     in Chrome's sync storage, tied to your own Google account's Chrome sync. This never passes through a developer-operated server.
   </li>
   <li>
@@ -168,7 +173,10 @@
 The kanji reading data used for per-kanji furigana (bundled with the extension; no network access) is extracted from
 <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project">KANJIDIC2</a> by the Electronic Dictionary Research and
 Development Group, used under <a href="https://www.edrdg.org/edrdg/licence.html">CC BY-SA 4.0</a>
-(on/kun readings of jōyō and jinmeiyō kanji).
+(on/kun readings of jōyō and jinmeiyō kanji). The school-grade data used for "Skip kanji" is also extracted from KANJIDIC2.
+The JLPT level data comes from the kanji lists of <a href="https://www.tanos.co.uk/jlpt/">JLPT Resources (tanos.co.uk)</a>
+by Jonathan Waller, used under <a href="https://www.tanos.co.uk/jlpt/sharing/">Creative Commons BY</a>
+(there is no official JLPT kanji list, so this widely used list is adopted).
 </p>
 
 <h2>Permissions</h2>

@@ -6,7 +6,8 @@
 import type { ApiShapeInfo } from './shapeMatcher';
 import type { RecenterCorrection, RubyWriteItem } from './slidesRequests';
 import type { KanjiReadingTable } from './kanjiSplit';
-import type { KanjiGradeTable, TokenizedWord } from './types';
+import type { KanjiLevelTables } from './knownKanji';
+import type { TokenizedWord } from './types';
 
 export interface TokenizeRequest {
   type: 'rubi/tokenize';
@@ -37,30 +38,31 @@ export function isTokenizeRequest(msg: unknown): msg is TokenizeRequest {
   );
 }
 
-export interface GradeTableRequest {
-  type: 'rubi/get-grade-table';
+/** 「省く漢字」の判定に使う、漢字ごとの段階の表(学年・JLPT)を取得する。 */
+export interface KanjiLevelsRequest {
+  type: 'rubi/get-kanji-levels';
   requestId: string;
 }
 
-export interface GradeTableSuccessResponse {
-  type: 'rubi/get-grade-table-result';
+export interface KanjiLevelsSuccessResponse {
+  type: 'rubi/get-kanji-levels-result';
   requestId: string;
-  gradeTable: KanjiGradeTable;
+  kanjiLevels: KanjiLevelTables;
 }
 
-export interface GradeTableErrorResponse {
-  type: 'rubi/get-grade-table-error';
+export interface KanjiLevelsErrorResponse {
+  type: 'rubi/get-kanji-levels-error';
   requestId: string;
   message: string;
 }
 
-export type GradeTableResponse = GradeTableSuccessResponse | GradeTableErrorResponse;
+export type KanjiLevelsResponse = KanjiLevelsSuccessResponse | KanjiLevelsErrorResponse;
 
-export function isGradeTableRequest(msg: unknown): msg is GradeTableRequest {
+export function isKanjiLevelsRequest(msg: unknown): msg is KanjiLevelsRequest {
   return (
     typeof msg === 'object' &&
     msg !== null &&
-    (msg as { type?: unknown }).type === 'rubi/get-grade-table'
+    (msg as { type?: unknown }).type === 'rubi/get-kanji-levels'
   );
 }
 

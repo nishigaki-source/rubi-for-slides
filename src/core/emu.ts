@@ -85,6 +85,12 @@ export function expandRectForDefaultInsets(rect: EmuRect): EmuRect {
 }
 
 /** 画面上のフォントサイズ(px)を Slides API 用の pt に変換する。 */
+/** pxFontSizeToPoint の逆。スライド上のポイントを、いまの画面の拡大率での px に直す。 */
+export function pointToPxFontSize(pt: number, pageContainerPx: PxRect, pageSizeEmu: EmuSize): number {
+  if (pageSizeEmu.height <= 0) return 0;
+  return (pt * EMU_PER_POINT * pageContainerPx.height) / pageSizeEmu.height;
+}
+
 export function pxFontSizeToPoint(fontSizePx: number, pageContainerPx: PxRect, pageSizeEmu: EmuSize): number {
   const scaleY = pageContainerPx.height > 0 ? pageSizeEmu.height / pageContainerPx.height : 0;
   const emuHeight = fontSizePx * scaleY;

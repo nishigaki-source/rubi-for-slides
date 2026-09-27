@@ -6,7 +6,7 @@
  * モード A(overlayRenderer.ts)と同じ `rubyPlan.ts` の計算結果を使うため、
  * 「どこに・何の読みを・どのサイズで」という部分は表示モードと完全に一致する。
  */
-import { expandRectForDefaultInsets, pxFontSizeToPoint, pxRectToEmuRect } from '../core/emu';
+import { expandRectForDefaultInsets, pointToPxFontSize, pxFontSizeToPoint, pxRectToEmuRect } from '../core/emu';
 import {
   nextRequestId,
   type DeleteRubyRequest,
@@ -191,6 +191,12 @@ async function requestPageInfo(
   return res;
 }
 
+/**
+ * 書き込むルビの最小フォントサイズ(pt)。画面表示の最小(8px)が、標準的な表示倍率
+ * (スライドの 1pt ≈ 画面の 1.33px)でおよそこの大きさになる。
+ */
+const MIN_WRITTEN_RUBY_FONT_PT = 6;
+
 export interface WriteOptions {
   sizeRatio: number;
   readingOptions: ReadingServiceOptions;
@@ -247,10 +253,16 @@ async function writeRubyToPage(
     // 文字の位置(plan)とスライドの枠を、await を挟まずに続けて測る
     const pageContainerPx = measurePagePx();
     if (!pageContainerPx) return { ok: false, message: t('errorNoPageContainer') };
-    const plan = computeParagraphPlan(paragraph, tokens, options.readingOptions, options.sizeRatio, {
-      fontFamily: options.fontFamily,
-      color: options.color,
-    });
+    const plan = computeParagraphPlan(
+      paragraph,
+      tokens,
+      options.readingOptions,
+      options.sizeRatio,
+      { fontFamily: options.fontFamily, color: options.color },
+      // 最小サイズは画面の px ではなくスライド上のポイントで決める。画面の px のままだと、
+      // スライドを縮小表示しているときにルビが本来より大きく書き込まれ、隣と重なってしまう
+      { minFontSizePx: pointToPxFontSize(MIN_WRITTEN_RUBY_FONT_PT, pageContainerPx, pageInfo.pageSizeEmu) }
+    );
     if (plan.length === 0) continue;
 
     const matchedShapeObjectId =

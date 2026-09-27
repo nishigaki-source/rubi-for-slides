@@ -152,9 +152,34 @@ export function groupAdjacentBoxes(boxes: Rect[]): number[][] {
   return groups;
 }
 
+/**
+ * 本文の矩形の並び(段落内の順序どおり)を、同じ視覚行ごとにまとめる(すき間があってもよい)。
+ * 隣り合うルビの重なりは、間にかなを挟んでいても起きるため(例:「現状の重要」の「じょう」と
+ * 「じゅう」)、左右のずらしはこの行単位で行う。戻り値は元の添字のまとまりの配列(順序は保つ)。
+ */
+export function groupBoxesByLine(boxes: Rect[]): number[][] {
+  const groups: number[][] = [];
+  boxes.forEach((box, i) => {
+    const current = groups[groups.length - 1];
+    const prev = i > 0 ? (boxes[i - 1] as Rect) : undefined;
+    // 前の区間より左に戻ったら折り返し(次の行)とみなす
+    if (current && prev && isOnSameLine(prev, box) && box.x >= prev.x) {
+      current.push(i);
+    } else {
+      groups.push([i]);
+    }
+  });
+  return groups;
+}
+
+function isOnSameLine(a: Rect, b: Rect): boolean {
+  const height = Math.max(a.height, b.height);
+  return Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) <= height * 0.5;
+}
+
 function areAdjacentOnSameLine(a: Rect, b: Rect): boolean {
   const height = Math.max(a.height, b.height);
-  const sameLine = Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) <= height * 0.5;
+  const sameLine = isOnSameLine(a, b);
   const gap = b.x - (a.x + a.width);
   // 文字の並びのすき間は字間程度。かな1文字(=本文の高さ程度)以上離れていれば隣り合っていない
   return sameLine && gap > -height * 0.3 && gap < height * 0.3;

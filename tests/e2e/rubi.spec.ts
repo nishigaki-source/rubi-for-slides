@@ -34,6 +34,8 @@ async function installChromeStub(page: Page): Promise<void> {
         getUILanguage: () => 'ja',
       },
       runtime: {
+        // 本物の拡張機能では常に存在する。無いと content script は「拡張機能本体とのつながりが切れた」とみなして止まる
+        id: 'e2e-test-extension-id',
         getManifest: () => ({ version: 'e2e-test' }),
         onInstalled: { addListener: () => {} },
         onMessage: { addListener: () => {} },
@@ -53,8 +55,17 @@ async function installChromeStub(page: Page): Promise<void> {
               };
             }
           }
-          if (message.type === 'rubi/get-grade-table') {
-            return { type: 'rubi/get-grade-table-result', requestId: message.requestId, gradeTable: {} };
+          if (message.type === 'rubi/get-kanji-levels') {
+            // 本物の拡張機能と同じデータ(学年: KANJIDIC2、JLPT: tanos.co.uk)を返す
+            const raw = (await (await fetch('/public/data/kanji-levels.json')).json()) as {
+              grade: Record<string, number>;
+              jlpt: Record<string, number>;
+            };
+            return {
+              type: 'rubi/get-kanji-levels-result',
+              requestId: message.requestId,
+              kanjiLevels: { grade: raw.grade, jlpt: raw.jlpt },
+            };
           }
           if (message.type === 'rubi/get-kanji-readings') {
             // 本物の拡張機能と同じデータ(KANJIDIC2 由来)を返す。形式は worker の parseKanjiReadingTable と同じ
@@ -184,6 +195,22 @@ test.describe('ルビの表示', () => {
     }).toPass({ timeout: 15_000 });
   });
 
+  test('省く漢字で「JLPT N5 までの漢字」を選ぶと、N5 の漢字だけルビが消える(段落1)', async ({ page }) => {
+    await expect(async () => {
+      expect((await getOverlaySpans(page)).map((s) => s.text)).toContain('がっ');
+    }).toPass({ timeout: 15_000 });
+    await page.evaluate(async () => {
+      const w = window as unknown as { chrome: { storage: { sync: { set: (i: object) => Promise<void> } } } };
+      await w.chrome.storage.sync.set({ rubiSettings: { skipKanji: 'jlpt-n5' } });
+    });
+    // 「食べる学校生活は楽しい。」: 食・学・校・生は N5 → 外れる。活は N3、楽は N4 → 残る
+    await expect(async () => {
+      const texts = (await getOverlaySpans(page)).map((s) => s.text);
+      expect(texts).toEqual(expect.arrayContaining(['かつ', 'たの']));
+      for (const gone of ['た', 'がっ', 'こう', 'せい']) expect(texts).not.toContain(gone);
+    }).toPass({ timeout: 15_000 });
+  });
+
   test('振り方を「熟語ごと」にすると従来どおり熟語全体に振る(段落1)', async ({ page }) => {
     await page.evaluate(async () => {
       const w = window as unknown as { chrome: { storage: { sync: { set: (i: object) => Promise<void> } } } };
@@ -289,6 +316,41 @@ test.describe('編集への追従(DomWatcher)', () => {
       const spans = await getOverlaySpans(page);
       expect(spans.map((s) => s.text)).toContain('あたら');
     }).toPass({ timeout: 15_000 });
+  });
+});
+
+test.describe('拡張機能の更新後に取り残された content script', () => {
+  test('拡張機能本体とのつながりが切れたら、エラーを記録せずに止まり、古いルビを消す', async ({ page }) => {
+    const errors: string[] = [];
+    page.on('console', (m) => {
+      if (m.type() === 'error') errors.push(m.text());
+    });
+    await expect(async () => {
+      const spans = await getOverlaySpans(page);
+      expect(spans.map((s) => s.text)).toContain('た');
+    }).toPass({ timeout: 15_000 });
+
+    // 拡張機能を更新・再読み込みしたときと同じく、chrome.runtime.id が無くなり、通信が失敗する状態にする
+    await page.evaluate(() => {
+      const runtime = (window as unknown as { chrome: { runtime: Record<string, unknown> } }).chrome.runtime;
+      delete runtime.id;
+      runtime.sendMessage = async () => {
+        throw new Error('Extension context invalidated.');
+      };
+    });
+    // スライドの編集(DOM の変化)で再描画が走るようにする
+    await page.evaluate(() => {
+      const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      t.setAttribute('x', '10');
+      t.setAttribute('y', '340');
+      t.textContent = '字';
+      document.getElementById('editor-i3-paragraph-0')!.appendChild(t);
+    });
+
+    await expect(async () => {
+      expect(await getOverlaySpans(page)).toEqual([]);
+    }).toPass({ timeout: 5_000 });
+    expect(errors.filter((e) => e.includes('ルビの描画に失敗しました'))).toEqual([]);
   });
 });
 

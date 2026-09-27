@@ -3,18 +3,53 @@
  * 設定の読み込み・ReadingService の呼び出し・オーバーレイ描画・DOM監視の
  * 全体をつなぐ。
  */
-import { createGradeFilter } from '../core/gradeFilter';
+import { createKnownKanjiFilter } from '../core/knownKanji';
 import type { ReadingServiceOptions } from '../core/types';
 import { DEFAULT_SETTINGS, loadSettings, onSettingsChanged, saveSettings, type RubiSettings } from '../shared/settings';
 import { loadUserDict } from '../shared/userDictStorage';
 import { startDomWatcher } from './domWatcher';
-import { getGradeTable } from './gradeTableClient';
+import { getKanjiLevels } from './kanjiLevelsClient';
 import { getKanjiReadings } from './kanjiReadingsClient';
+import { clearOverlay } from './overlayRenderer';
 import { initPanelBridge } from './panelBridge';
 import { runRubyPipeline } from './rubyPipeline';
 
 let currentSettings: RubiSettings = DEFAULT_SETTINGS;
 let rerenderInFlight: Promise<void> = Promise.resolve();
+/** DOM 監視・設定の購読を止める(拡張機能本体とのつながりが切れたとき用) */
+let stopWatching: (() => void) | null = null;
+
+/**
+ * 拡張機能本体とまだつながっているか。
+ *
+ * 【重要】拡張機能を更新・再読み込みすると、すでに開いていたタブにはこの古い content script が
+ * 取り残され、chrome.runtime / chrome.storage の呼び出しが「Extension context invalidated」で
+ * 失敗するようになる。DOM の変化のたびに再描画を試みてこのエラーを記録し続けていたため
+ * (実機で確認)、つながりが切れたことに気づいたら自分で止まる。新しいバージョンは、
+ * 利用者がスライドを再読み込みしたときに読み込まれる。
+ */
+function isExtensionContextAlive(): boolean {
+  try {
+    return chrome.runtime?.id !== undefined;
+  } catch {
+    return false;
+  }
+}
+
+function isContextInvalidatedError(err: unknown): boolean {
+  return err instanceof Error && err.message.includes('Extension context invalidated');
+}
+
+/** 取り残された古い content script を止める。古いルビが編集に追従せず残らないよう表示も消す。 */
+function shutDownOrphanedScript(): void {
+  try {
+    stopWatching?.();
+  } catch {
+    // つながりが切れた後は、購読の解除自体が失敗することがある。止まっていれば十分なので無視する
+  }
+  stopWatching = null;
+  clearOverlay();
+}
 
 async function buildReadingOptions(): Promise<ReadingServiceOptions> {
   const userDict = await loadUserDict();
@@ -29,13 +64,13 @@ async function buildReadingOptions(): Promise<ReadingServiceOptions> {
     }
   }
 
-  if (currentSettings.gradeFilterMaxGrade !== null) {
+  if (currentSettings.skipKanji !== 'none') {
     try {
-      const gradeTable = await getGradeTable();
-      options.gradeFilter = createGradeFilter(currentSettings.gradeFilterMaxGrade, gradeTable);
+      const filter = createKnownKanjiFilter(currentSettings.skipKanji, await getKanjiLevels());
+      if (filter) options.knownKanjiFilter = filter;
     } catch (err) {
       console.error(
-        '[ルビふり for Googleスライド] 学年別漢字配当表の取得に失敗しました。学年フィルタなしで続行します。',
+        '[ルビふり for Googleスライド] 漢字の学年・JLPT のデータの取得に失敗しました。省く漢字の設定なしで続行します。',
         err
       );
     }
@@ -49,6 +84,10 @@ function scheduleRerender(): void {
   rerenderInFlight = rerenderInFlight
     .catch(() => undefined)
     .then(async () => {
+      if (!isExtensionContextAlive()) {
+        shutDownOrphanedScript();
+        return;
+      }
       const readingOptions = await buildReadingOptions();
       await runRubyPipeline({
         enabled: currentSettings.enabled,
@@ -59,6 +98,10 @@ function scheduleRerender(): void {
       });
     })
     .catch((err: unknown) => {
+      if (!isExtensionContextAlive() || isContextInvalidatedError(err)) {
+        shutDownOrphanedScript();
+        return;
+      }
       console.error('[ルビふり for Googleスライド] ルビの描画に失敗しました', err);
     });
 }
@@ -79,14 +122,18 @@ async function main(): Promise<void> {
   currentSettings = await loadSettings();
   scheduleRerender();
 
-  onSettingsChanged((settings) => {
+  const unsubscribeSettings = onSettingsChanged((settings) => {
     currentSettings = settings;
     scheduleRerender();
   });
 
-  startDomWatcher(() => {
+  const domWatcher = startDomWatcher(() => {
     scheduleRerender();
   });
+  stopWatching = () => {
+    domWatcher.stop();
+    unsubscribeSettings();
+  };
 
   initPanelBridge({
     getSettings: () => currentSettings,

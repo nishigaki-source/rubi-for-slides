@@ -91,7 +91,7 @@ describe('buildRubyToken: ユーザー辞書', () => {
       { surface: '学校', reading: 'ガッコウ' },
       {
         userDict: { 学校: { reading: 'がっこう' } },
-        gradeFilter: { maxGrade: 6, gradeTable: { 学: 1, 校: 1 } },
+        knownKanjiFilter: { maxLevel: 6, levelTable: { 学: 1, 校: 1 } },
       }
     );
     // 学年フィルタだけなら対象外になるはずだが、ユーザー辞書指定があるため振られる
@@ -123,7 +123,7 @@ describe('buildRubyToken: ユーザー辞書', () => {
       { surface: '学校', reading: 'ガッコウ' },
       {
         userDict: { 学校: { style } },
-        gradeFilter: { maxGrade: 6, gradeTable: { 学: 1, 校: 1 } },
+        knownKanjiFilter: { maxLevel: 6, levelTable: { 学: 1, 校: 1 } },
       }
     );
     expect(result.rubyRanges).toEqual([{ start: 0, end: 2, kana: 'がっこう', style }]);
@@ -131,12 +131,12 @@ describe('buildRubyToken: ユーザー辞書', () => {
 });
 
 describe('buildRubyToken: 学年フィルタ', () => {
-  const gradeTable = { 学: 1, 校: 1, 食: 2 };
+  const levelTable = { 学: 1, 校: 1, 食: 2 };
 
   it('トークン内の漢字がすべて指定学年以下ならルビを振らない', () => {
     const result = buildRubyToken(
       { surface: '学校', reading: 'ガッコウ' },
-      { gradeFilter: { maxGrade: 1, gradeTable } }
+      { knownKanjiFilter: { maxLevel: 1, levelTable } }
     );
     expect(result.rubyRanges).toEqual([]);
   });
@@ -144,7 +144,7 @@ describe('buildRubyToken: 学年フィルタ', () => {
   it('学年不明の漢字が含まれる場合は安全側でルビを振る', () => {
     const result = buildRubyToken(
       { surface: '生活', reading: 'セイカツ' },
-      { gradeFilter: { maxGrade: 6, gradeTable } } // 生・活はgradeTableに無い
+      { knownKanjiFilter: { maxLevel: 6, levelTable } } // 生・活はgradeTableに無い
     );
     expect(result.rubyRanges.length).toBeGreaterThan(0);
   });
@@ -152,12 +152,12 @@ describe('buildRubyToken: 学年フィルタ', () => {
   it('指定学年より上の漢字を含む場合はルビを振る', () => {
     const result = buildRubyToken(
       { surface: '食べる', reading: 'タベル' },
-      { gradeFilter: { maxGrade: 1, gradeTable } } // 食はgrade2なのでmaxGrade1では対象外にならない
+      { knownKanjiFilter: { maxLevel: 1, levelTable } } // 食はgrade2なのでmaxGrade1では対象外にならない
     );
     expect(result.rubyRanges).toEqual([{ start: 0, end: 1, kana: 'た' }]);
   });
 
-  it('gradeFilterを指定しなければ全ての漢字にルビを振る(既定動作)', () => {
+  it('knownKanjiFilterを指定しなければ全ての漢字にルビを振る(既定動作)', () => {
     const result = buildRubyToken({ surface: '学校', reading: 'ガッコウ' });
     expect(result.rubyRanges).toEqual([{ start: 0, end: 2, kana: 'がっこう' }]);
   });
@@ -287,5 +287,43 @@ describe('buildRubyToken: 漢字ごとのルビ(rubyMode: per-kanji)', () => {
     const ranges = buildRubyToken({ surface: '始業式', reading: 'シギョウシキ' }, { ...perKanji, userDict }).rubyRanges;
     expect(ranges).toHaveLength(3);
     expect(ranges.every((r) => r.style === style)).toBe(true);
+  });
+});
+
+describe('buildRubyToken: 省く漢字 × 漢字ごとのルビ', () => {
+  const kanjiReadings = { 始: ['し'], 業: ['ぎょう'], 式: ['しき'], 人: ['ひと'] };
+  // N4 まで習った人(始・業は N4、式は N3)を想定した段階
+  const knownKanjiFilter = { levelTable: { 始: 2, 業: 2, 式: 3, 人: 1 }, maxLevel: 2 };
+
+  it('漢字ごとなら、習った漢字(始・業)だけルビを外し、習っていない漢字(式)に振る', () => {
+    const result = buildRubyToken(
+      { surface: '始業式', reading: 'シギョウシキ' },
+      { rubyMode: 'per-kanji', kanjiReadings, knownKanjiFilter }
+    );
+    expect(result.rubyRanges).toEqual([{ start: 2, end: 3, kana: 'しき' }]);
+  });
+
+  it('熟語ごとなら従来どおり、1字でも習っていない漢字があれば熟語全体に振る', () => {
+    const result = buildRubyToken(
+      { surface: '始業式', reading: 'シギョウシキ' },
+      { rubyMode: 'per-word', kanjiReadings, knownKanjiFilter }
+    );
+    expect(result.rubyRanges).toEqual([{ start: 0, end: 3, kana: 'しぎょうしき' }]);
+  });
+
+  it('「々」は直前の漢字を習っていれば一緒に外す(人々)', () => {
+    const result = buildRubyToken(
+      { surface: '人々', reading: 'ヒトビト' },
+      { rubyMode: 'per-kanji', kanjiReadings, knownKanjiFilter }
+    );
+    expect(result.rubyRanges).toEqual([]);
+  });
+
+  it('ユーザー辞書に登録した単語は、習った漢字でもルビを振る(辞書が優先)', () => {
+    const result = buildRubyToken(
+      { surface: '始業', reading: 'シギョウ' },
+      { rubyMode: 'per-kanji', kanjiReadings, knownKanjiFilter, userDict: { 始業: { reading: 'し|ぎょう' } } }
+    );
+    expect(result.rubyRanges).toHaveLength(2);
   });
 });

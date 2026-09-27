@@ -7,7 +7,7 @@ Googleスライドの日本語テキスト中の漢字に、ひらがなのル�
 ## 現在の状態（Phase 1・Phase 2 完了、Phase 3 一部完了）
 
 - ✅ プロジェクト雛形（Vite + TypeScript + Manifest V3 + Vitest + ESLint）
-- ✅ ReadingService（`src/core/`）: 送り仮名分離・グループルビ・学年フィルタ・ユーザー辞書（読み＋見た目の個別上書き）
+- ✅ ReadingService（`src/core/`）: 送り仮名分離・グループルビ・省く漢字(学年・JLPT)・ユーザー辞書（読み＋見た目の個別上書き）
 - ✅ Tokenizer host（`src/worker/`）: kuromoji 統合。fetch ベースの XHR シムで MV3 service worker 上で動作
 - ✅ TextExtractor / OverlayRenderer / DomWatcher（`src/content/`）: SVG からのテキスト抽出、オーバーレイ描画、DOM 監視
 - ✅ 設定パネル(Chrome のサイドパネル、v0.7.0〜): ルビの ON/OFF・振り方(漢字ごと/熟語ごと)・サイズ(小/中/大)・フォント・色・学年フィルタ・書き込み/削除操作（`src/sidepanel/`）。拡張機能アイコンのクリックでスライドの横に開き、スライド全体が隠れない。書き込み・削除は開いているタブの content script に依頼する（`src/content/panelBridge.ts`）。経緯は [PLAN.md](PLAN.md) Phase 3 節を参照
@@ -196,13 +196,13 @@ npm run lint         # ESLint
 ```
 src/
   core/      # DOM・kuromoji非依存のロジック(ReadingService)。単体テストの主対象
-             #   types / kana / reading / gradeFilter / userDict / messages(メッセージプロトコル型)
+             #   types / kana / reading / kanjiSplit(漢字ごとの読み) / knownKanji(省く漢字) / userDict / messages(メッセージプロトコル型)
   content/   # content script(スライド編集画面に注入される側)
              #   selectors(DOMセレクタ集約) / textExtractor / overlayRenderer / geometry(純粋関数)
-             #   domWatcher / rubyPipeline(オーケストレーション) / tokenizeClient / gradeTableClient
+             #   domWatcher / rubyPipeline(オーケストレーション) / tokenizeClient / kanjiLevelsClient / kanjiReadingsClient
              #   panelBridge(サイドパネルからの書き込み・削除の依頼を実行) / webFontLoader(Google Fontsの動的読み込み)
   worker/    # service worker
-             #   xhrShim(kuromoji用fetchシム) / tokenizer(kuromoji統合) / gradeTable / index(メッセージハンドラ)
+             #   xhrShim(kuromoji用fetchシム) / tokenizer(kuromoji統合) / kanjiLevels / kanjiReadings / index(メッセージハンドラ)
              #   アイコンクリックでサイドパネルを開く(chrome.sidePanel.setPanelBehavior)
   sidepanel/ # 設定パネル(Chrome のサイドパネル)。表示設定は storage に直接保存、書き込み・削除は content script に依頼
   options/   # 詳細設定ページ(ユーザー辞書の追加・編集・削除、インポート/エクスポート、実装済み)
@@ -223,12 +223,30 @@ tests/e2e/   # Playwrightによるe2eテスト。fixtures/(固定HTML)、kuromoj
 1. 漢字を含まないトークンはルビなし
 2. ユーザー辞書に表層形が完全一致すればそれを最優先(単語全体へのグループルビ)
 3. 読みが決定できない(未知語マーカー `*` や未定義)トークンはルビなし
-4. 学年フィルタが有効で、トークン内の漢字がすべて指定学年以下ならルビなし(学年不明の漢字は安全側でルビを振る)
+4. 「省く漢字」(小学校の学年、または JLPT のレベル)が設定されていて、トークン内の漢字をすべて習っていればルビなし
+   (表に無い漢字は安全側でルビを振る)。振り方が「漢字ごと」なら、手順5のあとで習った漢字の区間だけを外す
 5. それ以外は、表層形を「漢字の連続」と「かな等の連続」に交互分割し、読みと突き合わせて
    漢字の連続ごとにルビを割り当てる(グループルビ)。整合が取れない場合は単語全体を
    1つのグループルビにフォールバックする
 
-既定値は「学年フィルタなし(全漢字にルビ)」。
+既定値は「省く漢字なし(全漢字にルビ)」。
+
+### 省く漢字(小学校の学年・JLPT のレベル、v0.8.0〜)
+
+パネルの「省く漢字」で、小学校の学年(小1〜小6)か JLPT のレベル(N5〜N1)を1つ選ぶ。
+選んだ段階までに習う漢字にはルビを振らない(`src/core/knownKanji.ts`)。学年も JLPT も
+「段階(小さいほど易しい)」に直して同じ判定を使う。
+
+- データは `public/data/kanji-levels.json`(`scripts/build-kanji-levels.mjs` で生成、約26KB)。
+  - 学年: KANJIDIC2 の学年(1〜6年、1,026字。学年ごとの字数は 2020 年度からの学年別漢字配当表と一致)
+  - JLPT: ★JLPT は 2010 年以降、公式の漢字リストを公表していない。学習者に広く使われている
+    Jonathan Waller 氏のリスト(<https://www.tanos.co.uk/jlpt/>、Creative Commons BY)を使う
+    (N5 79字・N4 166字・N3 367字・N2 367字・N1 1,232字)。
+- 表に無い漢字(学年なら中学以降の漢字、JLPT ならリスト外の漢字)は「まだ習っていない」とみなしてルビを振る。
+- 「々」は直前の漢字と同じ扱い(人々: 「人」を習っていれば省く)。
+- ユーザー辞書に登録した単語は、習った漢字でもルビを振る(辞書が優先)。
+- v0.7.0 までの設定 `gradeFilterMaxGrade`(1〜6)は、読み込み時に `skipKanji: 'grade-N'` へ移行する
+  (`src/shared/settings.ts` の `normalizeSettings`)。
 
 ### 漢字ごとのルビ(v0.7.0〜、既定)
 
@@ -251,8 +269,7 @@ tests/e2e/   # Playwrightによるe2eテスト。fixtures/(固定HTML)、kuromoj
 
 ## 既知の注意点(未解決/Phase 1 残タスクに引き継ぎ)
 
-- `public/data/kanji-grades.sample.json` は**サンプル/プレースホルダー**であり、文部科学省の
-  学年別漢字配当表(教育漢字)の全件ではない。学年フィルタ機能を実際に使えるようにする前に、
-  公式データで置き換える必要がある。
+- (v0.8.0 で解消)v0.7.0 までは学年別漢字配当表がサンプル(代表的な数十字)のままで、学年フィルタが
+  ほとんどの漢字で効いていなかった。KANJIDIC2 の学年データ(1,026字)に置き換えた。
 - アイコン画像(`public/icons/*.png`)は「文/ぶん」(漢字+ふりがな)をモチーフにしたデザイン。生成スクリプトは `scripts/generate-icons.py`(要 Pillow)。
 - `manifest.json` は `default_locale` を意図的に外している(i18n 対応は Phase 3 のタスク)。

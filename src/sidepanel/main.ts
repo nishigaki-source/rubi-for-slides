@@ -17,6 +17,7 @@ import type {
   PanelCommandRequest,
   PanelCommandResponse,
 } from '../core/messages';
+import { isSkipKanjiSetting } from '../core/knownKanji';
 import type { RubyMode } from '../core/types';
 import { populateFontSelect } from '../shared/fontOptions';
 import { applyI18n, t } from '../shared/i18n';
@@ -35,6 +36,14 @@ applyI18n(document);
 for (const el of document.querySelectorAll<HTMLOptionElement>('[data-i18n-grade]')) {
   const grade = el.dataset.i18nGrade;
   if (grade) el.textContent = t('gradeFilterGrade', grade);
+}
+for (const el of document.querySelectorAll<HTMLOptionElement>('[data-i18n-jlpt]')) {
+  const level = el.dataset.i18nJlpt;
+  if (level) el.textContent = t('skipKanjiJlpt', level);
+}
+for (const el of document.querySelectorAll<HTMLOptGroupElement>('[data-i18n-group]')) {
+  const key = el.dataset.i18nGroup;
+  if (key) el.label = t(key);
 }
 
 // --- 開いているスライドのタブ ---
@@ -80,14 +89,14 @@ async function sendToSlidesTab<T>(message: PanelCommandRequest | MeasureRubyRequ
   }
 }
 
-// --- 表示設定(ルビON/OFF・振り方・サイズ・フォント・色・学年フィルタ) ---
+// --- 表示設定(ルビON/OFF・振り方・サイズ・フォント・色・省く漢字) ---
 
 const enabledEl = qs<HTMLInputElement>('#enabled');
 const sizeButtons = Array.from(qs<HTMLElement>('#sizeGroup').querySelectorAll<HTMLButtonElement>('.segBtn'));
 const rubyModeButtons = Array.from(qs<HTMLElement>('#rubyModeGroup').querySelectorAll<HTMLButtonElement>('.segBtn'));
 const fontFamilyEl = qs<HTMLSelectElement>('#fontFamily');
 const colorEl = qs<HTMLInputElement>('#color');
-const gradeFilterEl = qs<HTMLSelectElement>('#gradeFilter');
+const skipKanjiEl = qs<HTMLSelectElement>('#skipKanji');
 
 populateFontSelect(fontFamilyEl);
 
@@ -111,7 +120,7 @@ function applySettingsToForm(settings: RubiSettings): void {
   setActive(rubyModeButtons, (b) => b.dataset.mode === settings.rubyMode);
   fontFamilyEl.value = settings.fontFamily;
   colorEl.value = settings.color;
-  gradeFilterEl.value = settings.gradeFilterMaxGrade === null ? 'none' : String(settings.gradeFilterMaxGrade);
+  skipKanjiEl.value = settings.skipKanji;
 }
 
 applySettingsToForm(DEFAULT_SETTINGS);
@@ -125,7 +134,7 @@ async function persist(): Promise<void> {
   const next: RubiSettings = {
     enabled: enabledEl.checked,
     sizeRatio: currentSizeRatio,
-    gradeFilterMaxGrade: gradeFilterEl.value === 'none' ? null : Number(gradeFilterEl.value),
+    skipKanji: isSkipKanjiSetting(skipKanjiEl.value) ? skipKanjiEl.value : 'none',
     fontFamily: fontFamilyEl.value,
     color: colorEl.value,
     rubyMode: currentRubyMode,
@@ -134,7 +143,7 @@ async function persist(): Promise<void> {
 }
 
 enabledEl.addEventListener('change', () => void persist());
-gradeFilterEl.addEventListener('change', () => void persist());
+skipKanjiEl.addEventListener('change', () => void persist());
 fontFamilyEl.addEventListener('change', () => void persist());
 colorEl.addEventListener('change', () => void persist());
 

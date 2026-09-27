@@ -4,7 +4,12 @@
  */
 import { buildRubyTokens } from '../core/reading';
 import type { ReadingServiceOptions, TokenizedWord } from '../core/types';
-import { computeParagraphRubyPlan, type GlobalRubyRange, type RubyPlacement } from './overlayRenderer';
+import {
+  computeParagraphRubyPlan,
+  type GlobalRubyRange,
+  type RubyPlacement,
+  type RubyPlanLayoutOptions,
+} from './overlayRenderer';
 import type { ExtractedParagraph } from './textExtractor';
 
 /**
@@ -45,8 +50,9 @@ export function computeParagraphPlan(
   tokens: TokenizedWord[],
   readingOptions: ReadingServiceOptions,
   sizeRatio: number,
-  styleDefaults?: { fontFamily?: string; color?: string }
+  styleDefaults?: { fontFamily?: string; color?: string },
+  layout?: RubyPlanLayoutOptions
 ): RubyPlacement[] {
   const globalRanges = computeGlobalRubyRanges(tokens, readingOptions);
-  return computeParagraphRubyPlan(paragraph.chars, globalRanges, sizeRatio, styleDefaults);
+  return computeParagraphRubyPlan(paragraph.chars, globalRanges, sizeRatio, styleDefaults, layout);
 }

@@ -21,8 +21,8 @@
 
 import { hasKanji, isKanji, katakanaToHiragana } from './kana';
 import { splitKanjiReading, type KanjiReadingTable } from './kanjiSplit';
+import { areAllKanjiKnown, type KnownKanjiFilter } from './knownKanji';
 import type {
-  GradeFilterOptions,
   ReadingServiceOptions,
   RubyRange,
   RubyToken,
@@ -103,16 +103,17 @@ function alignSegments(segments: Segment[], readingHira: string): RubyRange[] | 
   return ranges;
 }
 
-/** トークン内の漢字がすべて指定学年以下かどうかを判定する。未知の漢字は安全側（false）。 */
-function isAllKanjiWithinGrade(surface: string, filter: GradeFilterOptions): boolean {
-  for (const char of surface) {
-    if (!isKanji(char)) continue;
-    const grade = filter.gradeTable[char];
-    if (grade === undefined || grade > filter.maxGrade) {
-      return false; // 学年不明、または指定学年より上 -> フィルタ対象外(=ルビを振る)
-    }
-  }
-  return true;
+/**
+ * 漢字ごとのルビのうち、もう習った漢字の区間を外す(「漢字ごと」のときだけ使う)。
+ * 例: N4 まで習った人には「始業式」の「始」(N4)・「業」(N4)を外し、「式」(N3)にだけ振る。
+ * 「々」だけの区間は直前の文字と合わせて判定する(人々: 「人」を習っていれば「々」も外す)。
+ */
+function dropKnownRanges(surface: string, ranges: RubyRange[], filter: KnownKanjiFilter): RubyRange[] {
+  const chars = Array.from(surface);
+  return ranges.filter((r) => {
+    const start = chars[r.start] === '々' && r.start > 0 ? r.start - 1 : r.start;
+    return !areAllKanjiKnown(chars.slice(start, r.end).join(''), filter);
+  });
 }
 
 /** ユーザー辞書の読みで、漢字ごとの区切りに使う記号(例: 「し|ぎょう|しき」)。 */
@@ -199,7 +200,7 @@ export function buildRubyToken(
     return { surface, rubyRanges: [] };
   }
 
-  // ユーザー辞書に明示的なエントリがある単語は学年フィルタより優先する
+  // ユーザー辞書に明示的なエントリがある単語は「省く漢字」の設定より優先する
   // (読み・見た目のどちらであっても、ユーザーが個別設定した意図を尊重する)。
   const userEntry = options.userDict?.[surface];
 
@@ -229,7 +230,8 @@ export function buildRubyToken(
     return { surface, rubyRanges: [] };
   }
 
-  if (!userEntry && options.gradeFilter && isAllKanjiWithinGrade(surface, options.gradeFilter)) {
+  // 省く漢字: 単語の漢字をすべて習っていれば、単語ごとルビを振らない(熟語ごと・漢字ごと共通)。
+  if (!userEntry && options.knownKanjiFilter && areAllKanjiKnown(surface, options.knownKanjiFilter)) {
     return { surface, rubyRanges: [] };
   }
 
@@ -241,6 +243,10 @@ export function buildRubyToken(
   let rubyRanges = aligned ?? [{ start: 0, end: surface.length, kana: readingHira }];
   if (options.rubyMode === 'per-kanji' && options.kanjiReadings) {
     rubyRanges = splitRangesPerKanji(surface, rubyRanges, options.kanjiReadings);
+    // 漢字ごとなら、習った漢字だけを外す(熟語ごとは上の単語単位の判定のみ。従来の動作)
+    if (!userEntry && options.knownKanjiFilter) {
+      rubyRanges = dropKnownRanges(surface, rubyRanges, options.knownKanjiFilter);
+    }
   }
 
   // 見た目だけの上書き(読みは kuromoji のまま)が指定されている場合、

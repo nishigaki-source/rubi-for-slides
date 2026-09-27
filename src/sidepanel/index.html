@@ -173,15 +173,24 @@
       <select id="fontFamily"></select>
       <label for="color" data-i18n="labelColor"></label>
       <input type="color" id="color" />
-      <label for="gradeFilter" data-i18n="labelGradeFilter"></label>
-      <select id="gradeFilter">
+      <label for="skipKanji" data-i18n="labelGradeFilter"></label>
+      <select id="skipKanji">
         <option value="none" data-i18n="gradeFilterNone"></option>
-        <option value="1" data-i18n-grade="1"></option>
-        <option value="2" data-i18n-grade="2"></option>
-        <option value="3" data-i18n-grade="3"></option>
-        <option value="4" data-i18n-grade="4"></option>
-        <option value="5" data-i18n-grade="5"></option>
-        <option value="6" data-i18n-grade="6"></option>
+        <optgroup data-i18n-group="skipKanjiGroupGrade">
+          <option value="grade-1" data-i18n-grade="1"></option>
+          <option value="grade-2" data-i18n-grade="2"></option>
+          <option value="grade-3" data-i18n-grade="3"></option>
+          <option value="grade-4" data-i18n-grade="4"></option>
+          <option value="grade-5" data-i18n-grade="5"></option>
+          <option value="grade-6" data-i18n-grade="6"></option>
+        </optgroup>
+        <optgroup data-i18n-group="skipKanjiGroupJlpt">
+          <option value="jlpt-n5" data-i18n-jlpt="5"></option>
+          <option value="jlpt-n4" data-i18n-jlpt="4"></option>
+          <option value="jlpt-n3" data-i18n-jlpt="3"></option>
+          <option value="jlpt-n2" data-i18n-jlpt="2"></option>
+          <option value="jlpt-n1" data-i18n-jlpt="1"></option>
+        </optgroup>
       </select>
     </div>
 

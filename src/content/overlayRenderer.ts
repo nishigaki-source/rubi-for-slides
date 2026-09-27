@@ -13,7 +13,13 @@
  */
 import type { RubyStyleOverride } from '../core/types';
 import { domRectToRect, groupIndicesByLine, transformRect, unionRects, type Rect } from './geometry';
-import { computeRubyFontSize, groupAdjacentBoxes, pickUniformRubyFontSize, resolveRubyCenters } from './rubyLayout';
+import {
+  computeRubyFontSize,
+  groupAdjacentBoxes,
+  groupBoxesByLine,
+  pickUniformRubyFontSize,
+  resolveRubyCenters,
+} from './rubyLayout';
 import type { ExtractedChar } from './textExtractor';
 import { ensureWebFontLoaded } from './webFontLoader';
 
@@ -194,8 +200,10 @@ export function computeParagraphRubyPlan(
   chars: ExtractedChar[],
   ranges: GlobalRubyRange[],
   sizeRatio: number,
-  styleDefaults: { fontFamily?: string; color?: string } = {}
+  styleDefaults: { fontFamily?: string; color?: string } = {},
+  layout: RubyPlanLayoutOptions = {}
 ): RubyPlacement[] {
+  const fontSizeOptions = layout.minFontSizePx !== undefined ? { minFontSize: layout.minFontSizePx } : {};
   const defaultFontFamily = styleDefaults.fontFamily ?? DEFAULT_RUBY_FONT_FAMILY;
   const defaultColor = styleDefaults.color ?? DEFAULT_RUBY_COLOR;
 
@@ -251,7 +259,8 @@ export function computeParagraphRubyPlan(
         box.width,
         box.height,
         Array.from(kanaSlice).length,
-        effectiveSizeRatio
+        effectiveSizeRatio,
+        fontSizeOptions
       );
       pending.push({
         kana: kanaSlice,
@@ -293,7 +302,13 @@ export function computeParagraphRubyPlan(
     const span = unionRects(items.map((p) => p.box));
     const kanaCount = items.reduce((n, p) => n + Array.from(p.kana).length, 0);
     const height = Math.max(...items.map((p) => p.box.height));
-    const clusterFontSize = computeRubyFontSize(span.width, height, kanaCount, (items[0] as Pending).sizeRatio);
+    const clusterFontSize = computeRubyFontSize(
+      span.width,
+      height,
+      kanaCount,
+      (items[0] as Pending).sizeRatio,
+      fontSizeOptions
+    );
     for (const p of items) p.naturalFontSize = clusterFontSize;
   }
 
@@ -301,19 +316,21 @@ export function computeParagraphRubyPlan(
   const uniformFontSize = uniformCandidates.length > 0 ? pickUniformRubyFontSize(uniformCandidates) : 0;
   const fontSizeOf = (p: Pending): number => (p.hasSizeOverride ? p.naturalFontSize : uniformFontSize);
 
-  // 位置: まとまりの中で、隣のルビと重ならないよう左右にずらす(重ならなければ本文の中心のまま)。
+  // 位置: 同じ行のルビが隣と重ならないよう左右にずらす(重ならなければ本文の中心のまま)。
+  // まとまりの中だけでなく、かなを挟んだ隣のルビとも重なりうる(ルビが最小サイズに
+  // 切り上げられて本文より幅が広くなったとき。例:「現状の重要」の「じょう」と「じゅう」)。
   const centers = pending.map((p) => p.box.x + p.box.width / 2);
-  for (const cluster of clusters) {
-    if (cluster.length < 2) continue;
-    const fontSize = fontSizeOf(pending[cluster[0] as number] as Pending);
+  for (const line of groupBoxesByLine(pending.map((p) => p.box))) {
+    if (line.length < 2) continue;
+    const gapFontSize = Math.max(...line.map((i) => fontSizeOf(pending[i] as Pending)));
     const resolved = resolveRubyCenters(
-      cluster.map((i) => {
+      line.map((i) => {
         const p = pending[i] as Pending;
-        return { center: centers[i] as number, width: Array.from(p.kana).length * fontSize };
+        return { center: centers[i] as number, width: Array.from(p.kana).length * fontSizeOf(p) };
       }),
-      fontSize * RUBY_HORIZONTAL_GAP_FACTOR
+      gapFontSize * RUBY_HORIZONTAL_GAP_FACTOR
     );
-    cluster.forEach((i, k) => {
+    line.forEach((i, k) => {
       centers[i] = resolved[k] as number;
     });
   }
@@ -326,6 +343,15 @@ export function computeParagraphRubyPlan(
     fontFamily: p.fontFamily,
     color: p.color,
   }));
+}
+
+export interface RubyPlanLayoutOptions {
+  /**
+   * ルビの最小フォントサイズ(px)。省略時は computeRubyFontSize の既定(画面上で 8px)。
+   * スライドへの書き込み(モード B)では、画面の拡大率によって結果が変わらないよう、
+   * スライド上のポイントから換算した値を渡す。
+   */
+  minFontSizePx?: number;
 }
 
 /** 隣り合うルビどうしの最小のすき間(ルビのフォントサイズに対する比率)。 */

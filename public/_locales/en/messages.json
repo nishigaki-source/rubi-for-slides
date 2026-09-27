@@ -61,6 +61,20 @@
       }
     }
   },
+  "skipKanjiGroupGrade": {
+    "message": "School grade (Japan)"
+  },
+  "skipKanjiGroupJlpt": {
+    "message": "JLPT level"
+  },
+  "skipKanjiJlpt": {
+    "message": "Kanji up to N$LEVEL$",
+    "placeholders": {
+      "LEVEL": {
+        "content": "$1"
+      }
+    }
+  },
   "sectionWrite": {
     "message": "Write to slide"
   },
@@ -189,8 +203,8 @@
       }
     }
   },
-  "errorGradeTableLoadFailed": {
-    "message": "Failed to load the kanji grade table (status: $STATUS$)",
+  "errorKanjiLevelsLoadFailed": {
+    "message": "Failed to load the kanji grade/JLPT data (status: $STATUS$)",
     "placeholders": {
       "STATUS": {
         "content": "$1"

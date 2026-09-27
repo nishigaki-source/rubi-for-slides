@@ -61,6 +61,20 @@
       }
     }
   },
+  "skipKanjiGroupGrade": {
+    "message": "小学校の学年"
+  },
+  "skipKanjiGroupJlpt": {
+    "message": "JLPT(日本語能力試験)"
+  },
+  "skipKanjiJlpt": {
+    "message": "N$LEVEL$までの漢字",
+    "placeholders": {
+      "LEVEL": {
+        "content": "$1"
+      }
+    }
+  },
   "sectionWrite": {
     "message": "スライドに書き込む"
   },
@@ -189,8 +203,8 @@
       }
     }
   },
-  "errorGradeTableLoadFailed": {
-    "message": "学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)",
+  "errorKanjiLevelsLoadFailed": {
+    "message": "漢字の学年・JLPT のデータの読み込みに失敗しました (status: $STATUS$)",
     "placeholders": {
       "STATUS": {
         "content": "$1"

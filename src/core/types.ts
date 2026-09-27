@@ -6,6 +6,7 @@
  * 純粋なロジックだけを扱う（PLAN.md 3.4節を参照）。
  */
 import type { KanjiReadingTable } from './kanjiSplit';
+import type { KnownKanjiFilter } from './knownKanji';
 
 /** 1 形態素（トークン）。kuromoji の出力を想定しているが、この型自体は
  * kuromoji に依存しない（worker 層で変換してから core に渡す）。 */
@@ -73,21 +74,6 @@ export interface UserDictEntry {
 export type UserDictionary = Record<string, UserDictEntry>;
 
 /**
- * 学年別漢字配当表。1 文字の漢字をキーに、その漢字を習う学年（1〜6）を返す。
- * 表に存在しない漢字（教育漢字以外の常用漢字など）は「学年不明」として扱い、
- * 学年フィルタでは常にルビ付与の対象とする（安全側に倒す）。
- */
-export type KanjiGradeTable = Record<string, number>;
-
-/** 学年フィルタの設定。省略時はフィルタなし（既定値、全漢字にルビを振る）。 */
-export interface GradeFilterOptions {
-  /** この学年以下で習う漢字だけで構成されるトークンにはルビを振らない */
-  maxGrade: number;
-  /** 学年別漢字配当表 */
-  gradeTable: KanjiGradeTable;
-}
-
-/**
  * ルビの振り方。
  * - 'per-kanji': 漢字ごと(モノルビ)。「始業式」なら「始」に「し」、「業」に「ぎょう」、「式」に「しき」。
  *   漢字ごとに分けられない語(熟字訓など)は熟語ルビにフォールバックする(src/core/kanjiSplit.ts)。
@@ -96,9 +82,12 @@ export interface GradeFilterOptions {
 export type RubyMode = 'per-kanji' | 'per-word';
 
 export interface ReadingServiceOptions {
-  /** 学年フィルタ。省略時は全漢字にルビを振る（既定動作、PLAN.md 決定事項参照） */
-  gradeFilter?: GradeFilterOptions;
-  /** ユーザー辞書。学年フィルタより優先される。 */
+  /**
+   * 省く漢字(学年・JLPT のレベルで「もう習った」とみなす漢字にはルビを振らない。src/core/knownKanji.ts)。
+   * 省略時は全漢字にルビを振る(既定動作、PLAN.md 決定事項参照)。
+   */
+  knownKanjiFilter?: KnownKanjiFilter;
+  /** ユーザー辞書。省く漢字の設定より優先される。 */
   userDict?: UserDictionary;
   /** ルビの振り方。省略時は 'per-word'(従来の動作) */
   rubyMode?: RubyMode;

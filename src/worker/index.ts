@@ -6,7 +6,7 @@
  */
 import {
   isDeleteRubyRequest,
-  isGradeTableRequest,
+  isKanjiLevelsRequest,
   isKanjiReadingsRequest,
   isPageInfoRequest,
   isPresentationPagesRequest,
@@ -14,7 +14,7 @@ import {
   isTokenizeRequest,
   isWriteRubyRequest,
   type DeleteRubyResponse,
-  type GradeTableResponse,
+  type KanjiLevelsResponse,
   type KanjiReadingsResponse,
   type PageInfoResponse,
   type PresentationPagesResponse,
@@ -26,7 +26,7 @@ import { FileAccessDeniedError, FileAccessRequiredError, withFileAccess } from '
 import { buildCreateRubyRequests, buildDeleteRequests, buildGroupRequests, buildRecenterRequests, planGroups } from '../core/slidesRequests';
 import { t } from '../shared/i18n';
 import { requestFileAccess, handlePickerExternalMessage } from './filePicker';
-import { getGradeTable } from './gradeTable';
+import { getKanjiLevels } from './kanjiLevels';
 import { getKanjiReadings } from './kanjiReadings';
 import { batchUpdate, getPageInfo, getPresentationPages, getRubyObjectIds } from './slidesClient';
 import { tokenize, warmUpTokenizer } from './tokenizer';
@@ -92,20 +92,16 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
     return true; // 非同期で sendResponse を呼ぶことを Chrome に伝える
   }
 
-  if (isGradeTableRequest(message)) {
+  if (isKanjiLevelsRequest(message)) {
     const { requestId } = message;
-    getGradeTable()
-      .then((gradeTable) => {
-        const response: GradeTableResponse = {
-          type: 'rubi/get-grade-table-result',
-          requestId,
-          gradeTable,
-        };
+    getKanjiLevels()
+      .then((kanjiLevels) => {
+        const response: KanjiLevelsResponse = { type: 'rubi/get-kanji-levels-result', requestId, kanjiLevels };
         sendResponse(response);
       })
       .catch((err: unknown) => {
-        const response: GradeTableResponse = {
-          type: 'rubi/get-grade-table-error',
+        const response: KanjiLevelsResponse = {
+          type: 'rubi/get-kanji-levels-error',
           requestId,
           message: err instanceof Error ? err.message : String(err),
         };

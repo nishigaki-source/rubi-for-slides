@@ -33,6 +33,9 @@ const ENTRIES = [
   ['labelGradeFilter', '省く漢字', 'Skip kanji'],
   ['gradeFilterNone', 'なし(すべてにルビ)', 'None (furigana on all kanji)'],
   ['gradeFilterGrade', '小$GRADE$までに習う漢字', 'Kanji taught by grade $GRADE$', ['GRADE']],
+  ['skipKanjiGroupGrade', '小学校の学年', 'School grade (Japan)'],
+  ['skipKanjiGroupJlpt', 'JLPT(日本語能力試験)', 'JLPT level'],
+  ['skipKanjiJlpt', 'N$LEVEL$までの漢字', 'Kanji up to N$LEVEL$', ['LEVEL']],
   ['sectionWrite', 'スライドに書き込む', 'Write to slide'],
   ['btnCurrentSlide', 'このスライド', 'This slide'],
   ['btnAllSlides', '全スライド', 'All slides'],
@@ -87,7 +90,7 @@ const ENTRIES = [
   ],
   ['errorAllSlidesFailed', 'すべてのスライドで処理に失敗しました。', 'Processing failed for all slides.'],
 
-  // --- worker/slidesClient.ts, worker/gradeTable.ts error messages ---
+  // --- worker/slidesClient.ts, worker/kanjiLevels.ts error messages ---
   [
     'errorFetchPresentationFailed',
     'プレゼンテーションの取得に失敗しました (status: $STATUS$)',
@@ -113,9 +116,9 @@ const ENTRIES = [
     ['STATUS'],
   ],
   [
-    'errorGradeTableLoadFailed',
-    '学年別漢字配当表の読み込みに失敗しました (status: $STATUS$)',
-    'Failed to load the kanji grade table (status: $STATUS$)',
+    'errorKanjiLevelsLoadFailed',
+    '漢字の学年・JLPT のデータの読み込みに失敗しました (status: $STATUS$)',
+    'Failed to load the kanji grade/JLPT data (status: $STATUS$)',
     ['STATUS'],
   ],
 

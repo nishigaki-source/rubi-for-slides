@@ -38,7 +38,7 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
   → 発表モード・印刷・PDF書き出しにもルビを反映させたい場合はこちらを使用
 ・ルビのサイズ(小・中・大)、フォント、色を自由に設定
 ・ルビは漢字1文字ずつに振るか(例: 始業式 → し/ぎょう/しき)、熟語ごとにまとめて振るかを選択可能
-・学年別漢字配当表による自動フィルタ(指定した学年までに習う漢字は除外)
+・習った漢字にはルビを振らない設定(小学校の学年:小1〜小6、または JLPT のレベル:N5〜N1 から選択)
 ・ユーザー辞書で単語ごとに読み・見た目を個別上書き
   (例: 専門用語や固有名詞の読みを正しく設定、特定の単語だけ強調表示)
 ・設定パネルはスライドの横(Chrome のサイドパネル)に表示されるので、スライド全体を見ながら操作できる
@@ -69,7 +69,7 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
   → use this if you need furigana in presenter mode, printing, or PDF export
 - Choose furigana size (small/medium/large), font, and color
 - Furigana per kanji (e.g. 始業式 → し/ぎょう/しき) or per word, your choice
-- Automatic grade-level filtering (skip kanji taught by a given school grade)
+- Skip kanji you already know: choose a Japanese school grade (1–6) or a JLPT level (N5–N1)
 - Per-word overrides via a user dictionary (fix a reading, or customize the look
   of a specific word — handy for technical terms and proper nouns)
 - The settings panel opens in Chrome's side panel next to your slide, so the whole slide stays visible
