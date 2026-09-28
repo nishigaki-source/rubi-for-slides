@@ -43,6 +43,26 @@ describe('computeParagraphRubyPlan: 隣のルビとの重なり', () => {
   });
 });
 
+describe('computeParagraphRubyPlan: ルビの大きさのそろえ方', () => {
+  it('本文の大きさが同じ部分はそろえ、1つの段落の中で一部だけ大きい文字は別にそろえる', () => {
+    // 「朝ごはん」(18px 相当)と「元気」(36px 相当)が同じ段落にある
+    const small = fakeLine('朝ご', 18);
+    const big = fakeLine('元気', 36, 100, 82);
+    const plan = computeParagraphRubyPlan(
+      [...small, ...big],
+      [
+        { start: 0, end: 1, kana: 'あさ' },
+        { start: 2, end: 3, kana: 'げん' },
+        { start: 3, end: 4, kana: 'き' },
+      ],
+      0.5
+    );
+    expect(plan[0]!.fontSizePx).toBeCloseTo(9, 5); // 18 × 0.5
+    expect(plan[1]!.fontSizePx).toBeCloseTo(18, 5); // 36 × 0.5(小さい部分に合わせて小さくしない)
+    expect(plan[2]!.fontSizePx).toBeCloseTo(18, 5);
+  });
+});
+
 describe('computeParagraphRubyPlan: 最小サイズの指定(書き込み用)', () => {
   it('最小サイズを画面の拡大率に比例させれば、縮小表示でも拡大表示でも同じ見た目の比率になる', () => {
     const scaleOf = (charPx: number) => {

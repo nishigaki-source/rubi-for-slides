@@ -312,9 +312,22 @@ export function computeParagraphRubyPlan(
     for (const p of items) p.naturalFontSize = clusterFontSize;
   }
 
-  const uniformCandidates = pending.filter((p) => !p.hasSizeOverride).map((p) => p.naturalFontSize);
-  const uniformFontSize = uniformCandidates.length > 0 ? pickUniformRubyFontSize(uniformCandidates) : 0;
-  const fontSizeOf = (p: Pending): number => (p.hasSizeOverride ? p.naturalFontSize : uniformFontSize);
+  // 段落の中でルビの大きさをそろえる。ただし本文の文字の大きさが違う部分(1つの段落の中で一部だけ
+  // 大きくした文字など)は別々にそろえる(実機で発見: 36pt の「元気」のルビが、同じ段落の 18pt の
+  // 部分に合わせて小さくなっていた)。
+  const sizeClassOf = new Map<Pending, number>();
+  const classHeights: number[] = [];
+  for (const p of pending) {
+    if (p.hasSizeOverride) continue;
+    let k = classHeights.findIndex((h) => Math.abs(p.box.height - h) <= h * SAME_BODY_SIZE_TOLERANCE);
+    if (k === -1) k = classHeights.push(p.box.height) - 1;
+    sizeClassOf.set(p, k);
+  }
+  const uniformFontSizes = classHeights.map((_, k) =>
+    pickUniformRubyFontSize(pending.filter((p) => sizeClassOf.get(p) === k).map((p) => p.naturalFontSize))
+  );
+  const fontSizeOf = (p: Pending): number =>
+    p.hasSizeOverride ? p.naturalFontSize : (uniformFontSizes[sizeClassOf.get(p) as number] as number);
 
   // 位置: 同じ行のルビが隣と重ならないよう左右にずらす(重ならなければ本文の中心のまま)。
   // まとまりの中だけでなく、かなを挟んだ隣のルビとも重なりうる(ルビが最小サイズに
@@ -353,6 +366,9 @@ export interface RubyPlanLayoutOptions {
    */
   minFontSizePx?: number;
 }
+
+/** 本文の高さがこの比率以内の差なら、同じ大きさの文字とみなしてルビの大きさをそろえる。 */
+const SAME_BODY_SIZE_TOLERANCE = 0.2;
 
 /** 隣り合うルビどうしの最小のすき間(ルビのフォントサイズに対する比率)。 */
 const RUBY_HORIZONTAL_GAP_FACTOR = 0.2;

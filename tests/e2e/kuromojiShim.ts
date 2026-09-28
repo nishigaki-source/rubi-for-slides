@@ -40,6 +40,7 @@ async function tokenize(text: string): Promise<TokenizedWord[]> {
     surface: t.surface_form,
     reading: t.reading,
     pos: t.pos,
+    posDetail1: t.pos_detail_1,
   }));
 }
 

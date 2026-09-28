@@ -110,6 +110,11 @@ const ENTRIES = [
     'Access to this presentation was not granted. Please try again and select the presentation in the dialog.',
   ],
   [
+    'errorOfficeFile',
+    'PowerPoint 形式のファイル(.pptx など)のままでは書き込めません。「ファイル」→「Google スライドとして保存」で変換し、変換後のファイルでお試しください。',
+    'Furigana cannot be written to a PowerPoint file (.pptx etc.) as is. Use File → Save as Google Slides, then try again in the converted file.',
+  ],
+  [
     'errorKanjiReadingsLoadFailed',
     '漢字の読みデータの読み込みに失敗しました (status: $STATUS$)',
     'Failed to load the kanji reading data (status: $STATUS$)',

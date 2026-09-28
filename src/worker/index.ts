@@ -28,7 +28,7 @@ import { t } from '../shared/i18n';
 import { requestFileAccess, handlePickerExternalMessage } from './filePicker';
 import { getKanjiLevels } from './kanjiLevels';
 import { getKanjiReadings } from './kanjiReadings';
-import { batchUpdate, getPageInfo, getPresentationPages, getRubyObjectIds } from './slidesClient';
+import { batchUpdate, getPageInfo, getPresentationPages, getRubyGroupObjectIds, getRubyObjectIds } from './slidesClient';
 import { tokenize, warmUpTokenizer } from './tokenizer';
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -73,6 +73,11 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err: 
 });
 
 chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+  // 動作確認用ビルド(npm run build:qa)だけ: dist を作り直したあと、ページから拡張機能を読み込み直せるようにする
+  if (typeof __RUBI_QA__ !== 'undefined' && __RUBI_QA__ && (message as { type?: unknown })?.type === 'rubi-qa/reload-extension') {
+    chrome.runtime.reload();
+    return false;
+  }
 
   if (isTokenizeRequest(message)) {
     const { requestId, text } = message;
@@ -131,12 +136,14 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
   if (isPageInfoRequest(message)) {
     const { requestId, presentationId, pageObjectId } = message;
     withAccess(presentationId, () => getPageInfo(presentationId, pageObjectId))
-      .then(({ pageSizeEmu, shapes }) => {
+      .then(({ pageSizeEmu, shapes, pageText }) => {
         const response: PageInfoResponse = {
           type: 'rubi/get-page-info-result',
           requestId,
           pageSizeEmu,
           shapes: shapes.map((s) => ({ objectId: s.objectId, text: s.text, box: s.box })),
+          emptyPlaceholderBoxes: shapes.filter((s) => s.isEmptyPlaceholder).map((s) => s.box),
+          pageText,
         };
         sendResponse(response);
       })
@@ -176,11 +183,22 @@ chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) =
   if (isWriteRubyRequest(message)) {
     const { requestId, presentationId, pageObjectId, items, groupWithOriginal } = message;
     withAccess(presentationId, async () => {
+      // 書き込みは、そのスライドにある前回のルビとの置き換えにする(実機で発見: 2回押すとルビが二重になり、
+      // サイズを変えて書き直すと大きさの違うルビが重なった)。削除と作成を1回の batchUpdate にまとめるので、
+      // 途中で失敗しても前回のルビだけが消えることはない。
+      const existing = await getRubyObjectIds(presentationId, pageObjectId);
+      const existingGroups = await getRubyGroupObjectIds(presentationId, pageObjectId);
+      const ungroupRequests = existingGroups.length > 0 ? [{ ungroupObjects: { objectIds: existingGroups } }] : [];
       const createRequests = buildCreateRubyRequests(pageObjectId, items);
       const groupRequests = groupWithOriginal
         ? buildGroupRequests(planGroups(items, () => generateObjectId('rubi-group')))
         : [];
-      await batchUpdate(presentationId, [...createRequests, ...groupRequests]);
+      await batchUpdate(presentationId, [
+        ...ungroupRequests,
+        ...buildDeleteRequests(existing),
+        ...createRequests,
+        ...groupRequests,
+      ]);
       return items.length;
     })
       .then((writtenCount) => {

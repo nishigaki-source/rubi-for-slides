@@ -195,6 +195,9 @@
   "errorFileAccessDenied": {
     "message": "このスライドへのアクセスが許可されませんでした。もう一度お試しいただき、表示された画面でスライドを選んでください。"
   },
+  "errorOfficeFile": {
+    "message": "PowerPoint 形式のファイル(.pptx など)のままでは書き込めません。「ファイル」→「Google スライドとして保存」で変換し、変換後のファイルでお試しください。"
+  },
   "errorKanjiReadingsLoadFailed": {
     "message": "漢字の読みデータの読み込みに失敗しました (status: $STATUS$)",
     "placeholders": {

@@ -12,6 +12,7 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "build:qa": "tsc -p tsconfig.json --noEmit && RUBI_QA=1 vite build",
     "build:e2e": "vite build --config vite.e2e.config.ts",
     "test:e2e": "npm run build:e2e && playwright test",
     "lint": "eslint . --ext .ts",

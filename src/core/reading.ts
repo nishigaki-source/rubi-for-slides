@@ -19,6 +19,7 @@
  *      分けられない語は 1〜3 の結果(熟語ルビ)のまま。
  */
 
+import { applyCounterReadings } from './counters';
 import { hasKanji, isKanji, katakanaToHiragana } from './kana';
 import { splitKanjiReading, type KanjiReadingTable } from './kanjiSplit';
 import { areAllKanjiKnown, type KnownKanjiFilter } from './knownKanji';
@@ -114,6 +115,18 @@ function dropKnownRanges(surface: string, ranges: RubyRange[], filter: KnownKanj
     const start = chars[r.start] === '々' && r.start > 0 ? r.start - 1 : r.start;
     return !areAllKanjiKnown(chars.slice(start, r.end).join(''), filter);
   });
+}
+
+/**
+ * 漢字で始まる語の読みが「ぢ」「づ」で始まっていたら「じ」「ず」にする。現代仮名遣いでは語頭に
+ * 「ぢ」「づ」は来ないが、kuromoji の辞書(IPADIC)は「図形」を「ヅケイ」としている(実機で発見)。
+ * 語の途中(鼻血 はなぢ、三日月 みかづき)はそのまま。
+ */
+function fixWordInitialDzu(surface: string, readingHira: string): string {
+  if (!isKanji(Array.from(surface)[0] ?? '')) return readingHira;
+  if (readingHira.startsWith('づ')) return 'ず' + readingHira.slice(1);
+  if (readingHira.startsWith('ぢ')) return 'じ' + readingHira.slice(1);
+  return readingHira;
 }
 
 /** ユーザー辞書の読みで、漢字ごとの区切りに使う記号(例: 「し|ぎょう|しき」)。 */
@@ -235,14 +248,14 @@ export function buildRubyToken(
     return { surface, rubyRanges: [] };
   }
 
-  const readingHira = katakanaToHiragana(token.reading);
+  const readingHira = fixWordInitialDzu(surface, katakanaToHiragana(token.reading));
   const segments = segmentSurface(surface);
   const aligned = alignSegments(segments, readingHira);
 
   // フォールバック: 整合が取れない場合は単語全体を 1 つのグループルビにする。
   let rubyRanges = aligned ?? [{ start: 0, end: surface.length, kana: readingHira }];
   if (options.rubyMode === 'per-kanji' && options.kanjiReadings) {
-    rubyRanges = splitRangesPerKanji(surface, rubyRanges, options.kanjiReadings);
+    if (!token.keepWhole) rubyRanges = splitRangesPerKanji(surface, rubyRanges, options.kanjiReadings);
     // 漢字ごとなら、習った漢字だけを外す(熟語ごとは上の単語単位の判定のみ。従来の動作)
     if (!userEntry && options.knownKanjiFilter) {
       rubyRanges = dropKnownRanges(surface, rubyRanges, options.knownKanjiFilter);
@@ -338,5 +351,5 @@ export function buildRubyTokens(
   tokens: TokenizedWord[],
   options: ReadingServiceOptions = {}
 ): RubyToken[] {
-  return mergeUserDictTokens(tokens, options.userDict).map((t) => buildRubyToken(t, options));
+  return mergeUserDictTokens(applyCounterReadings(tokens), options.userDict).map((t) => buildRubyToken(t, options));
 }

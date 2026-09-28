@@ -14,6 +14,7 @@ import {
 } from '../core/messages';
 import type { ReadingServiceOptions } from '../core/types';
 import type { RubiSettings } from '../shared/settings';
+import { initQaBridge } from './qaBridge';
 import { deleteRuby, writeRubyToAllSlides, writeRubyToCurrentSlide } from './writeController';
 
 export interface PanelBridgeDeps {
@@ -57,6 +58,11 @@ function measureRubyFontSizes(settings: RubiSettings): string[] | null {
 }
 
 export function initPanelBridge(deps: PanelBridgeDeps): void {
+  if (typeof __RUBI_QA__ !== 'undefined' && __RUBI_QA__) {
+    initQaBridge((command, groupWithOriginal) =>
+      runCommand({ type: 'rubi/panel-command', command, groupWithOriginal }, deps)
+    );
+  }
   chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
     if (isMeasureRubyRequest(message)) {
       const response: MeasureRubyResponse = { fontSizes: measureRubyFontSizes(deps.getSettings()) };

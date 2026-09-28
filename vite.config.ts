@@ -12,6 +12,8 @@ export default defineConfig({
   define: {
     // どのビルドが Chrome に読み込まれているかをログで判別できるようにする
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    // 動作確認用ビルド(npm run build:qa)だけ、ページから書き込み等を指示できる受け口を入れる(src/content/qaBridge.ts)
+    __RUBI_QA__: JSON.stringify(process.env.RUBI_QA === '1'),
   },
   resolve: {
     alias: {

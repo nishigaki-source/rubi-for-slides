@@ -42,6 +42,19 @@ function keyFor(container: Element): string {
   return key;
 }
 
+const ALNUM = /^[0-9A-Za-z０-９Ａ-Ｚａ-ｚ]$/;
+
+/** 前の文字と次の要素のあいだに、描かれていない半角スペースがあるか(数字・英字どうしのときだけ見る) */
+function needsSpaceBetween(prev: ExtractedChar, el: SVGTextElement, text: string): boolean {
+  if (prev.el === el || !ALNUM.test(prev.char) || !ALNUM.test(Array.from(text)[0] ?? '')) return false;
+  const a = prev.el.getBoundingClientRect();
+  const b = el.getBoundingClientRect();
+  const height = Math.max(a.height, b.height);
+  if (height === 0) return false;
+  const sameLine = Math.abs(a.y + a.height / 2 - (b.y + b.height / 2)) <= height * 0.5;
+  return sameLine && b.left - a.right > height * 0.15;
+}
+
 /**
  * 編集キャンバス全体を走査し、段落ごとにグループ化した文字列と文字要素を返す。
  * 呼び出し側(overlayRenderer)は、段落ごとの text を tokenize し、その結果の
@@ -64,6 +77,15 @@ export function extractParagraphs(root: ParentNode = document): ExtractedParagra
       paragraph = { key, chars: [], text: '' };
       byKey.set(key, paragraph);
       order.push(key);
+    }
+
+    // Googleスライドは半角スペースを <text> 要素として描かない(実機で発見: 「問3 5月」が「問35月」と
+    // つながり、「35月」と解釈されて「月」が「つき」になった)。数字・英字どうしが空白ぶん離れていれば、
+    // 空白を補う(補った空白にはルビが振られないので、位置の計算には使われない)。
+    const prev = paragraph.chars[paragraph.chars.length - 1];
+    if (prev && needsSpaceBetween(prev, el, text)) {
+      paragraph.chars.push({ el: prev.el, char: ' ', charIndexInElement: prev.charIndexInElement });
+      paragraph.text += ' ';
     }
 
     // 1 つの <text> 要素に複数文字が含まれる場合(上記コメント参照)は

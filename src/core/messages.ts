@@ -7,6 +7,7 @@ import type { ApiShapeInfo } from './shapeMatcher';
 import type { RecenterCorrection, RubyWriteItem } from './slidesRequests';
 import type { KanjiReadingTable } from './kanjiSplit';
 import type { KanjiLevelTables } from './knownKanji';
+import type { EmuRect } from './emu';
 import type { TokenizedWord } from './types';
 
 export interface TokenizeRequest {
@@ -107,6 +108,14 @@ export interface PageInfoSuccessResponse {
   requestId: string;
   pageSizeEmu: { width: number; height: number };
   shapes: ApiShapeInfo[];
+  /**
+   * 本文が空のプレースホルダーの位置。編集画面ではこの枠に「クリックしてテキストを追加」などの
+   * 案内文が表示され、DOM からは本文と区別できないため、この範囲にあって pageText に無い段落には
+   * 書き込まない(枠の上に置いた表などは pageText にあるので書き込む)。
+   */
+  emptyPlaceholderBoxes: EmuRect[];
+  /** ページ上のすべての文字(図形・表のセル・グループの中。空白を除いて連結したもの) */
+  pageText: string;
 }
 
 export interface PageInfoErrorResponse {

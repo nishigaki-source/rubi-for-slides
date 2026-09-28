@@ -20,6 +20,13 @@ export interface TokenizedWord {
   reading?: string | undefined;
   /** 品詞（フィルタリングに使う場合に備えて保持。現状は未使用） */
   pos?: string | undefined;
+  /** 品詞細分類1(例: 「数」「接尾」)。数字 + 助数詞の読みの補正に使う(src/core/counters.ts) */
+  posDetail1?: string | undefined;
+  /**
+   * 漢字ごとに分けず、語全体に1つのルビを振る(熟字訓。例: 一人 → ひとり、二十日 → はつか)。
+   * 数字 + 助数詞の補正(src/core/counters.ts)で、数字と合わせて読む語に付ける。
+   */
+  keepWhole?: boolean;
 }
 
 /**

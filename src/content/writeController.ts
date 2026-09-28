@@ -13,6 +13,7 @@ import {
   type DeleteRubyResponse,
   type PageInfoRequest,
   type PageInfoResponse,
+  type PageInfoSuccessResponse,
   type PresentationPagesRequest,
   type PresentationPagesResponse,
   type RecenterRubyRequest,
@@ -20,9 +21,10 @@ import {
   type WriteRubyRequest,
   type WriteRubyResponse,
 } from '../core/messages';
-import { findMatchingShapeObjectId } from '../core/shapeMatcher';
+import { findMatchingShapeObjectId, isCenterInsideAny } from '../core/shapeMatcher';
 import type { RecenterCorrection, RubyWriteItem } from '../core/slidesRequests';
 import { parseSlidesUrl } from '../core/slidesUrl';
+import { isOfficeFileOpen } from './officeFile';
 import { t } from '../shared/i18n';
 import type { ReadingServiceOptions } from '../core/types';
 import { domRectToRect, remapRectBetweenFrames, type Rect } from './geometry';
@@ -179,7 +181,7 @@ async function recenterByDom(
 async function requestPageInfo(
   presentationId: string,
   pageObjectId: string
-): Promise<{ pageSizeEmu: { width: number; height: number }; shapes: { objectId: string; text: string; box: { x: number; y: number; width: number; height: number } }[] }> {
+): Promise<Omit<PageInfoSuccessResponse, 'type' | 'requestId'>> {
   const req: PageInfoRequest = {
     type: 'rubi/get-page-info',
     requestId: nextRequestId(),
@@ -265,11 +267,19 @@ async function writeRubyToPage(
     );
     if (plan.length === 0) continue;
 
+    const firstBoxEmu = pxRectToEmuRect(plan[0]!.box, pageContainerPx, pageInfo.pageSizeEmu);
+    // 本文が空のプレースホルダーに編集画面だけ表示される案内文(「クリックしてテキストを追加」)には
+    // 書き込まない(実機で発見: 「つい か」だけがスライドに残り、発表時に宙に浮いて見えた)
+    // (枠の中に置いた表や図形の文字は API の本文にあるので、そちらは書き込む)
+    if (
+      isCenterInsideAny(firstBoxEmu, pageInfo.emptyPlaceholderBoxes ?? []) &&
+      !(pageInfo.pageText ?? '').includes(paragraph.text.replace(/\s/g, ''))
+    ) {
+      continue;
+    }
+
     const matchedShapeObjectId =
-      findMatchingShapeObjectId(
-        { text: paragraph.text, box: pxRectToEmuRect(plan[0]!.box, pageContainerPx, pageInfo.pageSizeEmu) },
-        pageInfo.shapes
-      ) ?? undefined;
+      findMatchingShapeObjectId({ text: paragraph.text, box: firstBoxEmu }, pageInfo.shapes) ?? undefined;
 
     for (const placement of plan) {
       const kanaCharCount = Array.from(placement.kana).length;
@@ -316,6 +326,9 @@ export async function writeRubyToCurrentSlide(options: WriteOptions): Promise<Wr
   if (!parsed) {
     return { ok: false, message: t('errorCannotIdentifySlide') };
   }
+  if (isOfficeFileOpen()) {
+    return { ok: false, message: t('errorOfficeFile') };
+  }
   return writeRubyToPage(parsed.presentationId, parsed.pageObjectId, options);
 }
 
@@ -330,6 +343,9 @@ export async function writeRubyToAllSlides(options: WriteOptions): Promise<Write
   const parsed = parseSlidesUrl(location.href);
   if (!parsed) {
     return { ok: false, message: t('errorCannotIdentifySlide') };
+  }
+  if (isOfficeFileOpen()) {
+    return { ok: false, message: t('errorOfficeFile') };
   }
   const originalPageObjectId = parsed.pageObjectId;
 
@@ -375,6 +391,9 @@ export async function deleteRuby(scope: 'current' | 'all'): Promise<DeleteResult
   const parsed = parseSlidesUrl(location.href);
   if (!parsed) {
     return { ok: false, message: t('errorCannotIdentifySlide') };
+  }
+  if (isOfficeFileOpen()) {
+    return { ok: false, message: t('errorOfficeFile') };
   }
 
   const req: DeleteRubyRequest = {

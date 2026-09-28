@@ -35,6 +35,13 @@ if (!existsSync(DIST)) {
   process.exit(1);
 }
 
+// 動作確認用ビルド(npm run build:qa)の受け口がストア版に混ざっていないか確かめる
+const qaHit = execSync(`grep -rl "rubi-qa/request" "${DIST}" || true`).toString().trim();
+if (qaHit) {
+  console.error(`dist/ に動作確認用の受け口が含まれています(${qaHit})。npm run build でビルドし直してください。`);
+  process.exit(1);
+}
+
 rmSync(DIST_STORE, { recursive: true, force: true });
 cpSync(DIST, DIST_STORE, { recursive: true });
 

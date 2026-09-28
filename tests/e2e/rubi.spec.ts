@@ -38,7 +38,13 @@ async function installChromeStub(page: Page): Promise<void> {
         id: 'e2e-test-extension-id',
         getManifest: () => ({ version: 'e2e-test' }),
         onInstalled: { addListener: () => {} },
-        onMessage: { addListener: () => {} },
+        onMessage: {
+          // サイドパネルからの指示(rubi/panel-command)をテストから送れるよう、受け手を覚えておく
+          addListener: (listener: unknown) => {
+            const w = window as unknown as { __rubiOnMessage?: unknown[] };
+            (w.__rubiOnMessage ??= []).push(listener);
+          },
+        },
         sendMessage: async (message: { type: string; requestId: string; text?: string }) => {
           if (message.type === 'rubi/tokenize') {
             await waitForKuromoji();
@@ -317,6 +323,28 @@ test.describe('編集への追従(DomWatcher)', () => {
       expect(spans.map((s) => s.text)).toContain('あたら');
     }).toPass({ timeout: 15_000 });
   });
+
+  test('描かれていない半角スペースを補う(「問3 5月」を「35月」と読まない)', async ({ page }) => {
+    // Googleスライドは半角スペースを <text> として描かず、文字の位置だけを空ける(実機で確認)
+    await page.evaluate(() => {
+      const container = document.getElementById('editor-i3-paragraph-0');
+      if (!container) throw new Error('editable paragraph not found');
+      const svgNS = 'http://www.w3.org/2000/svg';
+      const placed: [string, number][] = [['問', 10], ['3', 42], ['5', 70], ['月', 88], ['5', 120], ['日', 138]];
+      for (const [ch, x] of placed) {
+        const t = document.createElementNS(svgNS, 'text');
+        t.setAttribute('x', String(x));
+        t.setAttribute('y', '340');
+        t.setAttribute('font-size', '32');
+        t.textContent = ch;
+        container.appendChild(t);
+      }
+    });
+    await expect(async () => {
+      const spans = await getOverlaySpans(page);
+      expect(spans.map((s) => s.text)).toEqual(expect.arrayContaining(['とい', 'がつ', 'いつか']));
+    }).toPass({ timeout: 15_000 });
+  });
 });
 
 test.describe('拡張機能の更新後に取り残された content script', () => {
@@ -436,5 +464,51 @@ test.describe('ON/OFF切り替え', () => {
       const spans = await getOverlaySpans(page);
       expect(spans.length).toBeGreaterThan(0);
     }).toPass({ timeout: 15_000 });
+  });
+});
+
+test.describe('PowerPoint 形式のファイル(.pptx)を変換せずに開いている場合', () => {
+  async function waitForContentScript(page: Page): Promise<void> {
+    await page.waitForFunction(() => ((window as unknown as { __rubiOnMessage?: unknown[] }).__rubiOnMessage?.length ?? 0) > 0);
+  }
+
+  /** サイドパネルの「このスライド」に書き込む指示を送り、返ってきた結果を得る */
+  async function sendWriteCurrent(page: Page): Promise<{ ok: boolean; message?: string }> {
+    return page.evaluate(() => {
+      // 書き込み処理は URL からスライドを特定するので、Googleスライドの URL の形にしておく
+      history.replaceState(null, '', '/presentation/d/e2e-presentation/edit#slide=id.p1');
+      const listeners = (window as unknown as { __rubiOnMessage: ((m: unknown, s: unknown, r: (v: unknown) => void) => unknown)[] })
+        .__rubiOnMessage;
+      return new Promise<{ ok: boolean; message?: string }>((resolve) => {
+        for (const listener of listeners) {
+          listener({ type: 'rubi/panel-command', command: 'write-current', groupWithOriginal: false }, {}, (v) =>
+            resolve(v as { ok: boolean; message?: string })
+          );
+        }
+      });
+    });
+  }
+
+  test('タイトルの横に「.PPTX」の印があれば、API を呼ばずに「Google スライドとして保存」を案内する', async ({ page }) => {
+    await waitForContentScript(page);
+    await page.evaluate(() => {
+      const badge = document.createElement('div');
+      badge.textContent = '.PPTX';
+      badge.style.cssText = 'position:fixed;top:10px;left:300px;';
+      document.body.appendChild(badge);
+    });
+    const res = await sendWriteCurrent(page);
+    expect(res).toEqual({ ok: false, message: 'errorOfficeFile' });
+  });
+
+  test('スライドの本文に「.pptx」と書いてあるだけなら、PowerPoint 形式とはみなさない', async ({ page }) => {
+    await waitForContentScript(page);
+    await page.evaluate(() => {
+      const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      text.textContent = '.pptx';
+      document.querySelector('svg')?.appendChild(text);
+    });
+    const res = await sendWriteCurrent(page);
+    expect(res.message).not.toBe('errorOfficeFile');
   });
 });

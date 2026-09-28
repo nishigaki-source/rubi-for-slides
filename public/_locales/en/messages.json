@@ -195,6 +195,9 @@
   "errorFileAccessDenied": {
     "message": "Access to this presentation was not granted. Please try again and select the presentation in the dialog."
   },
+  "errorOfficeFile": {
+    "message": "Furigana cannot be written to a PowerPoint file (.pptx etc.) as is. Use File → Save as Google Slides, then try again in the converted file."
+  },
   "errorKanjiReadingsLoadFailed": {
     "message": "Failed to load the kanji reading data (status: $STATUS$)",
     "placeholders": {
