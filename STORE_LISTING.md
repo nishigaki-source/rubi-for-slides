@@ -36,8 +36,10 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 ・編集画面上にルビをリアルタイム表示(画面表示のみ、スライド自体は変更されません)
 ・「スライドへの書き込み」機能で、実際のテキストボックスとしてルビを書き込み
   → 発表モード・印刷・PDF書き出しにもルビを反映させたい場合はこちらを使用
+  → 書き直すと前のルビと置き換わるので、設定を変えて何度でもやり直せます
 ・ルビのサイズ(小・中・大)、フォント、色を自由に設定
 ・ルビは漢字1文字ずつに振るか(例: 始業式 → し/ぎょう/しき)、熟語ごとにまとめて振るかを選択可能
+・日付・時刻・数も正しい読みで(例: 4月1日 → がつ/ついたち、30分 → ぷん、一人 → ひとり)
 ・習った漢字にはルビを振らない設定(小学校の学年:小1〜小6、または JLPT のレベル:N5〜N1 から選択)
 ・ユーザー辞書で単語ごとに読み・見た目を個別上書き
   (例: 専門用語や固有名詞の読みを正しく設定、特定の単語だけ強調表示)
@@ -55,7 +57,7 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 ・保存された設定・辞書データは、ご自身のChromeアカウント(chrome.storage.sync)
   にのみ保存され、開発者のサーバーには一切送信されません
 
-詳しくはプライバシーポリシーをご覧ください: https://nishigaki-source.github.io/rubi-for-slides/
+詳しくはプライバシーポリシーをご覧ください: https://rubi.rocketdone.com/
 ```
 
 ### English
@@ -67,8 +69,10 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 - Real-time furigana display in the editor (display only; your slide content is untouched)
 - "Write to slide" mode adds furigana as real text boxes
   → use this if you need furigana in presenter mode, printing, or PDF export
+  → writing again replaces the previous furigana, so you can redo it after changing settings
 - Choose furigana size (small/medium/large), font, and color
 - Furigana per kanji (e.g. 始業式 → し/ぎょう/しき) or per word, your choice
+- Correct readings for dates, times, and counts (e.g. 4月1日 → がつ/ついたち, 30分 → ぷん, 一人 → ひとり)
 - Skip kanji you already know: choose a Japanese school grade (1–6) or a JLPT level (N5–N1)
 - Per-word overrides via a user dictionary (fix a reading, or customize the look
   of a specific word — handy for technical terms and proper nouns)
@@ -85,7 +89,7 @@ Show furigana over kanji in Google Slides, or write it directly into the slide. 
 - Your settings and dictionary are stored only in your own Chrome account
   (chrome.storage.sync) and are never sent to a developer-run server
 
-See the privacy policy for details: https://nishigaki-source.github.io/rubi-for-slides/
+See the privacy policy for details: https://rubi.rocketdone.com/
 ```
 
 ## 単一の目的(Single purpose)
