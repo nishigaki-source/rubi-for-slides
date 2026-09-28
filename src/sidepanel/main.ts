@@ -9,6 +9,10 @@
  * 表示設定は chrome.storage に直接保存し、開いているスライドの content script が
  * 変更を検知して再描画する。書き込み・削除はスライドの DOM を測る必要があるため、
  * 開いているタブの content script に依頼する(src/content/panelBridge.ts)。
+ *
+ * v1.0.0 から Googleドキュメントにも対応する。画面は「スライド」「ドキュメント」の2種類で、開いているタブに合わせて
+ * 自動で切り替える(body の data-kind。見出しにバッジを出す)。どちらでもないタブでは、最後に使った画面のまま案内を出す。ドキュメントへの書き込み・削除は
+ * service worker に依頼する(src/worker/docsHandler.ts)。ドキュメントでは、設定を変えるとルビを自動で付け直す。
  */
 import type {
   MeasureRubyRequest,
@@ -17,11 +21,21 @@ import type {
   PanelCommandRequest,
   PanelCommandResponse,
 } from '../core/messages';
+import { parseDocsUrl, type ParsedDocsUrl } from '../core/docs/docsUrl';
+import type { DocsCommand, DocsCommandRequest, DocsCommandResponse } from '../core/docs/messages';
 import { isSkipKanjiSetting } from '../core/knownKanji';
 import type { RubyMode } from '../core/types';
 import { populateFontSelect } from '../shared/fontOptions';
 import { applyI18n, t } from '../shared/i18n';
-import { DEFAULT_SETTINGS, loadSettings, onSettingsChanged, saveSettings, type RubiSettings } from '../shared/settings';
+import {
+  DEFAULT_SETTINGS,
+  isDocsRubyStyle,
+  loadSettings,
+  onSettingsChanged,
+  saveSettings,
+  type DocsRubyStyle,
+  type RubiSettings,
+} from '../shared/settings';
 import { SIZE_PRESETS, nearestSizePreset } from '../shared/sizePresets';
 
 const SLIDES_URL_PREFIX = 'https://docs.google.com/presentation/';
@@ -46,31 +60,71 @@ for (const el of document.querySelectorAll<HTMLOptGroupElement>('[data-i18n-grou
   if (key) el.label = t(key);
 }
 
-// --- 開いているスライドのタブ ---
+// --- 開いているタブ(スライド・ドキュメント)と、画面の種類 ---
 // サイドパネルはウィンドウ単位で開いたままになるため、利用者がタブを切り替えたら
-// 対象のタブも追従する。Googleスライド以外のタブでは書き込み系のボタンを無効にする。
+// 対象のタブも追従する。スライド・ドキュメント以外のタブでは、書き込み系のボタンを押せなくして案内を出す。
 
-const notSlidesNoticeEl = qs<HTMLDivElement>('#notSlidesNotice');
+const notSupportedNoticeEl = qs<HTMLDivElement>('#notSupportedNotice');
+const modeNameEl = qs<HTMLSpanElement>('#modeName');
 const writeBtn = qs<HTMLButtonElement>('#writeCurrentSlide');
 const writeAllBtn = qs<HTMLButtonElement>('#writeAllSlides');
 const deleteCurrentBtn = qs<HTMLButtonElement>('#deleteCurrentSlide');
 const deleteAllBtn = qs<HTMLButtonElement>('#deleteAllSlides');
 const actionButtons = [writeBtn, writeAllBtn, deleteCurrentBtn, deleteAllBtn];
+const docsWriteBtn = qs<HTMLButtonElement>('#docsWrite');
+const docsDeleteBtn = qs<HTMLButtonElement>('#docsDelete');
+
+type PanelMode = 'slides' | 'docs';
+type TabKind = PanelMode | null;
+
+/** 最後に選んだ画面の種類(スライド・ドキュメント以外のタブを開いたときに使う)。この画面だけの覚え書き */
+const MODE_STORAGE_KEY = 'rubiPanelMode';
+function loadMode(): PanelMode {
+  try {
+    return localStorage.getItem(MODE_STORAGE_KEY) === 'docs' ? 'docs' : 'slides';
+  } catch {
+    return 'slides';
+  }
+}
 
 let busy = false;
+let mode: PanelMode = loadMode();
+let activeKind: TabKind = null;
 let activeSlidesTabId: number | null = null;
+/** 開いているドキュメント(文書 ID・タブ)と、そのブラウザのタブ ID(表ルビの文字幅をそのページで測る) */
+let docsTarget: ParsedDocsUrl | null = null;
+let docsBrowserTabId: number | undefined;
 
 function updateButtonsEnabled(): void {
   const disabled = busy || activeSlidesTabId === null;
   actionButtons.forEach((b) => (b.disabled = disabled));
+  docsWriteBtn.disabled = busy || docsTarget === null;
+  docsDeleteBtn.disabled = busy || docsTarget === null;
+}
+
+/** 画面の種類を切り替える(見出しのバッジ・出し分け・押せない設定・案内)。 */
+function setMode(next: PanelMode): void {
+  mode = next;
+  try {
+    localStorage.setItem(MODE_STORAGE_KEY, next);
+  } catch {
+    // 覚えられなくても、切り替え自体はできる
+  }
+  document.body.dataset.kind = next;
+  modeNameEl.textContent = t(next === 'slides' ? 'modeSlides' : 'modeDocs');
+  notSupportedNoticeEl.hidden = activeKind !== null;
+  applyFieldStates();
+  updateButtonsEnabled();
 }
 
 async function refreshActiveTab(): Promise<void> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  // url は、ホスト権限のある Googleスライドのタブでだけ取得できる(それ以外は undefined)
+  // url は、ホスト権限のある Googleスライド・ドキュメントのタブでだけ取得できる(それ以外は undefined)
   activeSlidesTabId = tab?.id !== undefined && tab.url?.startsWith(SLIDES_URL_PREFIX) ? tab.id : null;
-  notSlidesNoticeEl.hidden = activeSlidesTabId !== null;
-  updateButtonsEnabled();
+  docsTarget = activeSlidesTabId === null && tab?.url ? parseDocsUrl(tab.url) : null;
+  docsBrowserTabId = docsTarget ? tab?.id : undefined;
+  activeKind = activeSlidesTabId !== null ? 'slides' : docsTarget ? 'docs' : null;
+  setMode(activeKind ?? mode);
 }
 
 chrome.tabs.onActivated.addListener(() => void refreshActiveTab());
@@ -97,11 +151,38 @@ const rubyModeButtons = Array.from(qs<HTMLElement>('#rubyModeGroup').querySelect
 const fontFamilyEl = qs<HTMLSelectElement>('#fontFamily');
 const colorEl = qs<HTMLInputElement>('#color');
 const skipKanjiEl = qs<HTMLSelectElement>('#skipKanji');
+const docsStyleInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="docsStyle"]'));
+const docsSizeHintEl = qs<HTMLDivElement>('#docsSizeHint');
+const docsFontHintEl = qs<HTMLDivElement>('#docsFontHint');
+const docsColorHintEl = qs<HTMLDivElement>('#docsColorHint');
 
 populateFontSelect(fontFamilyEl);
 
 let currentSizeRatio = DEFAULT_SETTINGS.sizeRatio;
 let currentRubyMode: RubyMode = DEFAULT_SETTINGS.rubyMode;
+let currentDocsStyle: DocsRubyStyle = DEFAULT_SETTINGS.docsStyle;
+/** 最後に画面に反映した設定(変わった項目を調べて、ドキュメントのルビを付け直すかを決める) */
+let lastSettings: RubiSettings = DEFAULT_SETTINGS;
+
+const isTableStyle = (style: DocsRubyStyle): boolean => style === 'table' || style === 'table-compact';
+/** ドキュメントの見せ方ごとに使わない設定(読みの大きさは括弧書き・漢字の右上、フォントは漢字の上以外、色は括弧書き) */
+const docsSizeUnused = (style: DocsRubyStyle): boolean => style === 'paren' || style === 'superscript';
+const docsFontUnused = (style: DocsRubyStyle): boolean => !isTableStyle(style);
+const docsColorUnused = (style: DocsRubyStyle): boolean => style === 'paren';
+
+/** ドキュメントのタブでは、見せ方で使わない設定を押せないようにする(スライドのタブではすべて使う)。 */
+function applyFieldStates(): void {
+  const docs = mode === 'docs';
+  const sizeUnused = docs && docsSizeUnused(currentDocsStyle);
+  const fontUnused = docs && docsFontUnused(currentDocsStyle);
+  const colorUnused = docs && docsColorUnused(currentDocsStyle);
+  sizeButtons.forEach((b) => (b.disabled = sizeUnused));
+  fontFamilyEl.disabled = fontUnused;
+  colorEl.disabled = colorUnused;
+  docsSizeHintEl.hidden = !sizeUnused;
+  docsFontHintEl.hidden = !fontUnused;
+  docsColorHintEl.hidden = !colorUnused;
+}
 
 function setActive(buttons: HTMLButtonElement[], isActive: (btn: HTMLButtonElement) => boolean): void {
   for (const btn of buttons) {
@@ -121,6 +202,10 @@ function applySettingsToForm(settings: RubiSettings): void {
   fontFamilyEl.value = settings.fontFamily;
   colorEl.value = settings.color;
   skipKanjiEl.value = settings.skipKanji;
+  currentDocsStyle = settings.docsStyle;
+  docsStyleInputs.forEach((input) => (input.checked = input.value === settings.docsStyle));
+  lastSettings = settings;
+  applyFieldStates();
 }
 
 applySettingsToForm(DEFAULT_SETTINGS);
@@ -131,18 +216,48 @@ loadSettings()
 onSettingsChanged(applySettingsToForm);
 
 async function persist(): Promise<void> {
+  const prev = lastSettings;
   const next: RubiSettings = {
+    ...prev,
     enabled: enabledEl.checked,
     sizeRatio: currentSizeRatio,
     skipKanji: isSkipKanjiSetting(skipKanjiEl.value) ? skipKanjiEl.value : 'none',
     fontFamily: fontFamilyEl.value,
     color: colorEl.value,
     rubyMode: currentRubyMode,
+    docsStyle: currentDocsStyle,
   };
+  lastSettings = next;
+  applyFieldStates();
   await saveSettings(next);
+  if (mode === 'docs' && docsRefreshNeeded(prev, next)) scheduleDocsRefresh();
+}
+
+/**
+ * ドキュメントのルビの見た目が変わる設定の変更か。使わない設定(括弧書きでの読みの大きさなど)だけの変更や、
+ * スライドの表示の ON/OFF では付け直さない。
+ */
+function docsRefreshNeeded(prev: RubiSettings, next: RubiSettings): boolean {
+  const changed = (Object.keys(next) as (keyof RubiSettings)[]).filter(
+    (k) => JSON.stringify(prev[k]) !== JSON.stringify(next[k])
+  );
+  return changed.some((k) => {
+    if (k === 'enabled') return false;
+    if (k === 'sizeRatio') return !docsSizeUnused(next.docsStyle);
+    if (k === 'fontFamily') return !docsFontUnused(next.docsStyle);
+    if (k === 'color') return !docsColorUnused(next.docsStyle);
+    return true;
+  });
 }
 
 enabledEl.addEventListener('change', () => void persist());
+for (const input of docsStyleInputs) {
+  input.addEventListener('change', () => {
+    if (!input.checked || !isDocsRubyStyle(input.value)) return;
+    currentDocsStyle = input.value;
+    void persist();
+  });
+}
 skipKanjiEl.addEventListener('change', () => void persist());
 fontFamilyEl.addEventListener('change', () => void persist());
 colorEl.addEventListener('change', () => void persist());
@@ -186,6 +301,7 @@ let sizeCheckToken = 0;
 for (const btn of sizeButtons) {
   btn.addEventListener('click', () => {
     void (async () => {
+      if (btn.disabled) return;
       const preset = SIZE_PRESETS.find((p) => p.key === btn.dataset.size);
       if (!preset || preset.value === currentSizeRatio) return;
       sizeHintEl.textContent = '';
@@ -316,3 +432,74 @@ deleteAllBtn.addEventListener('click', () => {
     if (ok) void run('delete-all');
   });
 });
+
+// --- ドキュメントへの書き込み・削除(service worker に依頼する) ---
+
+/** 設定を変えたときの自動の付け直し(少し待ってから1回だけ送る。処理中なら終わってから) */
+const DOCS_REFRESH_DELAY_MS = 700;
+let docsRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+let docsRefreshPending = false;
+
+function scheduleDocsRefresh(): void {
+  if (docsTarget === null) return;
+  if (docsRefreshTimer !== undefined) clearTimeout(docsRefreshTimer);
+  docsRefreshTimer = setTimeout(() => {
+    docsRefreshTimer = undefined;
+    if (busy) {
+      docsRefreshPending = true; // 今の処理が終わってから付け直す
+      return;
+    }
+    void runDocs('refresh');
+  }, DOCS_REFRESH_DELAY_MS);
+}
+
+const DOCS_STATUS: Record<'write' | 'delete' | 'refresh', string> = {
+  write: 'statusDocsWriting',
+  delete: 'statusDocsDeleting',
+  refresh: 'statusDocsRefreshing',
+};
+
+/** 編集されていたため消さずに残した表ルビがあるときの案内。 */
+function skippedNote(skipped: number | undefined): string {
+  return skipped ? `\n${t('statusDocsSkipped', String(skipped))}` : '';
+}
+
+async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'refresh'>): Promise<void> {
+  if (docsTarget === null) return;
+  busy = true;
+  updateButtonsEnabled();
+  setWriteStatus(t(DOCS_STATUS[command]), 'info');
+  try {
+    const request: DocsCommandRequest = {
+      type: 'rubi-docs/command',
+      command,
+      documentId: docsTarget.documentId,
+      ...(docsTarget.tabId ? { tabId: docsTarget.tabId } : {}),
+      ...(docsBrowserTabId !== undefined ? { browserTabId: docsBrowserTabId } : {}),
+    };
+    const res = (await chrome.runtime.sendMessage(request)) as DocsCommandResponse;
+    if (!res.ok) {
+      setWriteStatus(res.message, 'error');
+      return;
+    }
+    const count = String(res.count ?? 0);
+    if (command === 'refresh' && !res.refreshed) {
+      setWriteStatus(t('statusDocsSettingsSaved'), 'info');
+      return;
+    }
+    const key = command === 'write' ? 'statusDocsWriteSuccess' : command === 'delete' ? 'statusDocsDeleteSuccess' : 'statusDocsRefreshed';
+    setWriteStatus(`${t(key, count)}${skippedNote(res.skipped)}`, 'success');
+  } catch (err) {
+    setWriteStatus(err instanceof Error ? err.message : String(err), 'error');
+  } finally {
+    busy = false;
+    updateButtonsEnabled();
+    if (docsRefreshPending) {
+      docsRefreshPending = false;
+      void runDocs('refresh');
+    }
+  }
+}
+
+docsWriteBtn.addEventListener('click', () => void runDocs('write'));
+docsDeleteBtn.addEventListener('click', () => void runDocs('delete'));

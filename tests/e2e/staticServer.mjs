@@ -7,7 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const root = path.resolve(__dirname, '..', '..');
+// E2E_STATIC_ROOT を渡すと、そのフォルダ(プロジェクトルートからの相対)を配信する(サイドパネルの e2e 用のビルド)
+const root = path.resolve(__dirname, '..', '..', process.env.E2E_STATIC_ROOT || '.');
 const port = Number(process.env.E2E_STATIC_PORT || 4173);
 
 const MIME = {
@@ -16,6 +17,8 @@ const MIME = {
   '.mjs': 'text/javascript; charset=utf-8',
   '.json': 'application/json',
   '.gz': 'application/gzip',
+  '.css': 'text/css; charset=utf-8',
+  '.png': 'image/png',
 };
 
 const server = http.createServer((req, res) => {

@@ -1,9 +1,9 @@
 {
   "extName": {
-    "message": "ルビふり for Googleスライド"
+    "message": "ルビふり for Googleスライド＆ドキュメント"
   },
   "extDescription": {
-    "message": "Googleスライドの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。"
+    "message": "Googleスライド・ドキュメントの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。"
   },
   "panelTitle": {
     "message": "ルビふり"
@@ -98,6 +98,101 @@
   },
   "errorReloadSlidesTab": {
     "message": "スライドのタブと通信できませんでした。スライドのページを再読み込みしてから、もう一度お試しください。"
+  },
+  "sidePanelNotSupported": {
+    "message": "Googleスライドまたはドキュメントを開くと、ルビを書き込めます。"
+  },
+  "sidePanelNotDocs": {
+    "message": "Googleドキュメントの文書を開いてください。"
+  },
+  "modeSlides": {
+    "message": "スライド"
+  },
+  "modeDocs": {
+    "message": "ドキュメント"
+  },
+  "labelDocsStyle": {
+    "message": "見せ方"
+  },
+  "docsStyleGroupAriaLabel": {
+    "message": "ドキュメントでのルビの見せ方"
+  },
+  "docsStyleTable": {
+    "message": "漢字の上"
+  },
+  "docsStyleTableCompact": {
+    "message": "漢字の上（縮める）"
+  },
+  "docsStyleParen": {
+    "message": "括弧書き"
+  },
+  "docsStyleParenSmall": {
+    "message": "括弧書き（小さい文字）"
+  },
+  "docsStyleSuperscript": {
+    "message": "漢字の右上"
+  },
+  "hintDocsSizeUnused": {
+    "message": "括弧書き・漢字の右上では使いません。"
+  },
+  "hintDocsFontUnused": {
+    "message": "漢字の上のときだけ使います。"
+  },
+  "hintDocsColorUnused": {
+    "message": "括弧書きでは使いません(読みは本文と同じ色になります)。"
+  },
+  "sectionWriteDocs": {
+    "message": "ドキュメントに書き込む"
+  },
+  "btnDocsWrite": {
+    "message": "ルビをふる"
+  },
+  "btnDocsDelete": {
+    "message": "ルビを消す"
+  },
+  "statusDocsWriting": {
+    "message": "ルビをふっています…"
+  },
+  "statusDocsDeleting": {
+    "message": "ルビを消しています…"
+  },
+  "statusDocsRefreshing": {
+    "message": "設定を変えたので、ルビを付け直しています…"
+  },
+  "statusDocsWriteSuccess": {
+    "message": "ルビをふりました($COUNT$ か所)。",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusDocsDeleteSuccess": {
+    "message": "ルビを消しました($COUNT$ か所)。",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusDocsRefreshed": {
+    "message": "ルビを付け直しました($COUNT$ か所)。",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusDocsSettingsSaved": {
+    "message": "設定を保存しました。「ルビをふる」を押すと、この設定で文書に付けます。"
+  },
+  "statusDocsSkipped": {
+    "message": "ルビを付けた後に表が足されたり消されたりしていた $COUNT$ か所は、消さずに残しました。手で直してください。",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
   },
   "btnConfirmRun": {
     "message": "実行する"
@@ -197,6 +292,26 @@
   },
   "errorOfficeFile": {
     "message": "PowerPoint 形式のファイル(.pptx など)のままでは書き込めません。「ファイル」→「Google スライドとして保存」で変換し、変換後のファイルでお試しください。"
+  },
+  "errorDocsFileAccessDenied": {
+    "message": "この文書へのアクセスが許可されませんでした。もう一度お試しいただき、表示された画面で文書を選んでください。"
+  },
+  "errorDocsOfficeFile": {
+    "message": "Word 形式のファイルのままでは、ルビをふれません。「ファイル」→「Google ドキュメントとして保存」で Googleドキュメントに変換し、開いた文書でもう一度お試しください。"
+  },
+  "errorDocsApiFailed": {
+    "message": "Google ドキュメントとの通信に失敗しました (status: $STATUS$) $BODY$",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      },
+      "BODY": {
+        "content": "$2"
+      }
+    }
+  },
+  "errorDocsBodyNotFound": {
+    "message": "文書の本文が見つかりませんでした。"
   },
   "errorKanjiReadingsLoadFailed": {
     "message": "漢字の読みデータの読み込みに失敗しました (status: $STATUS$)",

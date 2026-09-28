@@ -1,9 +1,9 @@
 {
   "extName": {
-    "message": "Furigana for Google Slides"
+    "message": "Furigana for Google Slides & Docs"
   },
   "extDescription": {
-    "message": "Displays and writes hiragana furigana over kanji in Google Slides."
+    "message": "Displays and writes hiragana furigana over kanji in Google Slides and Google Docs."
   },
   "panelTitle": {
     "message": "Furigana"
@@ -98,6 +98,101 @@
   },
   "errorReloadSlidesTab": {
     "message": "Couldn't reach the slide's tab. Please reload the Google Slides page and try again."
+  },
+  "sidePanelNotSupported": {
+    "message": "Open a presentation in Google Slides or a document in Google Docs to write furigana."
+  },
+  "sidePanelNotDocs": {
+    "message": "Please open a document in Google Docs."
+  },
+  "modeSlides": {
+    "message": "Slides"
+  },
+  "modeDocs": {
+    "message": "Docs"
+  },
+  "labelDocsStyle": {
+    "message": "Style"
+  },
+  "docsStyleGroupAriaLabel": {
+    "message": "How furigana looks in the document"
+  },
+  "docsStyleTable": {
+    "message": "Above the kanji"
+  },
+  "docsStyleTableCompact": {
+    "message": "Above the kanji (condensed)"
+  },
+  "docsStyleParen": {
+    "message": "In parentheses"
+  },
+  "docsStyleParenSmall": {
+    "message": "In parentheses (small)"
+  },
+  "docsStyleSuperscript": {
+    "message": "Superscript"
+  },
+  "hintDocsSizeUnused": {
+    "message": "Not used for \"In parentheses\" or \"Superscript\"."
+  },
+  "hintDocsFontUnused": {
+    "message": "Used only for \"Above the kanji\"."
+  },
+  "hintDocsColorUnused": {
+    "message": "Not used for \"In parentheses\" (the reading uses the text color)."
+  },
+  "sectionWriteDocs": {
+    "message": "Write to document"
+  },
+  "btnDocsWrite": {
+    "message": "Add furigana"
+  },
+  "btnDocsDelete": {
+    "message": "Remove furigana"
+  },
+  "statusDocsWriting": {
+    "message": "Adding furigana…"
+  },
+  "statusDocsDeleting": {
+    "message": "Removing furigana…"
+  },
+  "statusDocsRefreshing": {
+    "message": "Settings changed — updating the furigana…"
+  },
+  "statusDocsWriteSuccess": {
+    "message": "Added furigana ($COUNT$ places).",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusDocsDeleteSuccess": {
+    "message": "Removed furigana ($COUNT$ places).",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusDocsRefreshed": {
+    "message": "Updated the furigana ($COUNT$ places).",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
+  "statusDocsSettingsSaved": {
+    "message": "Settings saved. Press \"Add furigana\" to apply them to the document."
+  },
+  "statusDocsSkipped": {
+    "message": "$COUNT$ place(s) where tables were added or removed after adding furigana were left as is. Please fix them by hand.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
   },
   "btnConfirmRun": {
     "message": "Run"
@@ -197,6 +292,26 @@
   },
   "errorOfficeFile": {
     "message": "Furigana cannot be written to a PowerPoint file (.pptx etc.) as is. Use File → Save as Google Slides, then try again in the converted file."
+  },
+  "errorDocsFileAccessDenied": {
+    "message": "Access to this document was not granted. Please try again and select the document in the dialog."
+  },
+  "errorDocsOfficeFile": {
+    "message": "Furigana cannot be added to a Word file (.docx etc.) as is. Use File → Save as Google Docs, then try again in the converted document."
+  },
+  "errorDocsApiFailed": {
+    "message": "Failed to communicate with Google Docs (status: $STATUS$) $BODY$",
+    "placeholders": {
+      "STATUS": {
+        "content": "$1"
+      },
+      "BODY": {
+        "content": "$2"
+      }
+    }
+  },
+  "errorDocsBodyNotFound": {
+    "message": "Couldn't find the document body."
   },
   "errorKanjiReadingsLoadFailed": {
     "message": "Failed to load the kanji reading data (status: $STATUS$)",

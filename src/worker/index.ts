@@ -3,6 +3,7 @@
  * content script からのトークン化・学年別漢字配当表リクエスト(モード A)、
  * および Slides API 経由でのページ情報取得・書き込み・削除リクエスト
  * (モード B)を受け付ける。
+ * Googleドキュメント用の指示(`rubi-docs/command`)は docsHandler.ts で受ける(v1.0.0 で統合)。
  */
 import {
   isDeleteRubyRequest,
@@ -25,6 +26,7 @@ import {
 import { FileAccessDeniedError, FileAccessRequiredError, withFileAccess } from '../core/fileAccess';
 import { buildCreateRubyRequests, buildDeleteRequests, buildGroupRequests, buildRecenterRequests, planGroups } from '../core/slidesRequests';
 import { t } from '../shared/i18n';
+import { handleDocsMessage } from './docsHandler';
 import { requestFileAccess, handlePickerExternalMessage } from './filePicker';
 import { getKanjiLevels } from './kanjiLevels';
 import { getKanjiReadings } from './kanjiReadings';
@@ -72,12 +74,15 @@ chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true }).catch((err: 
   console.error('[ルビふり for Googleスライド] サイドパネルの設定に失敗しました', err);
 });
 
-chrome.runtime.onMessage.addListener((message: unknown, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) => {
   // 動作確認用ビルド(npm run build:qa)だけ: dist を作り直したあと、ページから拡張機能を読み込み直せるようにする
   if (typeof __RUBI_QA__ !== 'undefined' && __RUBI_QA__ && (message as { type?: unknown })?.type === 'rubi-qa/reload-extension') {
     chrome.runtime.reload();
     return false;
   }
+
+  // Googleドキュメント(サイドパネル・動作確認用の受け口から)
+  if (handleDocsMessage(message, sender, sendResponse)) return true;
 
   if (isTokenizeRequest(message)) {
     const { requestId, text } = message;

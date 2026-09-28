@@ -1,5 +1,5 @@
 /**
- * drive.file でスライドへのアクセス許可を得るための Google Picker フロー(service worker 側)。
+ * drive.file でスライド・ドキュメントへのアクセス許可を得るための Google Picker フロー(service worker 側)。
  *
  * 1. requestFileAccess() が自ドメインの Picker ページをポップアップで開く。
  * 2. ページが externally_connectable 経由でアクセストークンを要求 → getAuthToken で返す。
@@ -20,15 +20,21 @@ interface PendingPicker {
   resolve: (granted: boolean) => void;
 }
 
-/** 同じスライドに対する Picker を二重に開かないよう、進行中のものを共有する。 */
+/**
+ * 許可を求めるファイルの種類。Picker ページの説明の文言を切り替える(`kind` を渡さない古い呼び方はスライド)。
+ * ページからの結果は、どちらの種類でも `presentationId` にファイルの ID が入って返る(既存の版との互換のため)。
+ */
+export type PickerFileKind = 'presentation' | 'document';
+
+/** 同じファイルに対する Picker を二重に開かないよう、進行中のものを共有する。 */
 const inflight = new Map<string, Promise<boolean>>();
 const pending = new Map<string, PendingPicker>();
 
 const POPUP_WIDTH = 760;
 const POPUP_HEIGHT = 640;
 
-/** 対象スライドへのアクセスを、Picker でユーザーに許可してもらう。許可されたら true。 */
-export function requestFileAccess(presentationId: string): Promise<boolean> {
+/** 対象のファイルへのアクセスを、Picker でユーザーに許可してもらう。許可されたら true。 */
+export function requestFileAccess(presentationId: string, kind: PickerFileKind = 'presentation'): Promise<boolean> {
   const existing = inflight.get(presentationId);
   if (existing) return existing;
 
@@ -45,7 +51,8 @@ export function requestFileAccess(presentationId: string): Promise<boolean> {
       resolve(granted);
     };
 
-    const url = `${PICKER_PAGE_URL}?ext=${encodeURIComponent(chrome.runtime.id)}&fileId=${encodeURIComponent(presentationId)}`;
+    const kindParam = kind === 'document' ? '&kind=document' : '';
+    const url = `${PICKER_PAGE_URL}?ext=${encodeURIComponent(chrome.runtime.id)}&fileId=${encodeURIComponent(presentationId)}${kindParam}`;
     chrome.windows
       .create({ url, type: 'popup', width: POPUP_WIDTH, height: POPUP_HEIGHT, focused: true })
       .then((win) => {

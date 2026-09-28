@@ -8,11 +8,11 @@ import { writeFileSync } from 'node:fs';
 // $1 を割り当てる(chrome.i18n.getMessage の substitutions は配列で渡す)。
 const ENTRIES = [
   // --- manifest ---
-  ['extName', 'ルビふり for Googleスライド', 'Furigana for Google Slides'],
+  ['extName', 'ルビふり for Googleスライド＆ドキュメント', 'Furigana for Google Slides & Docs'],
   [
     'extDescription',
-    'Googleスライドの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。',
-    'Displays and writes hiragana furigana over kanji in Google Slides.',
+    'Googleスライド・ドキュメントの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。',
+    'Displays and writes hiragana furigana over kanji in Google Slides and Google Docs.',
   ],
 
   // --- panel: static labels ---
@@ -51,6 +51,54 @@ const ENTRIES = [
     'errorReloadSlidesTab',
     'スライドのタブと通信できませんでした。スライドのページを再読み込みしてから、もう一度お試しください。',
     "Couldn't reach the slide's tab. Please reload the Google Slides page and try again.",
+  ],
+  [
+    'sidePanelNotSupported',
+    'Googleスライドまたはドキュメントを開くと、ルビを書き込めます。',
+    'Open a presentation in Google Slides or a document in Google Docs to write furigana.',
+  ],
+  [
+    'sidePanelNotDocs',
+    'Googleドキュメントの文書を開いてください。',
+    'Please open a document in Google Docs.',
+  ],
+  ['modeSlides', 'スライド', 'Slides'],
+  ['modeDocs', 'ドキュメント', 'Docs'],
+
+  // --- panel: Google Docs (v1.0.0) ---
+  ['labelDocsStyle', '見せ方', 'Style'],
+  ['docsStyleGroupAriaLabel', 'ドキュメントでのルビの見せ方', 'How furigana looks in the document'],
+  ['docsStyleTable', '漢字の上', 'Above the kanji'],
+  ['docsStyleTableCompact', '漢字の上（縮める）', 'Above the kanji (condensed)'],
+  ['docsStyleParen', '括弧書き', 'In parentheses'],
+  ['docsStyleParenSmall', '括弧書き（小さい文字）', 'In parentheses (small)'],
+  ['docsStyleSuperscript', '漢字の右上', 'Superscript'],
+  ['hintDocsSizeUnused', '括弧書き・漢字の右上では使いません。', 'Not used for "In parentheses" or "Superscript".'],
+  ['hintDocsFontUnused', '漢字の上のときだけ使います。', 'Used only for "Above the kanji".'],
+  [
+    'hintDocsColorUnused',
+    '括弧書きでは使いません(読みは本文と同じ色になります)。',
+    'Not used for "In parentheses" (the reading uses the text color).',
+  ],
+  ['sectionWriteDocs', 'ドキュメントに書き込む', 'Write to document'],
+  ['btnDocsWrite', 'ルビをふる', 'Add furigana'],
+  ['btnDocsDelete', 'ルビを消す', 'Remove furigana'],
+  ['statusDocsWriting', 'ルビをふっています…', 'Adding furigana…'],
+  ['statusDocsDeleting', 'ルビを消しています…', 'Removing furigana…'],
+  ['statusDocsRefreshing', '設定を変えたので、ルビを付け直しています…', 'Settings changed — updating the furigana…'],
+  ['statusDocsWriteSuccess', 'ルビをふりました($COUNT$ か所)。', 'Added furigana ($COUNT$ places).', ['COUNT']],
+  ['statusDocsDeleteSuccess', 'ルビを消しました($COUNT$ か所)。', 'Removed furigana ($COUNT$ places).', ['COUNT']],
+  ['statusDocsRefreshed', 'ルビを付け直しました($COUNT$ か所)。', 'Updated the furigana ($COUNT$ places).', ['COUNT']],
+  [
+    'statusDocsSettingsSaved',
+    '設定を保存しました。「ルビをふる」を押すと、この設定で文書に付けます。',
+    'Settings saved. Press "Add furigana" to apply them to the document.',
+  ],
+  [
+    'statusDocsSkipped',
+    'ルビを付けた後に表が足されたり消されたりしていた $COUNT$ か所は、消さずに残しました。手で直してください。',
+    '$COUNT$ place(s) where tables were added or removed after adding furigana were left as is. Please fix them by hand.',
+    ['COUNT'],
   ],
   ['btnConfirmRun', '実行する', 'Run'],
   ['btnCancelConfirm', 'キャンセル', 'Cancel'],
@@ -114,6 +162,23 @@ const ENTRIES = [
     'PowerPoint 形式のファイル(.pptx など)のままでは書き込めません。「ファイル」→「Google スライドとして保存」で変換し、変換後のファイルでお試しください。',
     'Furigana cannot be written to a PowerPoint file (.pptx etc.) as is. Use File → Save as Google Slides, then try again in the converted file.',
   ],
+  [
+    'errorDocsFileAccessDenied',
+    'この文書へのアクセスが許可されませんでした。もう一度お試しいただき、表示された画面で文書を選んでください。',
+    'Access to this document was not granted. Please try again and select the document in the dialog.',
+  ],
+  [
+    'errorDocsOfficeFile',
+    'Word 形式のファイルのままでは、ルビをふれません。「ファイル」→「Google ドキュメントとして保存」で Googleドキュメントに変換し、開いた文書でもう一度お試しください。',
+    'Furigana cannot be added to a Word file (.docx etc.) as is. Use File → Save as Google Docs, then try again in the converted document.',
+  ],
+  [
+    'errorDocsApiFailed',
+    'Google ドキュメントとの通信に失敗しました (status: $STATUS$) $BODY$',
+    'Failed to communicate with Google Docs (status: $STATUS$) $BODY$',
+    ['STATUS', 'BODY'],
+  ],
+  ['errorDocsBodyNotFound', '文書の本文が見つかりませんでした。', "Couldn't find the document body."],
   [
     'errorKanjiReadingsLoadFailed',
     '漢字の読みデータの読み込みに失敗しました (status: $STATUS$)',

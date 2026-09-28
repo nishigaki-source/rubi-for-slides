@@ -4,7 +4,7 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex" />
-<title>ルビふり for Googleスライド - Access / アクセスの許可</title>
+<title>ルビふり - Access / アクセスの許可</title>
 <style>
   body { font-family: -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; margin: 0; padding: 32px 24px; color: #1f1f1f; background: #fff; }
   main { max-width: 560px; margin: 0 auto; text-align: center; }
@@ -18,8 +18,10 @@
 </head>
 <body>
 <main>
-  <h1 data-ja="スライドへのアクセスを許可してください" data-en="Allow access to your presentation">スライドへのアクセスを許可してください</h1>
-  <p data-ja="ルビふりが、いま開いているスライドだけを読み書きできるようにします。表示されたスライドの行をクリックして選び、「選択」を押してください。" data-en="This lets Furigana read and write only the presentation you have open. Click the presentation row in the dialog, then click Select.">
+  <h1 data-ja="スライドへのアクセスを許可してください" data-en="Allow access to your presentation"
+      data-doc-ja="ドキュメントへのアクセスを許可してください" data-doc-en="Allow access to your document">スライドへのアクセスを許可してください</h1>
+  <p data-ja="ルビふりが、いま開いているスライドだけを読み書きできるようにします。表示されたスライドの行をクリックして選び、「選択」を押してください。" data-en="This lets Furigana read and write only the presentation you have open. Click the presentation row in the dialog, then click Select."
+     data-doc-ja="ルビふりが、いま開いているドキュメントだけを読み書きできるようにします。表示されたドキュメントの行をクリックして選び、「選択」を押してください。" data-doc-en="This lets Furigana read and write only the document you have open. Click the document row in the dialog, then click Select.">
     ルビふりが、いま開いているスライドだけを読み書きできるようにします。表示されたスライドの行をクリックして選び、「選択」を押してください。
   </p>
   <p data-ja="ほかのファイルには一切アクセスしません。" data-en="No other files are accessed.">ほかのファイルには一切アクセスしません。</p>
@@ -36,11 +38,14 @@ var CLOUD_PROJECT_NUMBER = '665117522331';
 var params = new URLSearchParams(location.search);
 var extId = params.get('ext');
 var fileId = params.get('fileId');
+// kind=document: Googleドキュメント(v1.0.0 から)。無ければスライド(それより前の版はこの値を送らない)
+var isDocument = params.get('kind') === 'document';
 var lang = (navigator.language || 'en').toLowerCase().indexOf('ja') === 0 ? 'ja' : 'en';
 
 document.documentElement.lang = lang;
 document.querySelectorAll('[data-ja]').forEach(function (el) {
-  el.textContent = el.getAttribute('data-' + lang);
+  var text = isDocument && el.hasAttribute('data-doc-' + lang) ? el.getAttribute('data-doc-' + lang) : el.getAttribute('data-' + lang);
+  el.textContent = text;
 });
 
 var statusEl = document.getElementById('status');
@@ -97,7 +102,7 @@ function openPicker(token) {
     .setAppId(CLOUD_PROJECT_NUMBER)
     .setOrigin(location.protocol + '//' + location.host)
     .setLocale(lang)
-    .setTitle(msg('スライドを選択', 'Select the presentation'))
+    .setTitle(isDocument ? msg('ドキュメントを選択', 'Select the document') : msg('スライドを選択', 'Select the presentation'))
     .setCallback(function (data) {
       var action = data[google.picker.Response.ACTION];
       if (action === google.picker.Action.PICKED) {
@@ -107,7 +112,9 @@ function openPicker(token) {
           setStatus(msg('許可されました。このウィンドウは自動で閉じます。', 'Access granted. This window will close automatically.'));
           finish(true);
         } else {
-          setStatus(msg('いま開いているスライドを選んでください。', 'Please select the presentation you have open.'), true);
+          setStatus(isDocument
+            ? msg('いま開いているドキュメントを選んでください。', 'Please select the document you have open.')
+            : msg('いま開いているスライドを選んでください。', 'Please select the presentation you have open.'), true);
           retryBtn.hidden = false;
         }
       } else if (action === google.picker.Action.CANCEL) {

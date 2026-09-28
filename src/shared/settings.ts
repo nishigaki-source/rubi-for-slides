@@ -5,6 +5,19 @@
 import { isSkipKanjiSetting, skipKanjiFromLegacyGrade, type SkipKanjiSetting } from '../core/knownKanji';
 import type { RubyMode } from '../core/types';
 
+/**
+ * ドキュメントでの見せ方(PLAN.md 2.1節、2026-09-28 決定)。既定は 'table'(E)。
+ * - 'table': E. 表ルビ / 'table-compact': F. 表ルビ(読みが長い語は読みを縮める)
+ * - 'paren': A. 括弧書き / 'paren-small': B. 括弧書き(小さい文字) / 'superscript': C. 上付き
+ */
+export type DocsRubyStyle = 'table' | 'table-compact' | 'paren' | 'paren-small' | 'superscript';
+
+export const DOCS_RUBY_STYLES: readonly DocsRubyStyle[] = ['table', 'table-compact', 'paren', 'paren-small', 'superscript'];
+
+export function isDocsRubyStyle(value: unknown): value is DocsRubyStyle {
+  return typeof value === 'string' && (DOCS_RUBY_STYLES as readonly string[]).includes(value);
+}
+
 export interface RubiSettings {
   /** ルビ表示の ON/OFF */
   enabled: boolean;
@@ -25,6 +38,8 @@ export interface RubiSettings {
    * v0.7.0 で追加、利用者からの要望)。漢字ごとに分けられない語は熟語ルビになる。
    */
   rubyMode: RubyMode;
+  /** ドキュメントでの見せ方(スライドでは使わない) */
+  docsStyle: DocsRubyStyle;
 }
 
 export const DEFAULT_SETTINGS: RubiSettings = {
@@ -34,6 +49,7 @@ export const DEFAULT_SETTINGS: RubiSettings = {
   fontFamily: 'Arial',
   color: '#1a1a1a',
   rubyMode: 'per-kanji',
+  docsStyle: 'table',
 };
 
 const STORAGE_KEY = 'rubiSettings';
@@ -48,7 +64,8 @@ export function normalizeSettings(value: unknown): RubiSettings {
   };
   const { gradeFilterMaxGrade, ...rest } = raw;
   const skipKanji = isSkipKanjiSetting(rest.skipKanji) ? rest.skipKanji : skipKanjiFromLegacyGrade(gradeFilterMaxGrade);
-  return { ...DEFAULT_SETTINGS, ...rest, skipKanji };
+  const docsStyle = isDocsRubyStyle(rest.docsStyle) ? rest.docsStyle : DEFAULT_SETTINGS.docsStyle;
+  return { ...DEFAULT_SETTINGS, ...rest, skipKanji, docsStyle };
 }
 
 export async function loadSettings(): Promise<RubiSettings> {

@@ -20,7 +20,16 @@
     border-bottom: 1px solid #eee;
   }
   .header img { width: 22px; height: 22px; border-radius: 5px; }
-  .title { margin: 0; font-size: 15px; font-weight: 600; }
+  .title { margin: 0; font-size: 15px; font-weight: 600; flex: 1; white-space: nowrap; }
+  .title { display: flex; align-items: center; }
+  /* 見出しの「スライド」「ドキュメント」のバッジ(スライドは薄いイエロー、ドキュメントは薄いブルー) */
+  .title .modeName {
+    margin-left: 8px; padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 11px; font-weight: 600; line-height: 16px;
+  }
+  body[data-kind='slides'] .modeName { background: #fef7e0; color: #8a6100; border: 1px solid #f9e3a7; }
+  body[data-kind='docs'] .modeName { background: #e8f0fe; color: #1967d2; border: 1px solid #c6dafc; }
   .body { padding: 4px 16px 16px; }
 
   .notice {
@@ -128,24 +137,43 @@
     background: #fff; color: #3c4043; cursor: pointer;
   }
 
-  #writeStatus { min-height: 16px; margin-top: 10px; font-size: 12px; color: #5f6368; }
+  #writeStatus { min-height: 16px; margin-top: 10px; font-size: 12px; color: #5f6368; white-space: pre-line; }
   #writeStatus.error { color: #c5221f; }
   #writeStatus.success { color: #188038; }
+
+  /* 画面の種類(body の data-kind: slides / docs)で、スライド用・ドキュメント用の部分を出し分ける */
+  body:not([data-kind='slides']) .slidesOnly { display: none !important; }
+  body:not([data-kind='docs']) .docsOnly { display: none !important; }
+  .choices { display: grid; gap: 4px; }
+  .choice {
+    display: flex; align-items: center; gap: 6px;
+    padding: 6px 8px;
+    border: 1px solid #dadce0; border-radius: 6px;
+    font-size: 12px; cursor: pointer;
+  }
+  .choice input { margin: 0; accent-color: #1a73e8; }
+  .choice:has(input:checked) { border-color: #1a73e8; background: #e8f0fe; }
+  .segBtn:disabled { opacity: 0.45; cursor: default; background: #f1f3f4; }
+  .segBtn.active:disabled { background: #8ab4f8; border-color: #8ab4f8; }
+  select:disabled, input[type='color']:disabled { opacity: 0.45; cursor: default; }
+  .fieldHint { margin-top: 4px; font-size: 11px; color: #5f6368; }
+  .fieldHint[hidden] { display: none; }
+  button.secondary.wide { width: 100%; }
 
   .footer { margin-top: 14px; padding-top: 12px; border-top: 1px solid #eee; }
   .footer a { font-size: 12px; color: #1a73e8; text-decoration: none; }
   .footer a:hover { text-decoration: underline; }
 </style>
 </head>
-<body>
+<body data-kind="slides">
   <div class="header">
     <img src="/icons/icon48.png" alt="" />
-    <h1 class="title" data-i18n="panelTitle"></h1>
+    <h1 class="title"><span data-i18n="panelTitle"></span><span class="modeName" id="modeName"></span></h1>
   </div>
   <div class="body">
-    <div class="notice" id="notSlidesNotice" data-i18n="sidePanelNotSlides" hidden></div>
+    <div class="notice" id="notSupportedNotice" data-i18n="sidePanelNotSupported" hidden></div>
 
-    <div class="toggleRow">
+    <div class="toggleRow slidesOnly">
       <label for="enabled" data-i18n="toggleShowRuby"></label>
       <label class="switch">
         <input type="checkbox" id="enabled" />
@@ -155,6 +183,14 @@
 
     <div class="sectionLabel" data-i18n="sectionAppearance"></div>
     <div class="grid">
+      <label class="top docsOnly" data-i18n="labelDocsStyle"></label>
+      <div class="choices docsOnly" id="docsStyleGroup" role="radiogroup" data-i18n-aria-label="docsStyleGroupAriaLabel">
+        <label class="choice"><input type="radio" name="docsStyle" value="table" /><span data-i18n="docsStyleTable"></span></label>
+        <label class="choice"><input type="radio" name="docsStyle" value="table-compact" /><span data-i18n="docsStyleTableCompact"></span></label>
+        <label class="choice"><input type="radio" name="docsStyle" value="paren" /><span data-i18n="docsStyleParen"></span></label>
+        <label class="choice"><input type="radio" name="docsStyle" value="paren-small" /><span data-i18n="docsStyleParenSmall"></span></label>
+        <label class="choice"><input type="radio" name="docsStyle" value="superscript" /><span data-i18n="docsStyleSuperscript"></span></label>
+      </div>
       <label data-i18n="labelRubyMode"></label>
       <div class="segGroup" id="rubyModeGroup" role="group" data-i18n-aria-label="rubyModeGroupAriaLabel">
         <button type="button" class="segBtn" data-mode="per-kanji" data-i18n="rubyModePerKanji"></button>
@@ -167,12 +203,19 @@
           <button type="button" class="segBtn" data-size="medium" data-i18n="sizeMedium"></button>
           <button type="button" class="segBtn" data-size="large" data-i18n="sizeLarge"></button>
         </div>
-        <div class="sizeHint" id="sizeHint" role="status"></div>
+        <div class="sizeHint slidesOnly" id="sizeHint" role="status"></div>
+        <div class="fieldHint docsOnly" id="docsSizeHint" data-i18n="hintDocsSizeUnused" hidden></div>
       </div>
-      <label for="fontFamily" data-i18n="labelFont"></label>
-      <select id="fontFamily"></select>
-      <label for="color" data-i18n="labelColor"></label>
-      <input type="color" id="color" />
+      <label class="top" for="fontFamily" data-i18n="labelFont"></label>
+      <div>
+        <select id="fontFamily"></select>
+        <div class="fieldHint docsOnly" id="docsFontHint" data-i18n="hintDocsFontUnused" hidden></div>
+      </div>
+      <label class="top" for="color" data-i18n="labelColor"></label>
+      <div>
+        <input type="color" id="color" />
+        <div class="fieldHint docsOnly" id="docsColorHint" data-i18n="hintDocsColorUnused" hidden></div>
+      </div>
       <label for="skipKanji" data-i18n="labelGradeFilter"></label>
       <select id="skipKanji">
         <option value="none" data-i18n="gradeFilterNone"></option>
@@ -194,22 +237,28 @@
       </select>
     </div>
 
-    <div class="sectionLabel" data-i18n="sectionWrite"></div>
-    <div class="btnRow">
+    <div class="sectionLabel slidesOnly" data-i18n="sectionWrite"></div>
+    <div class="btnRow slidesOnly">
       <button type="button" class="primary" id="writeCurrentSlide" data-i18n="btnCurrentSlide"></button>
       <button type="button" class="primary" id="writeAllSlides" data-i18n="btnAllSlides"></button>
     </div>
-    <label class="checkRow">
+    <label class="checkRow slidesOnly">
       <input type="checkbox" id="groupWithOriginal" />
       <span data-i18n="labelGroupWithOriginal"></span>
     </label>
 
-    <div id="deleteSection" hidden>
+    <div id="deleteSection" class="slidesOnly" hidden>
       <div class="sectionLabel" data-i18n="sectionDelete"></div>
       <div class="btnRow">
         <button type="button" class="secondary" id="deleteCurrentSlide" data-i18n="btnCurrentSlide"></button>
         <button type="button" class="secondary" id="deleteAllSlides" data-i18n="btnAllSlides"></button>
       </div>
+    </div>
+
+    <div class="sectionLabel docsOnly" data-i18n="sectionWriteDocs"></div>
+    <div class="btnRow docsOnly">
+      <button type="button" class="primary" id="docsWrite" data-i18n="btnDocsWrite"></button>
+      <button type="button" class="secondary" id="docsDelete" data-i18n="btnDocsDelete"></button>
     </div>
 
     <div class="confirmBox" id="confirmBox" role="alertdialog" hidden>
