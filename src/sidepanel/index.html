@@ -39,6 +39,26 @@
   }
   .notice[hidden] { display: none; }
 
+  /* ドキュメントで、ルビを付け直している間の「変換中」の表示。長い文書では数十秒かかるので、エラーと見間違えないようにする */
+  .progress {
+    position: sticky; top: 0; z-index: 2;
+    display: flex; align-items: flex-start; gap: 10px;
+    margin: 10px 0 4px; padding: 10px 12px;
+    border: 1px solid #c6dafc; border-radius: 8px; background: #e8f0fe; color: #174ea6;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.25);
+    font-size: 12px;
+  }
+  .progress[hidden] { display: none; }
+  .progressTitle { font-size: 13px; font-weight: 600; }
+  .progressSub { margin-top: 2px; color: #3c4043; }
+  .spinner {
+    flex: none; width: 16px; height: 16px; margin-top: 1px;
+    border: 2px solid #aecbfa; border-top-color: #1a73e8; border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spinner { animation-duration: 3s; } }
+
   .toggleRow {
     display: flex; align-items: center; justify-content: space-between;
     padding: 12px 0;
@@ -89,6 +109,7 @@
     font-size: 12px; cursor: pointer;
   }
   .segBtn:hover:not(.active) { background: #f1f3f4; }
+  label.choice:has(input:disabled) { opacity: 0.55; cursor: default; }
   .segBtn.active { background: #1a73e8; border-color: #1a73e8; color: #fff; font-weight: 500; }
   .sizeHint { min-height: 14px; margin-top: 4px; font-size: 11px; color: #5f6368; }
   input[type='color'] {
@@ -172,6 +193,13 @@
   </div>
   <div class="body">
     <div class="notice" id="notSupportedNotice" data-i18n="sidePanelNotSupported" hidden></div>
+    <div class="progress docsOnly" id="docsProgress" role="status" aria-live="polite" hidden>
+      <span class="spinner" aria-hidden="true"></span>
+      <div>
+        <div class="progressTitle" id="docsProgressTitle"></div>
+        <div class="progressSub" data-i18n="docsProgressHint"></div>
+      </div>
+    </div>
 
     <div class="toggleRow slidesOnly">
       <label for="enabled" data-i18n="toggleShowRuby"></label>

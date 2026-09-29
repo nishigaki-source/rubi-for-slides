@@ -34,6 +34,20 @@
   "hintZhDictUnused": {
     "message": "The user dictionary is not available for pinyin yet."
   },
+  "docsProgressRefreshing": {
+    "message": "Converting…"
+  },
+  "docsProgressHint": {
+    "message": "This can take tens of seconds for a long document. Settings are locked until it finishes."
+  },
+  "docsProgressElapsed": {
+    "message": "$SECONDS$ s elapsed",
+    "placeholders": {
+      "SECONDS": {
+        "content": "$1"
+      }
+    }
+  },
   "labelRubyMode": {
     "message": "Placement"
   },

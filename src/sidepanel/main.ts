@@ -88,6 +88,8 @@ function loadMode(): PanelMode {
 }
 
 let busy = false;
+/** ドキュメントのルビを付け直している(ふる・消すも含む)間 true。見た目の設定を押せなくする */
+let docsLocked = false;
 let mode: PanelMode = loadMode();
 let activeKind: TabKind = null;
 let activeSlidesTabId: number | null = null;
@@ -179,12 +181,16 @@ function applyFieldStates(): void {
   const fontUnused = docs && docsFontUnused(currentDocsStyle);
   const colorUnused = docs && docsColorUnused(currentDocsStyle);
   const zh = !docs && lastSettings.slidesRubyLanguage === 'zh';
-  rubyModeButtons.forEach((b) => (b.disabled = zh)); // 拼音は漢字1文字に1音節。振り方は選べない
-  skipKanjiEl.disabled = zh; // 省く漢字(学年・JLPT)は日本語用
+  // ドキュメントでルビを付け直している間は、見た目の設定をすべて押せなくする(押せると、続けて別の付け直しが
+  // 走って、いつまでも新しいルビが出ないように見える)
+  const locked = docs && docsLocked;
+  docsStyleInputs.forEach((input) => (input.disabled = locked));
+  rubyModeButtons.forEach((b) => (b.disabled = zh || locked)); // 拼音は漢字1文字に1音節。振り方は選べない
+  skipKanjiEl.disabled = zh || locked; // 省く漢字(学年・JLPT)は日本語用
   zhDictHintEl.hidden = !zh; // ユーザー辞書は、読みがひらがなのものだけ(拼音はまだ)
-  sizeButtons.forEach((b) => (b.disabled = sizeUnused));
-  fontFamilyEl.disabled = fontUnused;
-  colorEl.disabled = colorUnused;
+  sizeButtons.forEach((b) => (b.disabled = sizeUnused || locked));
+  fontFamilyEl.disabled = fontUnused || locked;
+  colorEl.disabled = colorUnused || locked;
   docsSizeHintEl.hidden = !sizeUnused;
   docsFontHintEl.hidden = !fontUnused;
   docsColorHintEl.hidden = !colorUnused;
@@ -236,9 +242,11 @@ async function persist(): Promise<void> {
     slidesRubyLanguage: rubyLanguageEl.value === 'zh' ? 'zh' : 'ja',
   };
   lastSettings = next;
+  const willRefresh = mode === 'docs' && docsTarget !== null && docsRefreshNeeded(prev, next);
+  if (willRefresh) startDocsProgress(t('docsProgressRefreshing')); // 保存を待たずに、すぐ「変換中」にする
   applyFieldStates();
   await saveSettings(next);
-  if (mode === 'docs' && docsRefreshNeeded(prev, next)) scheduleDocsRefresh();
+  if (willRefresh) startDocsRefresh();
 }
 
 /**
@@ -456,22 +464,58 @@ deleteAllBtn.addEventListener('click', () => {
 
 // --- ドキュメントへの書き込み・削除(service worker に依頼する) ---
 
-/** 設定を変えたときの自動の付け直し(少し待ってから1回だけ送る。処理中なら終わってから) */
-const DOCS_REFRESH_DELAY_MS = 700;
-let docsRefreshTimer: ReturnType<typeof setTimeout> | undefined;
+/**
+ * 設定を変えたときの自動の付け直し。以前は 0.7 秒待って、続けて変えた分をまとめていたが、変換中は設定を
+ * 押せなくしたので、まとめる必要はない(待つと、その間に別の見せ方を選べてしまう)。
+ */
 let docsRefreshPending = false;
 
-function scheduleDocsRefresh(): void {
-  if (docsTarget === null) return;
-  if (docsRefreshTimer !== undefined) clearTimeout(docsRefreshTimer);
-  docsRefreshTimer = setTimeout(() => {
-    docsRefreshTimer = undefined;
-    if (busy) {
-      docsRefreshPending = true; // 今の処理が終わってから付け直す
-      return;
-    }
-    void runDocs('refresh');
-  }, DOCS_REFRESH_DELAY_MS);
+function startDocsRefresh(): void {
+  if (docsTarget === null) {
+    endDocsProgress(); // 文書が閉じられたなど。押せないままにならないよう、解除する
+    return;
+  }
+  if (busy) {
+    docsRefreshPending = true; // 今の処理が終わってから付け直す
+    return;
+  }
+  void runDocs('refresh');
+}
+
+// --- 「変換中」の表示(ドキュメント。長い文書では数十秒かかるので、経過秒数も出してエラーと見間違えないようにする) ---
+
+const docsProgressEl = qs<HTMLDivElement>('#docsProgress');
+const docsProgressTitleEl = qs<HTMLDivElement>('#docsProgressTitle');
+let docsProgressLabel = '';
+let docsProgressStartedAt = 0;
+let docsProgressTimer: ReturnType<typeof setInterval> | undefined;
+
+function renderDocsProgress(): void {
+  const seconds = Math.floor((Date.now() - docsProgressStartedAt) / 1000);
+  docsProgressTitleEl.textContent = seconds >= 2 ? `${docsProgressLabel} (${t('docsProgressElapsed', String(seconds))})` : docsProgressLabel;
+}
+
+/** 「変換中」を出して、見た目の設定を押せなくする。すでに出ているときは、文言だけ変える(経過秒数は続ける)。 */
+function startDocsProgress(label: string): void {
+  docsProgressLabel = label;
+  if (!docsLocked) {
+    docsProgressStartedAt = Date.now();
+    docsLocked = true;
+    applyFieldStates();
+    docsProgressTimer = setInterval(renderDocsProgress, 1000);
+  }
+  docsProgressEl.hidden = false;
+  renderDocsProgress();
+}
+
+function endDocsProgress(): void {
+  clearInterval(docsProgressTimer);
+  docsProgressTimer = undefined;
+  docsProgressEl.hidden = true;
+  if (docsLocked) {
+    docsLocked = false;
+    applyFieldStates();
+  }
 }
 
 const DOCS_STATUS: Record<'write' | 'delete' | 'refresh', string> = {
@@ -489,6 +533,7 @@ async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'refre
   if (docsTarget === null) return;
   busy = true;
   updateButtonsEnabled();
+  startDocsProgress(t(command === 'refresh' ? 'docsProgressRefreshing' : DOCS_STATUS[command]));
   setWriteStatus(t(DOCS_STATUS[command]), 'info');
   try {
     const request: DocsCommandRequest = {
@@ -517,7 +562,9 @@ async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'refre
     updateButtonsEnabled();
     if (docsRefreshPending) {
       docsRefreshPending = false;
-      void runDocs('refresh');
+      void runDocs('refresh'); // 続けて付け直す(「変換中」のまま)
+    } else {
+      endDocsProgress();
     }
   }
 }

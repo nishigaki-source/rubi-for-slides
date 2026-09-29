@@ -34,6 +34,20 @@
   "hintZhDictUnused": {
     "message": "中国語の拼音では、ユーザー辞書はまだ使えません。"
   },
+  "docsProgressRefreshing": {
+    "message": "変換中…"
+  },
+  "docsProgressHint": {
+    "message": "文書の長さによって、数十秒かかることがあります。終わるまで、設定は変えられません。"
+  },
+  "docsProgressElapsed": {
+    "message": "$SECONDS$ 秒経過",
+    "placeholders": {
+      "SECONDS": {
+        "content": "$1"
+      }
+    }
+  },
   "labelRubyMode": {
     "message": "振り方"
   },

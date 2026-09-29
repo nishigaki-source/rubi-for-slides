@@ -23,6 +23,10 @@ interface FakeChromeOptions {
   settings?: Record<string, unknown>;
   /** スライドのタブ(content script)が、パネルの指示に返す答え。省略時は「ルビの大きさの一覧なし」 */
   tabResponse?: unknown;
+  /** ドキュメントの指示(ふる・消す・付け直す)の答えが返るまでの時間(ms)。長い文書で時間がかかる様子を再現する */
+  docsDelayMs?: number;
+  /** 付け直しの答えで、実際に付け直したか(ルビが付いていない文書では false) */
+  docsRefreshed?: boolean;
 }
 
 /** ページに Chrome の機能の代わりを入れる。送った指示は window.__sent に、保存した設定は window.__store に残る */
@@ -68,7 +72,8 @@ async function openPanel(page: Page, options: FakeChromeOptions): Promise<void> 
           getManifest: () => ({ version: '1.0.0' }),
           sendMessage: async (message: { command?: string }) => {
             sent.push(message);
-            if (message.command === 'refresh') return { ok: true, count: 5, refreshed: true };
+            if (opts.docsDelayMs) await new Promise((resolve) => setTimeout(resolve, opts.docsDelayMs));
+            if (message.command === 'refresh') return { ok: true, count: 5, refreshed: opts.docsRefreshed ?? true };
             return { ok: true, count: 5 };
           },
           openOptionsPage: async () => {
@@ -170,14 +175,10 @@ test.describe('ドキュメント', () => {
     await expect(page.locator('#color')).toBeEnabled();
   });
 
-  test('設定を続けて変えると、少し待ってから付け直しの指示を1回だけ送る(文書・タブ・ブラウザのタブの ID 付き)', async ({ page }) => {
+  test('設定を変えると、すぐに付け直しの指示を送る(文書・タブ・ブラウザのタブの ID 付き)', async ({ page }) => {
     await openPanel(page, { url: DOCS_URL });
     await sizeButton(page, 'small').click();
-    await sizeButton(page, 'large').click();
-    await sizeButton(page, 'medium').click();
     await expect.poll(() => commands(page)).toEqual(['refresh']);
-    await page.waitForTimeout(1000);
-    expect(await commands(page)).toEqual(['refresh']);
     expect((await sent(page))[0]).toMatchObject({
       type: 'rubi-docs/command',
       command: 'refresh',
@@ -186,7 +187,11 @@ test.describe('ドキュメント', () => {
       browserTabId: 7,
     });
     await expect(page.locator('#writeStatus')).toContainText('ルビを付け直しました(5 か所)');
-    expect(await stored<number>(page, 'sizeRatio')).toBe(0.5);
+    expect(await stored<number>(page, 'sizeRatio')).toBe(0.35);
+
+    await sizeButton(page, 'large').click();
+    await expect.poll(() => commands(page)).toEqual(['refresh', 'refresh']);
+    expect(await stored<number>(page, 'sizeRatio')).toBe(0.65);
   });
 
   test('見せ方・省く漢字を変えると保存して付け直す。使わない設定だけの変更では付け直さない', async ({ page }) => {
@@ -308,3 +313,68 @@ test.describe('ルビの言語(日本語のふりがな / 中国語の拼音。�
     expect(await commands(page)).toEqual([]);
   });
 });
+
+test.describe('ドキュメントの付け直し中は「変換中」を出して、見た目の設定を押せなくする', () => {
+  const lockedControls = (page: Page) => [
+    page.locator('input[name="docsStyle"]'),
+    page.locator('#rubyModeGroup .segBtn'),
+    page.locator('#sizeGroup .segBtn'),
+    page.locator('#fontFamily'),
+    page.locator('#color'),
+    page.locator('#skipKanji'),
+  ];
+
+  test('見せ方を変えると、すぐに「変換中」と経過秒数を出し、終わるまで見た目の設定を押せない。終わったら戻る', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, docsDelayMs: 2500 });
+    await expect(page.locator('#docsProgress')).toBeHidden();
+    await styleChoice(page, 'paren').click();
+
+    // 指示の答えを待っている間
+    await expect(page.locator('#docsProgress')).toBeVisible();
+    await expect(page.locator('#docsProgressTitle')).toContainText('変換中');
+    await expect(page.locator('#docsProgress')).toContainText('数十秒かかることがあります');
+    for (const control of lockedControls(page)) {
+      for (const element of await control.all()) await expect(element).toBeDisabled();
+    }
+    await expect(page.locator('#docsProgressTitle')).toContainText('秒経過', { timeout: 4000 });
+    // 押せない間に別の見せ方を押そうとしても、指示は増えない
+    await styleChoice(page, 'paren-small').click({ force: true });
+    expect(await commands(page)).toEqual(['refresh']);
+    expect(await stored<string>(page, 'docsStyle')).toBe('paren');
+
+    // 終わったら、表示を消して押せるようにする
+    await expect(page.locator('#docsProgress')).toBeHidden({ timeout: 6000 });
+    await expect(page.locator('#writeStatus')).toContainText('ルビを付け直しました');
+    await expect(page.locator('input[name="docsStyle"]').first()).toBeEnabled();
+    await expect(page.locator('#skipKanji')).toBeEnabled();
+    // 括弧書きではフォントを使わないので、終わったあとも押せない(見せ方による「使わない設定」は元の状態に戻る)
+    await expect(page.locator('#fontFamily')).toBeDisabled();
+  });
+
+  test('ルビが付いていない文書(付け直すものが無い)でも、終わったら押せるようになる', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, docsDelayMs: 300, docsRefreshed: false });
+    await styleChoice(page, 'table-compact').click();
+    await expect(page.locator('#docsProgress')).toBeHidden({ timeout: 4000 });
+    await expect(page.locator('#writeStatus')).toContainText('設定を保存しました');
+    await expect(page.locator('input[name="docsStyle"]').first()).toBeEnabled();
+    await expect(page.locator('#skipKanji')).toBeEnabled();
+  });
+
+  test('「ルビをふる」「ルビを消す」の間も「変換中」を出して、押せなくする', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, docsDelayMs: 1500 });
+    await page.locator('#docsWrite').click();
+    await expect(page.locator('#docsProgress')).toBeVisible();
+    await expect(page.locator('#docsProgressTitle')).toContainText('ルビをふっています');
+    await expect(page.locator('#skipKanji')).toBeDisabled();
+    await expect(page.locator('#docsProgress')).toBeHidden({ timeout: 5000 });
+    await expect(page.locator('#skipKanji')).toBeEnabled();
+  });
+
+  test('スライドのタブでは「変換中」を出さず、設定も押せなくしない', async ({ page }) => {
+    await openPanel(page, { url: SLIDES_URL, docsDelayMs: 1500 });
+    await page.locator('#skipKanji').selectOption('grade-2');
+    await expect(page.locator('#docsProgress')).toBeHidden();
+    await expect(page.locator('#skipKanji')).toBeEnabled();
+  });
+});
+

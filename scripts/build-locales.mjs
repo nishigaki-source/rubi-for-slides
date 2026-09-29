@@ -29,6 +29,13 @@ const ENTRIES = [
   ['rubyLanguageJa', '日本語のふりがな', 'Japanese furigana'],
   ['rubyLanguageZh', '中国語の拼音(簡体字)', 'Chinese pinyin (Simplified)'],
   ['hintZhDictUnused', '中国語の拼音では、ユーザー辞書はまだ使えません。', 'The user dictionary is not available for pinyin yet.'],
+  ['docsProgressRefreshing', '変換中…', 'Converting…'],
+  [
+    'docsProgressHint',
+    '文書の長さによって、数十秒かかることがあります。終わるまで、設定は変えられません。',
+    'This can take tens of seconds for a long document. Settings are locked until it finishes.',
+  ],
+  ['docsProgressElapsed', '$SECONDS$ 秒経過', '$SECONDS$ s elapsed', ['SECONDS']],
   ['labelRubyMode', '振り方', 'Placement'],
   ['rubyModeGroupAriaLabel', 'ルビの振り方', 'How furigana is placed'],
   ['rubyModePerKanji', '漢字ごと', 'Per kanji'],
