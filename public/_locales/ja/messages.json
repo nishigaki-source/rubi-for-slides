@@ -14,6 +14,14 @@
   "sectionAppearance": {
     "message": "ルビの見た目"
   },
+  "warnFontPdf": {
+    "message": "本文のフォントが「$FONTS$」です。日本語の文字を含まないフォントなので、PDF や印刷では本文の幅が変わり、ルビがずれることがあります。本文を日本語のフォント(Noto Sans JP など)に変えてから、もう一度書き込んでください。",
+    "placeholders": {
+      "FONTS": {
+        "content": "$1"
+      }
+    }
+  },
   "labelRubyMode": {
     "message": "振り方"
   },

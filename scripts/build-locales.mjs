@@ -19,6 +19,12 @@ const ENTRIES = [
   ['panelTitle', 'ルビふり', 'Furigana'],
   ['toggleShowRuby', 'ルビを表示', 'Show furigana'],
   ['sectionAppearance', 'ルビの見た目', 'Furigana appearance'],
+  [
+    'warnFontPdf',
+    '本文のフォントが「$FONTS$」です。日本語の文字を含まないフォントなので、PDF や印刷では本文の幅が変わり、ルビがずれることがあります。本文を日本語のフォント(Noto Sans JP など)に変えてから、もう一度書き込んでください。',
+    'The body font is "$FONTS$", which has no Japanese glyphs. In PDF export and printing, Google substitutes another font, so the text width changes and furigana can drift. Change the body font to a Japanese font (e.g. Noto Sans JP) and write again.',
+    ['FONTS'],
+  ],
   ['labelRubyMode', '振り方', 'Placement'],
   ['rubyModeGroupAriaLabel', 'ルビの振り方', 'How furigana is placed'],
   ['rubyModePerKanji', '漢字ごと', 'Per kanji'],

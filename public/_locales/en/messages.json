@@ -14,6 +14,14 @@
   "sectionAppearance": {
     "message": "Furigana appearance"
   },
+  "warnFontPdf": {
+    "message": "The body font is \"$FONTS$\", which has no Japanese glyphs. In PDF export and printing, Google substitutes another font, so the text width changes and furigana can drift. Change the body font to a Japanese font (e.g. Noto Sans JP) and write again.",
+    "placeholders": {
+      "FONTS": {
+        "content": "$1"
+      }
+    }
+  },
   "labelRubyMode": {
     "message": "Placement"
   },

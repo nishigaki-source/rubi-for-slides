@@ -23,6 +23,8 @@ import {
 } from '../core/messages';
 import { findMatchingShapeObjectId, isCenterInsideAny } from '../core/shapeMatcher';
 import type { RecenterCorrection, RubyWriteItem } from '../core/slidesRequests';
+import { firstFontFamily, isLatinOnlyFont } from '../core/fontCoverage';
+import { isKanji } from '../core/kana';
 import { parseSlidesUrl } from '../core/slidesUrl';
 import { isOfficeFileOpen } from './officeFile';
 import { t } from '../shared/i18n';
@@ -35,9 +37,13 @@ import { navigateToSlide } from './slideNavigator';
 import { tokenizeText } from './tokenizeClient';
 import { extractParagraphs } from './textExtractor';
 
-export type WriteResult = { ok: true; writtenCount: number } | { ok: false; message: string };
+/**
+ * latinOnlyFonts: 書き込んだルビの本文が、日本語の文字を含まないフォント(Arial など)だった場合のフォント名。
+ * PDF・印刷でルビがずれる原因になるので、設定パネルで警告する(src/core/fontCoverage.ts)。
+ */
+export type WriteResult = { ok: true; writtenCount: number; latinOnlyFonts: string[] } | { ok: false; message: string };
 export type WriteAllResult =
-  | { ok: true; writtenCount: number; slideCount: number; failedSlideCount: number }
+  | { ok: true; writtenCount: number; slideCount: number; failedSlideCount: number; latinOnlyFonts: string[] }
   | { ok: false; message: string };
 export type DeleteResult = { ok: true; deletedCount: number } | { ok: false; message: string };
 
@@ -241,6 +247,7 @@ async function writeRubyToPage(
   const paragraphs = extractParagraphs();
   const items: RubyWriteItem[] = [];
   const pendingItems: PendingRubyItem[] = [];
+  const latinOnlyFonts = new Set<string>();
 
   for (const paragraph of paragraphs) {
     if (paragraph.text.trim().length === 0) continue;
@@ -266,6 +273,7 @@ async function writeRubyToPage(
       { minFontSizePx: pointToPxFontSize(MIN_WRITTEN_RUBY_FONT_PT, pageContainerPx, pageInfo.pageSizeEmu) }
     );
     if (plan.length === 0) continue;
+    collectLatinOnlyFonts(paragraph, latinOnlyFonts);
 
     const firstBoxEmu = pxRectToEmuRect(plan[0]!.box, pageContainerPx, pageInfo.pageSizeEmu);
     // 本文が空のプレースホルダーに編集画面だけ表示される案内文(「クリックしてテキストを追加」)には
@@ -301,7 +309,7 @@ async function writeRubyToPage(
   }
 
   if (items.length === 0) {
-    return { ok: true, writtenCount: 0 };
+    return { ok: true, writtenCount: 0, latinOnlyFonts: [] };
   }
 
   const writeReq: WriteRubyRequest = {
@@ -317,7 +325,18 @@ async function writeRubyToPage(
     return { ok: false, message: writeRes.message };
   }
   await recenterByDom(pendingItems, measurePagePx, pageInfo.pageSizeEmu, presentationId);
-  return { ok: true, writtenCount: writeRes.writtenCount };
+  return { ok: true, writtenCount: writeRes.writtenCount, latinOnlyFonts: [...latinOnlyFonts] };
+}
+
+/** 段落の漢字の本文フォントのうち、日本語の文字を含まないもの(Arial など)の名前を集める。 */
+function collectLatinOnlyFonts(paragraph: { chars: { el: Element; char: string }[] }, into: Set<string>): void {
+  const seen = new Set<Element>();
+  for (const c of paragraph.chars) {
+    if (!isKanji(c.char) || seen.has(c.el)) continue;
+    seen.add(c.el);
+    const family = getComputedStyle(c.el).fontFamily;
+    if (isLatinOnlyFont(family)) into.add(firstFontFamily(family));
+  }
 }
 
 /** 現在表示中のスライド1枚に、画面表示中のルビと同じ内容を実際のテキストボックスとして書き込む。 */
@@ -362,6 +381,7 @@ export async function writeRubyToAllSlides(options: WriteOptions): Promise<Write
 
   let totalWritten = 0;
   let failedSlideCount = 0;
+  const latinOnlyFonts = new Set<string>();
 
   for (const pageObjectId of pageObjectIds) {
     const navigated = await navigateToSlide(pageObjectId);
@@ -372,6 +392,7 @@ export async function writeRubyToAllSlides(options: WriteOptions): Promise<Write
     const result = await writeRubyToPage(parsed.presentationId, pageObjectId, options);
     if (result.ok) {
       totalWritten += result.writtenCount;
+      result.latinOnlyFonts.forEach((f) => latinOnlyFonts.add(f));
     } else {
       failedSlideCount += 1;
     }
@@ -383,7 +404,13 @@ export async function writeRubyToAllSlides(options: WriteOptions): Promise<Write
     return { ok: false, message: t('errorAllSlidesFailed') };
   }
 
-  return { ok: true, writtenCount: totalWritten, slideCount: pageObjectIds.length, failedSlideCount };
+  return {
+    ok: true,
+    writtenCount: totalWritten,
+    slideCount: pageObjectIds.length,
+    failedSlideCount,
+    latinOnlyFonts: [...latinOnlyFonts],
+  };
 }
 
 /** 書き込んだルビを一括削除する(要件14)。scope='current' なら現在のスライドのみ。 */

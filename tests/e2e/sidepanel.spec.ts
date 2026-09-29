@@ -21,6 +21,8 @@ const SLIDES_URL = 'https://docs.google.com/presentation/d/xyz/edit#slide=id.p';
 interface FakeChromeOptions {
   url: string;
   settings?: Record<string, unknown>;
+  /** スライドのタブ(content script)が、パネルの指示に返す答え。省略時は「ルビの大きさの一覧なし」 */
+  tabResponse?: unknown;
 }
 
 /** ページに Chrome の機能の代わりを入れる。送った指示は window.__sent に、保存した設定は window.__store に残る */
@@ -74,7 +76,7 @@ async function openPanel(page: Page, options: FakeChromeOptions): Promise<void> 
         },
         tabs: {
           query: async () => [{ id: 7, url: opts.url, title: 'テスト' }],
-          sendMessage: async () => ({ fontSizes: null }),
+          sendMessage: async () => opts.tabResponse ?? { fontSizes: null },
           onActivated: { addListener() {} },
           onUpdated: { addListener() {} },
         },
@@ -229,3 +231,35 @@ test('「ユーザー辞書を編集」で辞書の画面を開く', async ({ pa
   await page.locator('#openOptions').click();
   await expect.poll(() => page.evaluate(() => (window as unknown as { __openedOptions?: boolean }).__openedOptions)).toBe(true);
 });
+
+test.describe('書き込み後の警告(本文が日本語を含まないフォントのとき、PDF・印刷でずれる)', () => {
+  const WRITE_OK = { ok: true, command: 'write-current', writtenCount: 12 };
+
+  test('本文が Arial などなら、書き込み後に警告を出す(フォント名入り)', async ({ page }) => {
+    await openPanel(page, { url: SLIDES_URL, tabResponse: { ...WRITE_OK, latinOnlyFonts: ['Arial'] } });
+    await expect(page.locator('#fontWarning')).toBeHidden();
+    await page.locator('#writeCurrentSlide').click();
+    await expect(page.locator('#writeStatus')).toContainText('12');
+    await expect(page.locator('#fontWarning')).toBeVisible();
+    await expect(page.locator('#fontWarning')).toContainText('Arial');
+    await expect(page.locator('#fontWarning')).toContainText('PDF');
+  });
+
+  test('日本語のフォントなら警告を出さない', async ({ page }) => {
+    await openPanel(page, { url: SLIDES_URL, tabResponse: { ...WRITE_OK, latinOnlyFonts: [] } });
+    await page.locator('#writeCurrentSlide').click();
+    await expect(page.locator('#writeStatus')).toContainText('12');
+    await expect(page.locator('#fontWarning')).toBeHidden();
+  });
+
+  test('1件も書き込まなかったときは警告を出さない', async ({ page }) => {
+    await openPanel(page, {
+      url: SLIDES_URL,
+      tabResponse: { ok: true, command: 'write-current', writtenCount: 0, latinOnlyFonts: ['Arial'] },
+    });
+    await page.locator('#writeCurrentSlide').click();
+    await expect(page.locator('#writeStatus')).toBeVisible();
+    await expect(page.locator('#fontWarning')).toBeHidden();
+  });
+});
+

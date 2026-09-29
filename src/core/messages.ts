@@ -259,8 +259,8 @@ export interface PanelCommandRequest {
 }
 
 export type PanelCommandResponse =
-  | { ok: true; command: 'write-current'; writtenCount: number }
-  | { ok: true; command: 'write-all'; writtenCount: number; slideCount: number }
+  | { ok: true; command: 'write-current'; writtenCount: number; latinOnlyFonts?: string[] }
+  | { ok: true; command: 'write-all'; writtenCount: number; slideCount: number; latinOnlyFonts?: string[] }
   | { ok: true; command: 'delete-current' | 'delete-all'; deletedCount: number }
   | { ok: false; message: string };
 

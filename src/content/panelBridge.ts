@@ -41,12 +41,23 @@ async function runCommand(req: PanelCommandRequest, deps: PanelBridgeDeps): Prom
     const result = await writeRubyToCurrentSlide(options);
     if (!result.ok) return result;
     await deps.onWriteSuccess(result.writtenCount);
-    return { ok: true, command: 'write-current', writtenCount: result.writtenCount };
+    return {
+      ok: true,
+      command: 'write-current',
+      writtenCount: result.writtenCount,
+      latinOnlyFonts: result.latinOnlyFonts,
+    };
   }
   const result = await writeRubyToAllSlides(options);
   if (!result.ok) return result;
   await deps.onWriteSuccess(result.writtenCount);
-  return { ok: true, command: 'write-all', writtenCount: result.writtenCount, slideCount: result.slideCount };
+  return {
+    ok: true,
+    command: 'write-all',
+    writtenCount: result.writtenCount,
+    slideCount: result.slideCount,
+    latinOnlyFonts: result.latinOnlyFonts,
+  };
 }
 
 /** 画面に表示中のルビのフォントサイズ(表示が OFF・ルビが無いときは null)。 */

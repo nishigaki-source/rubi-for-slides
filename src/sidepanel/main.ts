@@ -336,6 +336,14 @@ qs<HTMLAnchorElement>('#openOptions').addEventListener('click', (e) => {
 
 const groupWithOriginalEl = qs<HTMLInputElement>('#groupWithOriginal');
 const writeStatusEl = qs<HTMLDivElement>('#writeStatus');
+const fontWarningEl = qs<HTMLDivElement>('#fontWarning');
+
+/** 書き込んだ本文が日本語を含まないフォント(Arial など)だったとき、PDF・印刷でずれる可能性を知らせる。 */
+function showFontWarning(fonts: string[] | undefined): void {
+  const list = fonts ?? [];
+  fontWarningEl.hidden = list.length === 0;
+  fontWarningEl.textContent = list.length === 0 ? '' : t('warnFontPdf', list.join('・'));
+}
 const deleteSectionEl = qs<HTMLDivElement>('#deleteSection');
 
 function setWriteStatus(text: string, kind: 'info' | 'success' | 'error'): void {
@@ -397,6 +405,7 @@ async function run(command: PanelCommand): Promise<void> {
   busy = true;
   updateButtonsEnabled();
   setWriteStatus(t(STATUS_BY_COMMAND[command]), 'info');
+  showFontWarning(undefined);
   try {
     const res = await sendToSlidesTab<PanelCommandResponse>({
       type: 'rubi/panel-command',
@@ -408,6 +417,9 @@ async function run(command: PanelCommand): Promise<void> {
       return;
     }
     setWriteStatus(describeSuccess(res), 'success');
+    if (res.command === 'write-current' || res.command === 'write-all') {
+      showFontWarning(res.writtenCount > 0 ? res.latinOnlyFonts : undefined);
+    }
     if ((res.command === 'write-current' || res.command === 'write-all') && res.writtenCount > 0) {
       deleteSectionEl.hidden = false;
     }
