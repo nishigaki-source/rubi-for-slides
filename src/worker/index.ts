@@ -12,6 +12,7 @@ import {
   isPageInfoRequest,
   isPresentationPagesRequest,
   isRecenterRubyRequest,
+  isPinyinRequest,
   isTokenizeRequest,
   isWriteRubyRequest,
   type DeleteRubyResponse,
@@ -23,6 +24,7 @@ import {
   type TokenizeResponse,
   type WriteRubyResponse,
 } from '../core/messages';
+import { buildPinyinRanges } from '../core/pinyin';
 import { FileAccessDeniedError, FileAccessRequiredError, withFileAccess } from '../core/fileAccess';
 import { buildCreateRubyRequests, buildDeleteRequests, buildGroupRequests, buildRecenterRequests, planGroups } from '../core/slidesRequests';
 import { t } from '../shared/i18n';
@@ -83,6 +85,19 @@ chrome.runtime.onMessage.addListener((message: unknown, sender, sendResponse) =>
 
   // Googleドキュメント(サイドパネル・動作確認用の受け口から)
   if (handleDocsMessage(message, sender, sendResponse)) return true;
+
+  if (isPinyinRequest(message)) {
+    try {
+      sendResponse({ type: 'rubi/pinyin-result', requestId: message.requestId, ranges: buildPinyinRanges(message.text) });
+    } catch (err) {
+      sendResponse({
+        type: 'rubi/pinyin-error',
+        requestId: message.requestId,
+        message: err instanceof Error ? err.message : String(err),
+      });
+    }
+    return false;
+  }
 
   if (isTokenizeRequest(message)) {
     const { requestId, text } = message;

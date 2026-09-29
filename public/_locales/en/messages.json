@@ -22,6 +22,18 @@
       }
     }
   },
+  "labelRubyLanguage": {
+    "message": "Language"
+  },
+  "rubyLanguageJa": {
+    "message": "Japanese furigana"
+  },
+  "rubyLanguageZh": {
+    "message": "Chinese pinyin (Simplified)"
+  },
+  "hintZhDictUnused": {
+    "message": "The user dictionary is not available for pinyin yet."
+  },
   "labelRubyMode": {
     "message": "Placement"
   },

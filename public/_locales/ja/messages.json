@@ -22,6 +22,18 @@
       }
     }
   },
+  "labelRubyLanguage": {
+    "message": "言語"
+  },
+  "rubyLanguageJa": {
+    "message": "日本語のふりがな"
+  },
+  "rubyLanguageZh": {
+    "message": "中国語の拼音(簡体字)"
+  },
+  "hintZhDictUnused": {
+    "message": "中国語の拼音では、ユーザー辞書はまだ使えません。"
+  },
   "labelRubyMode": {
     "message": "振り方"
   },

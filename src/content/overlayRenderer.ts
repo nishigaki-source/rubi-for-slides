@@ -11,6 +11,7 @@
  * (Phase 0 で検証済みの経路)。要素内が1文字だけの場合は
  * getBoundingClientRect() で十分(こちらの方が軽量)。
  */
+import { estimateRubyWidthEm } from '../core/textWidth';
 import type { RubyStyleOverride } from '../core/types';
 import { domRectToRect, groupIndicesByLine, transformRect, unionRects, type Rect } from './geometry';
 import {
@@ -203,7 +204,10 @@ export function computeParagraphRubyPlan(
   styleDefaults: { fontFamily?: string; color?: string } = {},
   layout: RubyPlanLayoutOptions = {}
 ): RubyPlacement[] {
-  const fontSizeOptions = layout.minFontSizePx !== undefined ? { minFontSize: layout.minFontSizePx } : {};
+  const baseFontSizeOptions = layout.minFontSizePx !== undefined ? { minFontSize: layout.minFontSizePx } : {};
+  // 拼音(英字)は、漢字の幅に収めようとして縮めすぎない。はみ出しは、同じ行の左右の位置の調整で重ならないようにする
+  const fontSizeOptionsFor = (kana: string) =>
+    isLatinRuby(kana) ? { ...baseFontSizeOptions, widthSafetyFactor: LATIN_WIDTH_SAFETY_FACTOR } : baseFontSizeOptions;
   const defaultFontFamily = styleDefaults.fontFamily ?? DEFAULT_RUBY_FONT_FAMILY;
   const defaultColor = styleDefaults.color ?? DEFAULT_RUBY_COLOR;
 
@@ -258,9 +262,9 @@ export function computeParagraphRubyPlan(
       const naturalFontSize = computeRubyFontSize(
         box.width,
         box.height,
-        Array.from(kanaSlice).length,
+        estimateRubyWidthEm(kanaSlice), // ルビの幅(em)。かなは文字数と同じ、拼音は英字の幅
         effectiveSizeRatio,
-        fontSizeOptions
+        fontSizeOptionsFor(kanaSlice)
       );
       pending.push({
         kana: kanaSlice,
@@ -300,14 +304,19 @@ export function computeParagraphRubyPlan(
     if (cluster.length < 2) continue;
     const items = cluster.map((i) => pending[i] as Pending);
     const span = unionRects(items.map((p) => p.box));
-    const kanaCount = items.reduce((n, p) => n + Array.from(p.kana).length, 0);
+    // 拼音(英字)は音節の間のすき間ぶんも幅に数える(かなは従来どおり)
+    // 拼音(英字)は、音節の間のすき間ぶんも幅に数える(かなは従来どおり)
+    const kanaCount = items.reduce(
+      (n, p) => n + estimateRubyWidthEm(p.kana) + (isLatinRuby(p.kana) ? LATIN_RUBY_GAP_FACTOR : 0),
+      0
+    );
     const height = Math.max(...items.map((p) => p.box.height));
     const clusterFontSize = computeRubyFontSize(
       span.width,
       height,
       kanaCount,
       (items[0] as Pending).sizeRatio,
-      fontSizeOptions
+      items.some((p) => isLatinRuby(p.kana)) ? fontSizeOptionsFor('a') : baseFontSizeOptions
     );
     for (const p of items) p.naturalFontSize = clusterFontSize;
   }
@@ -339,9 +348,9 @@ export function computeParagraphRubyPlan(
     const resolved = resolveRubyCenters(
       line.map((i) => {
         const p = pending[i] as Pending;
-        return { center: centers[i] as number, width: Array.from(p.kana).length * fontSizeOf(p) };
+        return { center: centers[i] as number, width: estimateRubyWidthEm(p.kana) * fontSizeOf(p) };
       }),
-      gapFontSize * RUBY_HORIZONTAL_GAP_FACTOR
+      gapFontSize * Math.max(...line.map((i) => gapFactorFor((pending[i] as Pending).kana)))
     );
     line.forEach((i, k) => {
       centers[i] = resolved[k] as number;
@@ -372,6 +381,25 @@ const SAME_BODY_SIZE_TOLERANCE = 0.2;
 
 /** 隣り合うルビどうしの最小のすき間(ルビのフォントサイズに対する比率)。 */
 const RUBY_HORIZONTAL_GAP_FACTOR = 0.2;
+/**
+ * 拼音(英字)のときのすき間。英字のスペース(約 0.28em)に近い幅にして、音節を区切って読めるようにする。
+ * かなの 0.2 のままだと、実機で音節がほぼ接して1つの単語のように見えた(2026-09-29)。
+ */
+const LATIN_RUBY_GAP_FACTOR = 0.32;
+/**
+ * 拼音の幅の制約に掛ける安全係数(かなの既定は 1.05)。音節の長い語が続く行でも、ルビが小さくなりすぎない。
+ * はみ出した分は、resolveRubyCenters が同じ行の隣のルビを左右にずらして吸収する。
+ */
+const LATIN_WIDTH_SAFETY_FACTOR = 1.25;
+
+/** 読みが英字(拼音)か。 */
+function isLatinRuby(kana: string): boolean {
+  return /[A-Za-z\u00c0-\u024f]/.test(kana);
+}
+
+function gapFactorFor(kana: string): number {
+  return isLatinRuby(kana) ? LATIN_RUBY_GAP_FACTOR : RUBY_HORIZONTAL_GAP_FACTOR;
+}
 
 /**
  * 1 段落分のルビを描画する。呼び出し側で段落ごとに呼ぶことを想定。

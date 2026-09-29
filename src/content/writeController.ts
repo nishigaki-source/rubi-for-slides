@@ -26,15 +26,16 @@ import type { RecenterCorrection, RubyWriteItem } from '../core/slidesRequests';
 import { firstFontFamily, isLatinOnlyFont } from '../core/fontCoverage';
 import { isKanji } from '../core/kana';
 import { parseSlidesUrl } from '../core/slidesUrl';
+import { estimateRubyWidthEm } from '../core/textWidth';
 import { isOfficeFileOpen } from './officeFile';
 import { t } from '../shared/i18n';
 import type { ReadingServiceOptions } from '../core/types';
 import { domRectToRect, remapRectBetweenFrames, type Rect } from './geometry';
-import { computeParagraphPlan } from './rubyPlan';
+import { computeParagraphPlanFromRanges } from './rubyPlan';
 import { computeRubyBoxAboveBody } from './rubyLayout';
 import { getPageContainerElement } from './selectors';
 import { navigateToSlide } from './slideNavigator';
-import { tokenizeText } from './tokenizeClient';
+import { fetchParagraphRanges } from './paragraphRanges';
 import { extractParagraphs } from './textExtractor';
 
 /**
@@ -252,20 +253,19 @@ async function writeRubyToPage(
   for (const paragraph of paragraphs) {
     if (paragraph.text.trim().length === 0) continue;
 
-    let tokens;
+    let ranges;
     try {
-      tokens = await tokenizeText(paragraph.text);
+      ranges = await fetchParagraphRanges(paragraph.text, options.readingOptions);
     } catch {
-      continue; // トークン化に失敗した段落はスキップ(モードAと同じ方針)
+      continue; // 読みの取得に失敗した段落はスキップ(モードAと同じ方針)
     }
 
     // 文字の位置(plan)とスライドの枠を、await を挟まずに続けて測る
     const pageContainerPx = measurePagePx();
     if (!pageContainerPx) return { ok: false, message: t('errorNoPageContainer') };
-    const plan = computeParagraphPlan(
+    const plan = computeParagraphPlanFromRanges(
       paragraph,
-      tokens,
-      options.readingOptions,
+      ranges,
       options.sizeRatio,
       { fontFamily: options.fontFamily, color: options.color },
       // 最小サイズは画面の px ではなくスライド上のポイントで決める。画面の px のままだと、
@@ -290,7 +290,7 @@ async function writeRubyToPage(
       findMatchingShapeObjectId({ text: paragraph.text, box: firstBoxEmu }, pageInfo.shapes) ?? undefined;
 
     for (const placement of plan) {
-      const kanaCharCount = Array.from(placement.kana).length;
+      const kanaCharCount = estimateRubyWidthEm(placement.kana); // ルビの幅(em)。かなは文字数と同じ
       const rubyBoxPx = computeRubyBoxAboveBody(placement.box, placement.fontSizePx, kanaCharCount, placement.centerX);
       const box = expandRectForDefaultInsets(pxRectToEmuRect(rubyBoxPx, pageContainerPx, pageInfo.pageSizeEmu));
       const fontSizePt = pxFontSizeToPoint(placement.fontSizePx, pageContainerPx, pageInfo.pageSizeEmu);
