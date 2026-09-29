@@ -152,6 +152,7 @@ const fontFamilyEl = qs<HTMLSelectElement>('#fontFamily');
 const colorEl = qs<HTMLInputElement>('#color');
 const skipKanjiEl = qs<HTMLSelectElement>('#skipKanji');
 const rubyLanguageEl = qs<HTMLSelectElement>('#rubyLanguage');
+const zhDictHintEl = qs<HTMLDivElement>('#zhDictHint');
 const docsStyleInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="docsStyle"]'));
 const docsSizeHintEl = qs<HTMLDivElement>('#docsSizeHint');
 const docsFontHintEl = qs<HTMLDivElement>('#docsFontHint');
@@ -180,6 +181,7 @@ function applyFieldStates(): void {
   const zh = !docs && lastSettings.slidesRubyLanguage === 'zh';
   rubyModeButtons.forEach((b) => (b.disabled = zh)); // 拼音は漢字1文字に1音節。振り方は選べない
   skipKanjiEl.disabled = zh; // 省く漢字(学年・JLPT)は日本語用
+  zhDictHintEl.hidden = !zh; // ユーザー辞書は、読みがひらがなのものだけ(拼音はまだ)
   sizeButtons.forEach((b) => (b.disabled = sizeUnused));
   fontFamilyEl.disabled = fontUnused;
   colorEl.disabled = colorUnused;

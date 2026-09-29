@@ -31,7 +31,10 @@ export function estimateRubyWidthEm(text: string): number {
     }
     // 声調記号付きの英字(ā ǎ ǚ など)は、元の英字(a a u)の幅で数える
     const base = ch.normalize('NFD').charAt(0);
-    em += NARROW[base] ?? WIDE[base] ?? (base >= 'A' && base <= 'Z' ? 0.67 : LATIN_DEFAULT_EM);
+    let width = NARROW[base] ?? WIDE[base] ?? (base >= 'A' && base <= 'Z' ? 0.67 : LATIN_DEFAULT_EM);
+    // 声調記号付きの i(ī í ǐ ì)は、記号のぶん i より広い(実機で確認。Arial で約 0.28em)
+    if (base === 'i' && ch !== base) width = 0.28;
+    em += width;
   }
   return em;
 }

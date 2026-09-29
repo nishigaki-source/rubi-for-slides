@@ -110,13 +110,14 @@ describe('computeParagraphRubyPlan: 中国語の拼音(英字のルビ)', () => 
     expect(size).toBeLessThanOrEqual(16);
   });
 
-  it('隣り合う拼音は重ならない(幅は英字の幅で見積もる)', () => {
+  it('隣り合う拼音は重ならず、音節の間にすき間を空ける(幅は英字の幅で見積もる)', () => {
     const plan = computeParagraphRubyPlan(fakeLine(text, 32), buildPinyinRanges(text), 0.5);
     for (let i = 1; i < plan.length; i++) {
       const a = plan[i - 1]!;
       const b = plan[i]!;
       const halves = ((estimateRubyWidthEm(a.kana) + estimateRubyWidthEm(b.kana)) * a.fontSizePx) / 2;
-      expect(b.centerX - a.centerX).toBeGreaterThanOrEqual(halves - 1e-6);
+      // 音節の間には、英字のスペースに近いすき間(ルビの大きさの 0.32 倍)を空ける
+      expect(b.centerX - a.centerX).toBeGreaterThanOrEqual(halves + 0.32 * a.fontSizePx - 1e-6);
     }
   });
 

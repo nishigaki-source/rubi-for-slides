@@ -22,6 +22,7 @@ const ENTRIES = [
   ['labelRubyLanguage', '言語', 'Language'],
   ['rubyLanguageJa', '日本語のふりがな', 'Japanese furigana'],
   ['rubyLanguageZh', '中国語の拼音(簡体字)', 'Chinese pinyin (Simplified)'],
+  ['hintZhDictUnused', '中国語の拼音では、ユーザー辞書はまだ使えません。', 'The user dictionary is not available for pinyin yet.'],
   ['labelRubyMode', '振り方', 'Placement'],
   ['rubyModeGroupAriaLabel', 'ルビの振り方', 'How furigana is placed'],
   ['rubyModePerKanji', '漢字ごと', 'Per kanji'],
