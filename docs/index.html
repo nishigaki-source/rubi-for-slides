@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>ルビふり for Googleスライド — プライバシーポリシー / Privacy Policy</title>
+<title>ルビふり for Googleスライド＆ドキュメント — プライバシーポリシー / Privacy Policy</title>
 <style>
   body {
     max-width: 760px;
@@ -25,15 +25,17 @@
 </head>
 <body>
 
-<h1>ルビふり for Googleスライド</h1>
-<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-09-29</p>
+<h1>ルビふり for Googleスライド＆ドキュメント</h1>
+<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-09-30</p>
 <p class="lang-toggle"><a href="#ja">日本語</a> / <a href="#en">English</a></p>
 
 <section id="ja">
 <h2>この拡張機能について</h2>
 <p>
-「ルビふり for Googleスライド」は、Googleスライドの編集画面上で日本語テキスト中の漢字にひらがなのルビ(ふりがな)を表示し、
-必要に応じて実際のテキストボックスとしてスライドに書き込むためのChrome拡張機能です。
+「ルビふり for Googleスライド＆ドキュメント」は、Googleスライド・Googleドキュメントの日本語テキスト中の漢字にひらがなのルビ(ふりがな)を、
+スライドでは中国語の漢字に拼音(ピンイン)を、表示・書き込みするためのChrome拡張機能です。
+スライドでは、編集画面への表示のほか、実際のテキストボックスとして書き込むことができます。
+ドキュメントでは、文書の本文にルビ(表・括弧書き・上付きの文字など)を書き込みます。
 </p>
 
 <h2>収集する情報</h2>
@@ -60,10 +62,27 @@
     開発者がこの内容を閲覧・収集・保存することはありません。
   </li>
   <li>
+    <strong>Googleドキュメントの内容(Google Docs API)</strong><br />
+    パネルの「ルビをふる」「ルビを消す」を使う際、利用者の明示的な操作とGoogleアカウントでの認可(OAuth、
+    <code>drive.file</code> スコープ)に基づき、利用者がGoogle Pickerで選択したドキュメントに限って、
+    本文(段落・文字の書式・表・ヘッダー・フッター・脚注)の取得、およびルビの書き込み・削除を行います。
+    ドキュメントでは、ルビが文書の本文そのもの(表・括弧書き・上付きの文字)として書き込まれ、
+    書き込んだ範囲は、消すときに元へ戻せるよう、文書の中の「名前付き範囲」に記録されます。
+    パネルの「ルビを消す」または通常の編集操作(元に戻す)で、元の状態に戻せます。選択していない文書にはアクセスしません。
+    この通信は利用者のブラウザとGoogle自身のサーバー(<code>docs.googleapis.com</code>)の間で直接行われ、
+    開発者がこの内容を閲覧・収集・保存することはありません。
+  </li>
+  <li>
+    <strong>文字の幅の測定(ドキュメントのページ内)</strong><br />
+    ドキュメントに表のルビを書き込むとき、表の列の幅を決めるため、開いているドキュメントのページの中で、
+    文字の幅を測る短い処理を実行します(<code>chrome.scripting</code>)。受け取るのは文字の幅の数値だけで、
+    文書の内容を読み取ったり、外部に送信したりすることはありません。
+  </li>
+  <li>
     <strong>Google Picker(ファイル選択画面)</strong><br />
-    アクセスを許可するスライドを選ぶため、当サイトの静的ページ(<code>rubi.rocketdone.com/picker.html</code>)で
+    アクセスを許可するスライド・ドキュメントを選ぶため、当サイトの静的ページ(<code>rubi.rocketdone.com/picker.html</code>)で
     Google Picker(<code>apis.google.com</code>)を表示します。このページは選択結果を拡張機能に返すだけで、
-    スライドの内容や識別情報を開発者のサーバーに送信・保存することはありません。
+    スライド・ドキュメントの内容や識別情報を開発者のサーバーに送信・保存することはありません。
   </li>
   <li>
     <strong>Googleフォント(Google Fonts)</strong><br />
@@ -91,15 +110,17 @@ JLPT のレベルのデータは、Jonathan Waller 氏の
 <h2>権限について</h2>
 <ul>
   <li><code>storage</code>: 上記の表示設定・ユーザー辞書の保存に使用します。</li>
-  <li><code>identity</code>: Google Slides APIを利用するためのOAuth認可(ログイン済みのGoogleアカウントでの許可。<code>drive.file</code> スコープ)に使用します。</li>
-  <li><code>activeTab</code> / Googleスライドへのホスト権限: 現在開いているGoogleスライドの編集画面でのみ動作するために使用します。</li>
+  <li><code>identity</code>: Google Slides API・Google Docs APIを利用するためのOAuth認可(ログイン済みのGoogleアカウントでの許可。<code>drive.file</code> スコープ)に使用します。</li>
+  <li><code>activeTab</code> / Googleスライド・Googleドキュメントへのホスト権限: 現在開いているGoogleスライド・ドキュメントの編集画面でのみ動作するために使用します。</li>
+  <li><code>sidePanel</code>: 設定パネルを、Chromeのサイドパネル(画面の横)に表示するために使用します。</li>
+  <li><code>scripting</code>: 上記の「文字の幅の測定」を、開いているドキュメントのページ内で行うために使用します。</li>
 </ul>
 
 <h2>データの保持・削除</h2>
 <p>
 表示設定・ユーザー辞書は、利用者が拡張機能をアンインストールするか、Chromeの同期データを削除するまで保持されます。
-スライドへの書き込み機能で作成したルビ用テキストボックスは、パネルの削除機能、または通常のGoogleスライドの編集操作(元に戻す・削除)で
-いつでも取り除くことができます。
+スライドへの書き込み機能で作成したルビ用テキストボックス、およびドキュメントに書き込んだルビは、パネルの削除機能、
+または通常のGoogleスライド・ドキュメントの編集操作(元に戻す・削除)で、いつでも取り除くことができます。
 </p>
 
 <h2>Google ユーザーデータの取り扱い(Limited Use)</h2>
@@ -109,7 +130,7 @@ JLPT のレベルのデータは、Jonathan Waller 氏の
 (Limited Use の要件を含む)に準拠します。
 </p>
 <ul>
-  <li>Google スライドのデータは、ユーザーが求めた機能(ルビの書き込み・削除)を提供する目的でのみ使用します。</li>
+  <li>Google スライド・ドキュメントのデータは、ユーザーが求めた機能(ルビの書き込み・削除)を提供する目的でのみ使用します。</li>
   <li>データを開発者のサーバーへ送信・保存することはなく、第三者への提供・転送・販売も行いません。</li>
   <li>広告(パーソナライズド広告を含む)の表示や、ユーザーのプロファイリング、データブローカー等への提供には一切使用しません。</li>
   <li>開発者を含む人間がデータを閲覧することはありません(すべての処理はユーザーのブラウザ内で完結します)。</li>
@@ -131,8 +152,10 @@ JLPT のレベルのデータは、Jonathan Waller 氏の
 
 <h2>About this extension</h2>
 <p>
-"ルビふり for Googleスライド" (Furigana for Google Slides) is a Chrome extension that displays hiragana reading aids
-(furigana/ruby text) over kanji in the Google Slides editor, and optionally writes them into the slide as real text boxes.
+"ルビふり for Googleスライド＆ドキュメント" (Furigana for Google Slides & Docs) is a Chrome extension that displays and writes
+hiragana reading aids (furigana/ruby text) over kanji in Google Slides and Google Docs, and pinyin over Chinese characters in Google Slides.
+In Slides it can display the readings in the editor, or write them into the slide as real text boxes.
+In Docs it writes the readings into the document body (as a table, parenthesized text, or superscript text).
 </p>
 
 <h2>Information we collect</h2>
@@ -158,11 +181,27 @@ JLPT のレベルのデータは、Jonathan Waller 氏の
     the developer never views, collects, or stores this content.
   </li>
   <li>
+    <strong>Google Docs content (Google Docs API)</strong><br />
+    When you use "Add furigana" / "Remove furigana" in the panel, based on your explicit action and Google account authorization (OAuth,
+    the <code>drive.file</code> scope), the extension reads the body (paragraphs, text formatting, tables, headers, footers, footnotes) of,
+    and adds/removes furigana in, only the document you selected in Google Picker. In Docs, furigana becomes part of the document body itself
+    (a table, parenthesized text, or superscript text), and the ranges it wrote are recorded as named ranges inside the document so that they can be removed.
+    You can restore the original with "Remove furigana" in the panel or with normal undo. It cannot access any document you have not selected.
+    This communication happens directly between your browser and Google's own servers (<code>docs.googleapis.com</code>);
+    the developer never views, collects, or stores this content.
+  </li>
+  <li>
+    <strong>Measuring text width (inside the Docs page)</strong><br />
+    When writing table-style furigana to a document, the extension runs a short script in the open document's page
+    (<code>chrome.scripting</code>) to measure character widths, which decides the table column widths.
+    It receives only width numbers; it does not read the document's content or send anything elsewhere.
+  </li>
+  <li>
     <strong>Google Picker (file selection dialog)</strong><br />
-    To let you choose which presentation to grant access to, a static page on this site
+    To let you choose which presentation or document to grant access to, a static page on this site
     (<code>rubi.rocketdone.com/picker.html</code>) shows Google Picker (<code>apis.google.com</code>).
     The page only returns your selection to the extension; it does not send or store the content or identity of your
-    presentation on any server operated by the developer.
+    presentation or document on any server operated by the developer.
   </li>
   <li>
     <strong>Google Fonts</strong><br />
@@ -188,15 +227,17 @@ Pinyin is computed entirely inside your browser; your text is never sent anywher
 <h2>Permissions</h2>
 <ul>
   <li><code>storage</code>: used to store the display settings and user dictionary described above.</li>
-  <li><code>identity</code>: used for OAuth authorization (the <code>drive.file</code> scope) to call the Google Slides API using your already-signed-in Google account.</li>
-  <li><code>activeTab</code> / host permission for Google Slides: used so the extension only runs on the currently open Google Slides editor.</li>
+  <li><code>identity</code>: used for OAuth authorization (the <code>drive.file</code> scope) to call the Google Slides API and Google Docs API using your already-signed-in Google account.</li>
+  <li><code>activeTab</code> / host permission for Google Slides and Google Docs: used so the extension only runs on the currently open Google Slides / Docs editor.</li>
+  <li><code>sidePanel</code>: used to show the settings panel in Chrome's side panel next to the page.</li>
+  <li><code>scripting</code>: used to measure text width inside the open document's page, as described above.</li>
 </ul>
 
 <h2>Data retention and deletion</h2>
 <p>
 Display settings and the user dictionary are kept until you uninstall the extension or clear your Chrome sync data.
-Ruby text boxes created via the write feature can be removed at any time using the panel's delete function, or through
-normal Google Slides editing (undo/delete).
+Ruby text boxes created via the write feature, and furigana written into documents, can be removed at any time using the panel's delete function, or through
+normal Google Slides / Docs editing (undo/delete).
 </p>
 
 <h2>Google user data (Limited Use)</h2>
@@ -206,7 +247,7 @@ The use and transfer to any other app of information received from Google APIs b
 including the Limited Use requirements.
 </p>
 <ul>
-  <li>Google Slides data is used only to provide the user-requested feature (writing and removing furigana text boxes).</li>
+  <li>Google Slides and Docs data is used only to provide the user-requested feature (writing and removing furigana).</li>
   <li>The data is never sent to or stored on a developer-operated server, and is never sold, shared, or transferred to third parties.</li>
   <li>It is never used for advertising (including personalized ads), user profiling, or provided to data brokers.</li>
   <li>No humans, including the developer, read this data; all processing happens inside your own browser.</li>

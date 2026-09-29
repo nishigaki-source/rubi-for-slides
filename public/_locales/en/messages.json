@@ -3,7 +3,7 @@
     "message": "Furigana for Google Slides & Docs"
   },
   "extDescription": {
-    "message": "Displays and writes hiragana furigana over kanji in Google Slides and Google Docs."
+    "message": "Displays and writes hiragana furigana over kanji in Google Slides and Docs, and pinyin over Chinese in Slides."
   },
   "panelTitle": {
     "message": "Furigana"

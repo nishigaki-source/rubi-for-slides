@@ -11,8 +11,8 @@ const ENTRIES = [
   ['extName', 'ルビふり for Googleスライド＆ドキュメント', 'Furigana for Google Slides & Docs'],
   [
     'extDescription',
-    'Googleスライド・ドキュメントの漢字にひらがなのルビ（ふりがな）を表示・書き込みします。',
-    'Displays and writes hiragana furigana over kanji in Google Slides and Google Docs.',
+    'Googleスライド・ドキュメントの漢字にひらがなのルビ（ふりがな）を、スライドでは中国語の拼音も、表示・書き込みします。',
+    'Displays and writes hiragana furigana over kanji in Google Slides and Docs, and pinyin over Chinese in Slides.',
   ],
 
   // --- panel: static labels ---
