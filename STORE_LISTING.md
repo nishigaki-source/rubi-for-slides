@@ -6,11 +6,10 @@
 
 ## 基本情報
 
-- **拡張機能名**: ルビふり for Googleスライド＆ドキュメント(英語: Furigana for Google Slides & Docs)。`manifest.json` の `__MSG_extName__` から自動取得されるので、ダッシュボードでの入力は基本不要。v1.0.0 でドキュメント対応にあわせて変更(v0.8.0 までは「ルビふり for Googleスライド」)
+- **拡張機能名**: ルビふり for Googleスライド＆ドキュメント（拼音対応）(英語: Furigana & Pinyin for Google Slides & Docs)。`manifest.json` の `__MSG_extName__` から自動取得されるので、ダッシュボードでの入力は基本不要。v1.0.0 でドキュメント・拼音対応にあわせて変更(v0.8.0 までは「ルビふり for Googleスライド」)。「拼音」で検索した中国語の先生にも見つけてもらえるよう、末尾に「（拼音対応）」を付けた(名前にキーワードを並べる形は、ストアの規約で指摘されるおそれがあるため避けた)。OAuth の同意画面の名前は別の設定で、変えない(「Google」を入れない)
 - **カテゴリ**: 生産性(Productivity)。「教育」(Education)でも当てはまるが、Googleスライド・ドキュメント上で動く実務ツールという性質上、生産性を第一候補として推奨
 - **言語**: 日本語(主)。英語の掲載文も下に用意した(ストアの「追加言語」機能で登録可能)。拡張機能の画面は日本語・英語のみなので、中国語の掲載文は、中国語の画面(`zh_CN`)を用意してからにする
 - **プライバシーポリシーURL**: <https://rubi.rocketdone.com/>(カスタムドメイン)
-- **名前について(要判断)**: 「pinyin」で検索した中国語の先生に見つけてもらうには、名前に拼音を入れる案がある(例: 「ルビふり(ふりがな・拼音) for Googleスライド＆ドキュメント」/ 英語 "Furigana & Pinyin for Google Slides & Docs")。現状は説明文にだけ入れている
 
 ## 概要(短い説明、132文字以内)
 
@@ -30,7 +29,7 @@ Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides.
 
 ### 日本語
 ```
-「ルビふり for Googleスライド＆ドキュメント」は、Googleスライド・Googleドキュメントの漢字に、
+「ルビふり for Googleスライド＆ドキュメント（拼音対応）」は、Googleスライド・Googleドキュメントの漢字に、
 ひらがなのルビ(ふりがな)を表示・書き込みする拡張機能です。
 スライドでは、中国語の漢字に拼音(ピンイン)を振ることもできます。
 
@@ -83,7 +82,7 @@ Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides.
 
 ### English
 ```
-"Furigana for Google Slides & Docs" is a Chrome extension that displays and writes hiragana reading aids
+"Furigana & Pinyin for Google Slides & Docs" is a Chrome extension that displays and writes hiragana reading aids
 (furigana/ruby text) over kanji in Google Slides and Google Docs.
 In Slides it can also add pinyin over Chinese characters.
 

@@ -8,7 +8,7 @@ import { writeFileSync } from 'node:fs';
 // $1 を割り当てる(chrome.i18n.getMessage の substitutions は配列で渡す)。
 const ENTRIES = [
   // --- manifest ---
-  ['extName', 'ルビふり for Googleスライド＆ドキュメント', 'Furigana for Google Slides & Docs'],
+  ['extName', 'ルビふり for Googleスライド＆ドキュメント（拼音対応）', 'Furigana & Pinyin for Google Slides & Docs'],
   [
     'extDescription',
     'Googleスライド・ドキュメントの漢字にひらがなのルビ（ふりがな）を、スライドでは中国語の拼音も、表示・書き込みします。',

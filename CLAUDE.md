@@ -5,7 +5,7 @@
 - Chrome ウェブストアの公開済み拡張機能が上限(3個)に達し、引き上げも通らなかった。そのため
   「ルビふり for Googleドキュメント」は新しい拡張機能として出さず、**この拡張機能(ストア ID
   `boccgohdphepnoaenacpckicbdinihoc`)の v1.0.0 としてドキュメントにも対応させた**。名前は
-  「ルビふり for Googleスライド＆ドキュメント」(英語 Furigana for Google Slides & Docs)。
+  「ルビふり for Googleスライド＆ドキュメント（拼音対応）」(英語 Furigana & Pinyin for Google Slides & Docs)。
 - ドキュメント版は `/Users/ni/claude/rubi-docs`(GitHub `nishigaki-source/rubi-for-docs`)で開発した。検証の記録・
   Docs API の性質はそちらの `PHASE0_FINDINGS.md`(4.2 節)・`PLAN.md`・`HANDOFF.md`。
 - ドキュメント固有のファイル:
