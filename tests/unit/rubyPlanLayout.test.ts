@@ -3,6 +3,8 @@ import { computeParagraphRubyPlan, type GlobalRubyRange } from '@content/overlay
 import type { ExtractedChar } from '@content/textExtractor';
 import { groupBoxesByLine } from '@content/rubyLayout';
 import { pointToPxFontSize, pxFontSizeToPoint } from '@core/emu';
+import { buildPinyinRanges } from '@core/pinyin';
+import { estimateRubyWidthEm } from '@core/textWidth';
 
 /** 1文字ずつの <text> 要素を、指定した大きさで横一列に並べた偽物(getBoundingClientRect だけ使う) */
 function fakeLine(text: string, charPx: number, originX = 0, originY = 100): ExtractedChar[] {
@@ -93,5 +95,33 @@ describe('pointToPxFontSize', () => {
     const px = pointToPxFontSize(6, page, pageSizeEmu);
     expect(px).toBeCloseTo(4, 9);
     expect(pxFontSizeToPoint(px, page, pageSizeEmu)).toBe(6);
+  });
+});
+
+describe('computeParagraphRubyPlan: 中国語の拼音(英字のルビ)', () => {
+  const text = '我们今天学习汉语，欢迎光临';
+
+  it('英字の幅で見積もるので、かなの文字数で数えたときより大きなルビになる', () => {
+    const plan = computeParagraphRubyPlan(fakeLine(text, 32), buildPinyinRanges(text), 0.5);
+    expect(plan.length).toBeGreaterThan(8);
+    const size = plan[0]!.fontSizePx;
+    // 本文 32px の 50% = 16px が上限。文字数で数える(1文字 = 1em)と、平均 3.5 文字の拼音は 9px 前後まで縮められていた
+    expect(size).toBeGreaterThan(12);
+    expect(size).toBeLessThanOrEqual(16);
+  });
+
+  it('隣り合う拼音は重ならない(幅は英字の幅で見積もる)', () => {
+    const plan = computeParagraphRubyPlan(fakeLine(text, 32), buildPinyinRanges(text), 0.5);
+    for (let i = 1; i < plan.length; i++) {
+      const a = plan[i - 1]!;
+      const b = plan[i]!;
+      const halves = ((estimateRubyWidthEm(a.kana) + estimateRubyWidthEm(b.kana)) * a.fontSizePx) / 2;
+      expect(b.centerX - a.centerX).toBeGreaterThanOrEqual(halves - 1e-6);
+    }
+  });
+
+  it('日本語のふりがなの配置は変わらない(かなは1文字 = 1em)', () => {
+    const plan = computeParagraphRubyPlan(fakeLine('現状の重要', 8), RANGES, 0.35);
+    expect(plan.map((p) => Math.round(p.fontSizePx * 100) / 100)).toEqual(plan.map(() => 8));
   });
 });

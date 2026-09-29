@@ -53,6 +53,22 @@ export function computeParagraphPlan(
   styleDefaults?: { fontFamily?: string; color?: string },
   layout?: RubyPlanLayoutOptions
 ): RubyPlacement[] {
-  const globalRanges = computeGlobalRubyRanges(tokens, readingOptions);
-  return computeParagraphRubyPlan(paragraph.chars, globalRanges, sizeRatio, styleDefaults, layout);
+  return computeParagraphPlanFromRanges(
+    paragraph,
+    computeGlobalRubyRanges(tokens, readingOptions),
+    sizeRatio,
+    styleDefaults,
+    layout
+  );
+}
+
+/** 読みの区間がすでに分かっているとき(中国語の拼音など)の配置の計算。 */
+export function computeParagraphPlanFromRanges(
+  paragraph: ExtractedParagraph,
+  ranges: GlobalRubyRange[],
+  sizeRatio: number,
+  styleDefaults?: { fontFamily?: string; color?: string },
+  layout?: RubyPlanLayoutOptions
+): RubyPlacement[] {
+  return computeParagraphRubyPlan(paragraph.chars, ranges, sizeRatio, styleDefaults, layout);
 }

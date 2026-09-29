@@ -11,6 +11,7 @@
  * (Phase 0 で検証済みの経路)。要素内が1文字だけの場合は
  * getBoundingClientRect() で十分(こちらの方が軽量)。
  */
+import { estimateRubyWidthEm } from '../core/textWidth';
 import type { RubyStyleOverride } from '../core/types';
 import { domRectToRect, groupIndicesByLine, transformRect, unionRects, type Rect } from './geometry';
 import {
@@ -258,7 +259,7 @@ export function computeParagraphRubyPlan(
       const naturalFontSize = computeRubyFontSize(
         box.width,
         box.height,
-        Array.from(kanaSlice).length,
+        estimateRubyWidthEm(kanaSlice), // ルビの幅(em)。かなは文字数と同じ、拼音は英字の幅
         effectiveSizeRatio,
         fontSizeOptions
       );
@@ -300,7 +301,7 @@ export function computeParagraphRubyPlan(
     if (cluster.length < 2) continue;
     const items = cluster.map((i) => pending[i] as Pending);
     const span = unionRects(items.map((p) => p.box));
-    const kanaCount = items.reduce((n, p) => n + Array.from(p.kana).length, 0);
+    const kanaCount = items.reduce((n, p) => n + estimateRubyWidthEm(p.kana), 0);
     const height = Math.max(...items.map((p) => p.box.height));
     const clusterFontSize = computeRubyFontSize(
       span.width,
@@ -339,7 +340,7 @@ export function computeParagraphRubyPlan(
     const resolved = resolveRubyCenters(
       line.map((i) => {
         const p = pending[i] as Pending;
-        return { center: centers[i] as number, width: Array.from(p.kana).length * fontSizeOf(p) };
+        return { center: centers[i] as number, width: estimateRubyWidthEm(p.kana) * fontSizeOf(p) };
       }),
       gapFontSize * RUBY_HORIZONTAL_GAP_FACTOR
     );

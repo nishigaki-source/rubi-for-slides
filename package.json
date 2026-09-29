@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "kuromoji": "^0.1.2",
-    "pako": "^3.0.2"
+    "pako": "^3.0.2",
+    "pinyin-pro": "3.29.4"
   }
 }

@@ -53,7 +53,13 @@ function shutDownOrphanedScript(): void {
 
 async function buildReadingOptions(): Promise<ReadingServiceOptions> {
   const userDict = await loadUserDict();
-  const options: ReadingServiceOptions = { userDict, rubyMode: currentSettings.rubyMode };
+  const options: ReadingServiceOptions = {
+    userDict,
+    rubyMode: currentSettings.rubyMode,
+    rubyLanguage: currentSettings.slidesRubyLanguage,
+  };
+  // 中国語の拼音は漢字ごとの読みの表・省く漢字(学年・JLPT)を使わない
+  if (currentSettings.slidesRubyLanguage === 'zh') return options;
 
   if (currentSettings.rubyMode === 'per-kanji') {
     try {

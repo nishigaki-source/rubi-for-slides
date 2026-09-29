@@ -14,6 +14,15 @@
   "sectionAppearance": {
     "message": "ルビの見た目"
   },
+  "labelRubyLanguage": {
+    "message": "言語"
+  },
+  "rubyLanguageJa": {
+    "message": "日本語のふりがな"
+  },
+  "rubyLanguageZh": {
+    "message": "中国語の拼音(簡体字)"
+  },
   "labelRubyMode": {
     "message": "振り方"
   },

@@ -39,6 +39,26 @@ export function isTokenizeRequest(msg: unknown): msg is TokenizeRequest {
   );
 }
 
+/** 中国語の拼音(ピンイン)を、段落の文字列から求める(試作)。 */
+export interface PinyinRequest {
+  type: 'rubi/pinyin';
+  requestId: string;
+  text: string;
+}
+
+export type PinyinResponse =
+  | {
+      type: 'rubi/pinyin-result';
+      requestId: string;
+      /** 拼音のルビ区間(コードポイント単位) */
+      ranges: { start: number; end: number; kana: string }[];
+    }
+  | { type: 'rubi/pinyin-error'; requestId: string; message: string };
+
+export function isPinyinRequest(msg: unknown): msg is PinyinRequest {
+  return typeof msg === 'object' && msg !== null && (msg as { type?: unknown }).type === 'rubi/pinyin';
+}
+
 /** 「省く漢字」の判定に使う、漢字ごとの段階の表(学年・JLPT)を取得する。 */
 export interface KanjiLevelsRequest {
   type: 'rubi/get-kanji-levels';

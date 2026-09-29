@@ -3,7 +3,7 @@
  * 読み書き。content script と popup の両方から使われる共通モジュール。
  */
 import { isSkipKanjiSetting, skipKanjiFromLegacyGrade, type SkipKanjiSetting } from '../core/knownKanji';
-import type { RubyMode } from '../core/types';
+import type { RubyLanguage, RubyMode } from '../core/types';
 
 /**
  * ドキュメントでの見せ方(PLAN.md 2.1節、2026-09-28 決定)。既定は 'table'(E)。
@@ -40,6 +40,11 @@ export interface RubiSettings {
   rubyMode: RubyMode;
   /** ドキュメントでの見せ方(スライドでは使わない) */
   docsStyle: DocsRubyStyle;
+  /**
+   * スライドのルビの言語(試作): 'ja' = 日本語のふりがな(既定)、'zh' = 中国語の拼音(簡体字)。
+   * ドキュメントはまだ対応していないので、スライドだけの項目として名前に slides を付けている。
+   */
+  slidesRubyLanguage: RubyLanguage;
 }
 
 export const DEFAULT_SETTINGS: RubiSettings = {
@@ -50,6 +55,7 @@ export const DEFAULT_SETTINGS: RubiSettings = {
   color: '#1a1a1a',
   rubyMode: 'per-kanji',
   docsStyle: 'table',
+  slidesRubyLanguage: 'ja',
 };
 
 const STORAGE_KEY = 'rubiSettings';
@@ -65,7 +71,8 @@ export function normalizeSettings(value: unknown): RubiSettings {
   const { gradeFilterMaxGrade, ...rest } = raw;
   const skipKanji = isSkipKanjiSetting(rest.skipKanji) ? rest.skipKanji : skipKanjiFromLegacyGrade(gradeFilterMaxGrade);
   const docsStyle = isDocsRubyStyle(rest.docsStyle) ? rest.docsStyle : DEFAULT_SETTINGS.docsStyle;
-  return { ...DEFAULT_SETTINGS, ...rest, skipKanji, docsStyle };
+  const slidesRubyLanguage: RubyLanguage = rest.slidesRubyLanguage === 'zh' ? 'zh' : 'ja';
+  return { ...DEFAULT_SETTINGS, ...rest, skipKanji, docsStyle, slidesRubyLanguage };
 }
 
 export async function loadSettings(): Promise<RubiSettings> {

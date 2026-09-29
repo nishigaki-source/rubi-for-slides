@@ -151,6 +151,7 @@ const rubyModeButtons = Array.from(qs<HTMLElement>('#rubyModeGroup').querySelect
 const fontFamilyEl = qs<HTMLSelectElement>('#fontFamily');
 const colorEl = qs<HTMLInputElement>('#color');
 const skipKanjiEl = qs<HTMLSelectElement>('#skipKanji');
+const rubyLanguageEl = qs<HTMLSelectElement>('#rubyLanguage');
 const docsStyleInputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[name="docsStyle"]'));
 const docsSizeHintEl = qs<HTMLDivElement>('#docsSizeHint');
 const docsFontHintEl = qs<HTMLDivElement>('#docsFontHint');
@@ -176,6 +177,9 @@ function applyFieldStates(): void {
   const sizeUnused = docs && docsSizeUnused(currentDocsStyle);
   const fontUnused = docs && docsFontUnused(currentDocsStyle);
   const colorUnused = docs && docsColorUnused(currentDocsStyle);
+  const zh = !docs && lastSettings.slidesRubyLanguage === 'zh';
+  rubyModeButtons.forEach((b) => (b.disabled = zh)); // 拼音は漢字1文字に1音節。振り方は選べない
+  skipKanjiEl.disabled = zh; // 省く漢字(学年・JLPT)は日本語用
   sizeButtons.forEach((b) => (b.disabled = sizeUnused));
   fontFamilyEl.disabled = fontUnused;
   colorEl.disabled = colorUnused;
@@ -202,6 +206,7 @@ function applySettingsToForm(settings: RubiSettings): void {
   fontFamilyEl.value = settings.fontFamily;
   colorEl.value = settings.color;
   skipKanjiEl.value = settings.skipKanji;
+  rubyLanguageEl.value = settings.slidesRubyLanguage;
   currentDocsStyle = settings.docsStyle;
   docsStyleInputs.forEach((input) => (input.checked = input.value === settings.docsStyle));
   lastSettings = settings;
@@ -226,6 +231,7 @@ async function persist(): Promise<void> {
     color: colorEl.value,
     rubyMode: currentRubyMode,
     docsStyle: currentDocsStyle,
+    slidesRubyLanguage: rubyLanguageEl.value === 'zh' ? 'zh' : 'ja',
   };
   lastSettings = next;
   applyFieldStates();
@@ -259,6 +265,7 @@ for (const input of docsStyleInputs) {
   });
 }
 skipKanjiEl.addEventListener('change', () => void persist());
+rubyLanguageEl.addEventListener('change', () => void persist());
 fontFamilyEl.addEventListener('change', () => void persist());
 colorEl.addEventListener('change', () => void persist());
 

@@ -88,7 +88,12 @@ export type UserDictionary = Record<string, UserDictEntry>;
  */
 export type RubyMode = 'per-kanji' | 'per-word';
 
+/** ルビの言語。'ja' = 日本語のふりがな(既定)、'zh' = 中国語の拼音(簡体字。試作) */
+export type RubyLanguage = 'ja' | 'zh';
+
 export interface ReadingServiceOptions {
+  /** ルビの言語。省略時は 'ja'。'zh' のときは形態素解析を使わず、拼音を振る(スライドの表示・書き込みだけ対応) */
+  rubyLanguage?: RubyLanguage;
   /**
    * 省く漢字(学年・JLPT のレベルで「もう習った」とみなす漢字にはルビを振らない。src/core/knownKanji.ts)。
    * 省略時は全漢字にルビを振る(既定動作、PLAN.md 決定事項参照)。

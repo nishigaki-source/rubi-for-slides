@@ -5,9 +5,8 @@
  */
 import type { ReadingServiceOptions } from '../core/types';
 import { clearOverlay, renderParagraphRuby, setOverlayVisible } from './overlayRenderer';
-import { computeGlobalRubyRanges } from './rubyPlan';
+import { fetchParagraphRanges } from './paragraphRanges';
 import { extractParagraphs } from './textExtractor';
-import { tokenizeText } from './tokenizeClient';
 
 export interface RubyPipelineOptions {
   enabled: boolean;
@@ -39,15 +38,13 @@ export async function runRubyPipeline(options: RubyPipelineOptions): Promise<voi
       const text = paragraph.text;
       if (text.trim().length === 0) return;
 
-      let tokens;
+      let globalRanges;
       try {
-        tokens = await tokenizeText(text);
+        globalRanges = await fetchParagraphRanges(text, options.readingOptions);
       } catch (err) {
-        console.error('[ルビふり for Googleスライド] トークン化に失敗しました:', err);
+        console.error('[ルビふり for Googleスライド] 読みの取得に失敗しました:', err);
         return;
       }
-
-      const globalRanges = computeGlobalRubyRanges(tokens, options.readingOptions);
 
       renderParagraphRuby(paragraph.chars, globalRanges, {
         enabled: true,
