@@ -15,13 +15,13 @@
 
 ### 日本語
 ```
-Googleスライド・ドキュメントの漢字にルビ(ふりがな)、スライドでは中国語の拼音も、表示・書き込み。読み・サイズ・フォント・色も設定できます。
+Googleスライド・ドキュメントの漢字にルビ(ふりがな)や中国語の拼音を、表示・書き込み。読み・サイズ・フォント・色も設定できます。
 ```
 (73文字)
 
 ### English
 ```
-Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides. Set the reading, font, color, and size.
+Furigana for kanji and pinyin for Chinese in Google Slides and Docs. Set the reading, font, color, and size.
 ```
 (120 characters)
 
@@ -31,7 +31,7 @@ Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides.
 ```
 「ルビふり for Googleスライド＆ドキュメント（拼音対応）」は、Googleスライド・Googleドキュメントの漢字に、
 ひらがなのルビ(ふりがな)を表示・書き込みする拡張機能です。
-スライドでは、中国語の漢字に拼音(ピンイン)を振ることもできます。
+中国語の漢字に拼音(ピンイン)を振ることもできます(スライド・ドキュメント)。
 
 ■ Googleスライドで
 ・編集画面にルビをリアルタイム表示(画面表示のみ。スライド自体は変更されません)
@@ -45,6 +45,7 @@ Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides.
   漢字の上(表)/ 漢字の上(縮める)/ 括弧書き / 括弧書き(小さい文字)/ 漢字の右上
 ・「ルビを消す」で、書き込む前の状態に戻せます
 ・箇条書き・表の中・ヘッダー・フッター・脚注にも対応(括弧書きで書き込みます)
+・中国語の拼音(簡体字)にも対応。「言語」で切り替えます(括弧書きでは、続いた漢字をまとめて「汉字(hàn zì)」の形にします)
 ・設定を変えると、ルビを自動で付け直します
 
 ■ どちらでも使える機能
@@ -68,7 +69,7 @@ Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides.
 
 ■ こんな方におすすめ
 ・日本語学習者向けの教材、子ども向けの教材をGoogleスライド・ドキュメントで作っている方
-・中国語の教材に拼音を振りたい方(スライド)
+・中国語の教材に拼音を振りたい方
 ・専門用語や固有名詞が多い資料にふりがなを振りたい方
 
 ■ 権限について
@@ -84,7 +85,7 @@ Furigana for kanji in Google Slides and Docs, plus pinyin for Chinese in Slides.
 ```
 "Furigana & Pinyin for Google Slides & Docs" is a Chrome extension that displays and writes hiragana reading aids
 (furigana/ruby text) over kanji in Google Slides and Google Docs.
-In Slides it can also add pinyin over Chinese characters.
+It can also add pinyin over Chinese characters (in Slides and Docs).
 
 ■ In Google Slides
 - Real-time furigana display in the editor (display only; your slide content is untouched)
@@ -98,6 +99,7 @@ In Slides it can also add pinyin over Chinese characters.
   Above the kanji (table) / Above the kanji (shrunk) / In parentheses / In parentheses (small) / Superscript
 - "Remove furigana" restores the document to how it was before
 - Also works in bullet lists, table cells, headers, footers, and footnotes (written in parentheses)
+- Chinese pinyin (Simplified) is supported too. Switch with "Language" (in parentheses styles, consecutive characters are grouped like 汉字 (hàn zì))
 - Changing a setting redoes the furigana automatically
 
 ■ In both
@@ -121,7 +123,7 @@ furigana can drift. Change the body font to a Japanese font (e.g. Noto Sans JP) 
 
 ■ Who this is for
 - Anyone building materials for Japanese learners or children in Google Slides / Docs
-- Anyone who wants pinyin on Chinese teaching material (Slides)
+- Anyone who wants pinyin on Chinese teaching material
 - Anyone with lots of jargon or proper nouns who wants accurate furigana
 
 ■ Permissions
@@ -139,12 +141,12 @@ Chromeウェブストアは拡張機能に「単一の目的」の説明を求�
 
 ### 日本語
 ```
-Googleスライド・ドキュメントの漢字に、読みを添えるルビ(日本語のふりがな、スライドでは中国語の拼音)を表示・書き込みすること。
+Googleスライド・ドキュメントの漢字に、読みを添えるルビ(日本語のふりがな、中国語の拼音)を表示・書き込みすること。
 ```
 
 ### English
 ```
-To display and write reading aids (Japanese furigana, and Chinese pinyin in Slides) over kanji/hanzi in Google Slides and Google Docs.
+To display and write reading aids (Japanese furigana, and Chinese pinyin) over kanji/hanzi in Google Slides and Google Docs.
 ```
 
 ## 権限の使用理由(審査で求められる場合がある)

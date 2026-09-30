@@ -220,6 +220,65 @@ describe('省く漢字・ユーザー辞書', () => {
   });
 });
 
+describe('中国語の拼音(ドキュメント)', () => {
+  const ZH = (): FakeParagraph[] => [
+    { text: '汉语课文', style: { namedStyleType: 'HEADING_1' } },
+    { text: '我叫王明，是日本人。我在北京大学学习汉语。', style: { namedStyleType: 'NORMAL_TEXT' } },
+    { text: '苹果和香蕉', bullet: true },
+  ];
+  beforeEach(() => {
+    fake = new FakeDocs(ZH());
+    setSettings({ docsRubyLanguage: 'zh', docsStyle: 'paren' });
+  });
+
+  it('括弧書き: 続いた漢字を1つにして、節ごとに拼音を括弧で入れる(形態素解析は使わない)', async () => {
+    const w = await write();
+    const text = fake.text();
+    expect(text).toContain('我叫王明（wǒ jiào wáng míng），是日本人（shì rì běn rén）。');
+    expect(text).toContain('我在北京大学学习汉语（wǒ zài běi jīng dà xué xué xí hàn yǔ）。');
+    expect(w.count).toBeGreaterThan(0);
+  });
+
+  it('表ルビ: 漢字1文字ごとの列に拼音を置く(声調記号付き)。消すと元に戻る', async () => {
+    setSettings({ docsStyle: 'table' });
+    const before = fake.snapshot();
+    const w = await write();
+    // 漢字は 4 + 18 + 4(箇条書きは括弧書きで書くが、区間の数は漢字のまとまりの数)
+    expect(w.count).toBeGreaterThan(20);
+    const text = fake.text();
+    for (const syllable of ['hàn', 'yǔ', 'wǒ', 'běi', 'jīng']) expect(text).toContain(syllable);
+    await remove();
+    expect(fake.snapshot()).toBe(before);
+    expect(fake.namedRangesOf('rubi')).toEqual([]);
+  });
+
+  it('括弧書き・小さい文字・上付きでも、消すと元に戻る', async () => {
+    for (const docsStyle of ['paren', 'paren-small', 'superscript'] as const) {
+      fake = new FakeDocs(ZH());
+      setSettings({ docsStyle });
+      const before = fake.snapshot();
+      await write();
+      expect(fake.snapshot()).not.toBe(before);
+      await remove();
+      expect(fake.snapshot()).toBe(before);
+    }
+  });
+
+  it('省く漢字(学年・JLPT)は中国語では使わない', async () => {
+    const all = (await write()).count;
+    await remove();
+    setSettings({ skipKanji: 'grade-2' });
+    expect((await write()).count).toBe(all);
+  });
+
+  it('言語を日本語に戻すと、日本語のふりがなで書く', async () => {
+    fake = new FakeDocs(PARAGRAPHS());
+    setSettings({ docsRubyLanguage: 'ja', docsStyle: 'paren' });
+    await write();
+    expect(fake.text()).toContain('春（はる）');
+  });
+});
+
 describe('Word 形式(.docx)のまま開いた文書', () => {
   it('ふる・消す・付け直すとも、Googleドキュメントに変換する方法を案内する', async () => {
     // chrome.i18n の代わりは '' を返すので、t() は文言のキーを返す

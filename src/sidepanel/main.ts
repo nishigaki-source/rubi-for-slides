@@ -175,16 +175,23 @@ const docsFontUnused = (style: DocsRubyStyle): boolean => !isTableStyle(style);
 const docsColorUnused = (style: DocsRubyStyle): boolean => style === 'paren';
 
 /** ドキュメントのタブでは、見せ方で使わない設定を押せないようにする(スライドのタブではすべて使う)。 */
+/** いまの画面(スライド・ドキュメント)のルビの言語。言語は、スライドとドキュメントで別に覚える。 */
+function currentLanguage(settings: RubiSettings): 'ja' | 'zh' {
+  return mode === 'docs' ? settings.docsRubyLanguage : settings.slidesRubyLanguage;
+}
+
 function applyFieldStates(): void {
   const docs = mode === 'docs';
   const sizeUnused = docs && docsSizeUnused(currentDocsStyle);
   const fontUnused = docs && docsFontUnused(currentDocsStyle);
   const colorUnused = docs && docsColorUnused(currentDocsStyle);
-  const zh = !docs && lastSettings.slidesRubyLanguage === 'zh';
+  const zh = currentLanguage(lastSettings) === 'zh';
+  rubyLanguageEl.value = currentLanguage(lastSettings); // スライドとドキュメントを切り替えたときも、それぞれの言語を出す
   // ドキュメントでルビを付け直している間は、見た目の設定をすべて押せなくする(押せると、続けて別の付け直しが
   // 走って、いつまでも新しいルビが出ないように見える)
   const locked = docs && docsLocked;
   docsStyleInputs.forEach((input) => (input.disabled = locked));
+  rubyLanguageEl.disabled = locked;
   rubyModeButtons.forEach((b) => (b.disabled = zh || locked)); // 拼音は漢字1文字に1音節。振り方は選べない
   skipKanjiEl.disabled = zh || locked; // 省く漢字(学年・JLPT)は日本語用
   zhDictHintEl.hidden = !zh; // ユーザー辞書は、読みがひらがなのものだけ(拼音はまだ)
@@ -214,7 +221,6 @@ function applySettingsToForm(settings: RubiSettings): void {
   fontFamilyEl.value = settings.fontFamily;
   colorEl.value = settings.color;
   skipKanjiEl.value = settings.skipKanji;
-  rubyLanguageEl.value = settings.slidesRubyLanguage;
   currentDocsStyle = settings.docsStyle;
   docsStyleInputs.forEach((input) => (input.checked = input.value === settings.docsStyle));
   lastSettings = settings;
@@ -239,7 +245,9 @@ async function persist(): Promise<void> {
     color: colorEl.value,
     rubyMode: currentRubyMode,
     docsStyle: currentDocsStyle,
-    slidesRubyLanguage: rubyLanguageEl.value === 'zh' ? 'zh' : 'ja',
+    ...(mode === 'docs'
+      ? { docsRubyLanguage: rubyLanguageEl.value === 'zh' ? ('zh' as const) : ('ja' as const) }
+      : { slidesRubyLanguage: rubyLanguageEl.value === 'zh' ? ('zh' as const) : ('ja' as const) }),
   };
   lastSettings = next;
   const willRefresh = mode === 'docs' && docsTarget !== null && docsRefreshNeeded(prev, next);

@@ -12,6 +12,7 @@
  */
 import { hasKanji } from '../core/kana';
 import { createKnownKanjiFilter } from '../core/knownKanji';
+import { buildPinyinRanges } from '../core/pinyin';
 import { buildRubyTokens } from '../core/reading';
 import type { ReadingServiceOptions } from '../core/types';
 import { buildDeleteRubyRequests, collectRubiRanges, newlineStyleFix } from '../core/docs/deleteRuby';
@@ -38,7 +39,7 @@ import {
   type LineLayoutOptions,
   type RubyUnit,
 } from '../core/docs/lineLayout';
-import { rubySpansForParagraph, type RubySpan } from '../core/docs/rubySpans';
+import { mergeAdjacentSpans, rubySpansForParagraph, type RubySpan } from '../core/docs/rubySpans';
 import { buildRestoreTableRubyRequests, buildTableRubyRequests, collectTableGroups } from '../core/docs/tableRuby';
 import type { DocsDocument, DocsRequest } from '../core/docs/types';
 import { loadSettings, type RubiSettings } from '../shared/settings';
@@ -72,6 +73,8 @@ function pickSegment(doc: DocsDocument, tabId: string | undefined): DocSegment {
 }
 
 async function readingOptions(settings: RubiSettings): Promise<ReadingServiceOptions> {
+  // 中国語の拼音は、形態素解析・漢字ごとの読みの表・省く漢字・ユーザー辞書を使わない
+  if (settings.docsRubyLanguage === 'zh') return { rubyLanguage: 'zh' };
   const [kanjiReadings, userDict, levels] = await Promise.all([
     getKanjiReadings(),
     loadUserDict(),
@@ -79,11 +82,29 @@ async function readingOptions(settings: RubiSettings): Promise<ReadingServiceOpt
   ]);
   const knownKanjiFilter = levels ? createKnownKanjiFilter(settings.skipKanji, levels) : null;
   return {
+    rubyLanguage: 'ja',
     rubyMode: settings.rubyMode,
     kanjiReadings,
     userDict,
     ...(knownKanjiFilter ? { knownKanjiFilter } : {}),
   };
+}
+
+/**
+ * 段落の読みの区間。日本語は形態素解析(kuromoji)の結果から、中国語は拼音(漢字1文字ごと)から作る。
+ * 中国語で、本文に差し込む見せ方(inline)のときは、続いた漢字を1つにまとめる(「汉字(hàn zì)」の形)。
+ * 表ルビは1文字ごとの列に読みを置くので、まとめない。
+ */
+async function spansForParagraph(
+  p: DocParagraph,
+  options: ReadingServiceOptions,
+  inline: boolean
+): Promise<RubySpan[] | null> {
+  if (options.rubyLanguage === 'zh') {
+    const spans = rubySpansForParagraph(p, [{ surface: p.text, rubyRanges: buildPinyinRanges(p.text) }]);
+    return spans && inline ? mergeAdjacentSpans(spans) : spans;
+  }
+  return rubySpansForParagraph(p, buildRubyTokens(await tokenize(p.text), options));
 }
 
 /**
@@ -198,12 +219,13 @@ export async function writeRuby(
   const planned: { paragraph: DocParagraph; spans: RubySpan[]; table: boolean }[] = [];
   for (const p of paragraphs) {
     if (!hasKanji(p.text)) continue;
-    const spans = rubySpansForParagraph(p, buildRubyTokens(await tokenize(p.text), options));
+    const table = useTable && canUseTable(p);
+    const spans = await spansForParagraph(p, options, !table);
     if (!spans) {
       console.warn('[ルビふり] 段落の位置の対応が取れないため飛ばしました', p.startIndex);
       continue;
     }
-    if (spans.length > 0) planned.push({ paragraph: p, spans, table: useTable && canUseTable(p) });
+    if (spans.length > 0) planned.push({ paragraph: p, spans, table });
   }
   lap('tokenize');
 
@@ -261,7 +283,7 @@ export async function writeRuby(
     const subParagraphs = extractParagraphs(sub.content, { ...tab, namedStyles: seg.namedStyles });
     for (const p of [...subParagraphs].sort((a, b) => b.startIndex - a.startIndex)) {
       if (!hasKanji(p.text)) continue;
-      const spans = rubySpansForParagraph(p, buildRubyTokens(await tokenize(p.text), options));
+      const spans = await spansForParagraph(p, options, true);
       if (!spans || spans.length === 0) continue;
       requests.push(
         ...buildInlineRubyRequests(spans, {

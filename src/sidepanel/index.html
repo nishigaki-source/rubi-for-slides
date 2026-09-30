@@ -219,8 +219,8 @@
         <label class="choice"><input type="radio" name="docsStyle" value="paren-small" /><span data-i18n="docsStyleParenSmall"></span></label>
         <label class="choice"><input type="radio" name="docsStyle" value="superscript" /><span data-i18n="docsStyleSuperscript"></span></label>
       </div>
-      <label class="slidesOnly" for="rubyLanguage" data-i18n="labelRubyLanguage"></label>
-      <select id="rubyLanguage" class="slidesOnly">
+      <label for="rubyLanguage" data-i18n="labelRubyLanguage"></label>
+      <select id="rubyLanguage">
         <option value="ja" data-i18n="rubyLanguageJa"></option>
         <option value="zh" data-i18n="rubyLanguageZh"></option>
       </select>
@@ -307,7 +307,7 @@
 
     <div class="footer">
       <a href="#" id="openOptions" data-i18n="linkEditUserDict"></a>
-      <div class="fieldHint slidesOnly" id="zhDictHint" data-i18n="hintZhDictUnused" hidden></div>
+      <div class="fieldHint" id="zhDictHint" data-i18n="hintZhDictUnused" hidden></div>
     </div>
   </div>
   <script type="module" src="./main.ts"></script>

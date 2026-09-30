@@ -22,8 +22,10 @@
 
 ### v1.0.0 に含めた、統合後の追加(2026-09-29)
 
-- **中国語の拼音(スライドのみ)**: サイドパネルの「言語」で、日本語のふりがな / 中国語の拼音(簡体字)を選べる(設定 `slidesRubyLanguage`。
-  ドキュメントはまだ日本語のふりがなだけ)。`src/core/pinyin.ts`・`pinyinFixes.ts`(軽声の補正表。試作で、中国語の先生の確認は未)・`textWidth.ts`
+- **中国語の拼音(スライド・ドキュメント)**: サイドパネルの「言語」で、日本語のふりがな / 中国語の拼音(簡体字)を選べる(設定は
+  スライドが `slidesRubyLanguage`、ドキュメントが `docsRubyLanguage`。別々に覚える)。ドキュメントは `src/worker/docsRuby.ts` の
+  `spansForParagraph` が拼音の区間を作り、括弧書き・上付きでは `mergeAdjacentSpans`(`src/core/docs/rubySpans.ts`)で続いた漢字をまとめる
+  (「汉字(hàn zì)」)。表ルビは1文字ごとの列に拼音を置く。`src/core/pinyin.ts`・`pinyinFixes.ts`(軽声の補正表。試作で、中国語の先生の確認は未)・`textWidth.ts`
   (ルビの幅を英字で見積もる)、ライブラリ pinyin-pro(MIT。`public/licenses/` に全文)。詳細は README の「中国語の拼音」節。
   未対応: 繁体字・儿化・拼音のユーザー辞書・日本語と中国語が混ざったスライド(書き込みは前のルビと置き換えるため、日本語のあとに中国語を書くと日本語が消える)。
 - **PDF・印刷でルビがずれる件の警告**: 本文が Arial など日本語を含まないフォントだと、PDF では別のフォント(MS PGothic)になって本文が狭くなり、

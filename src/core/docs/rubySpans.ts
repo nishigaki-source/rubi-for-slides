@@ -66,3 +66,28 @@ export function excludeOverlapping(
 ): RubySpan[] {
   return spans.filter((s) => !excluded.some((x) => s.startIndex < x.endIndex && x.startIndex < s.endIndex));
 }
+
+/**
+ * 隣り合う区間(すき間なく続いているもの)を1つにまとめる。読みは半角スペースでつなぐ。
+ *
+ * 中国語の拼音は漢字1文字ごとの区間になるが、本文に差し込む見せ方(括弧書き・上付き)で1文字ごとに
+ * 読みを入れると「汉(hàn)字(zì)」になってしまう。続いた漢字を1つにして「汉字(hàn zì)」の形にする。
+ * 途中に句読点・かな・空白があれば、そこで区切る(節ごとに読みが付く)。表ルビは1文字ごとの列が要るので、これは使わない。
+ */
+export function mergeAdjacentSpans(spans: readonly RubySpan[]): RubySpan[] {
+  const merged: RubySpan[] = [];
+  for (const span of spans) {
+    const last = merged[merged.length - 1];
+    if (last && last.endIndex === span.startIndex && !last.style && !span.style) {
+      merged[merged.length - 1] = {
+        startIndex: last.startIndex,
+        endIndex: span.endIndex,
+        base: last.base + span.base,
+        reading: `${last.reading} ${span.reading}`,
+      };
+    } else {
+      merged.push({ ...span });
+    }
+  }
+  return merged;
+}

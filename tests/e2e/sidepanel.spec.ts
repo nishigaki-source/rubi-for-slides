@@ -44,6 +44,7 @@ async function openPanel(page: Page, options: FakeChromeOptions): Promise<void> 
           rubyMode: 'per-kanji',
           docsStyle: 'table',
           slidesRubyLanguage: 'ja',
+          docsRubyLanguage: 'ja',
           ...(opts.settings ?? {}),
         },
       };
@@ -269,7 +270,7 @@ test.describe('書き込み後の警告(本文が日本語を含まないフォ�
   });
 });
 
-test.describe('ルビの言語(日本語のふりがな / 中国語の拼音。スライドのみ)', () => {
+test.describe('ルビの言語(日本語のふりがな / 中国語の拼音。スライドとドキュメントで別々に覚える)', () => {
   const rubyModeButtons = (page: Page) => page.locator('#rubyModeGroup .segBtn');
 
   test('スライドのタブ: 既定は日本語。中国語を選ぶと保存し、振り方・省く漢字を押せなくして、辞書の注意書きを出す', async ({ page }) => {
@@ -300,10 +301,44 @@ test.describe('ルビの言語(日本語のふりがな / 中国語の拼音。�
     await expect(page.locator('#skipKanji')).toBeDisabled();
   });
 
-  test('ドキュメントのタブ: 言語の選択は出さない(ドキュメントはまだ日本語のふりがなだけ)', async ({ page }) => {
-    await openPanel(page, { url: DOCS_URL });
-    await expect(page.locator('#rubyLanguage')).toBeHidden();
+  test('ドキュメントのタブ: 言語を選べる。中国語を選ぶと、ドキュメントの言語だけ保存し、付け直しを送る', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, settings: { slidesRubyLanguage: 'ja' } });
+    await expect(page.locator('#rubyLanguage')).toBeVisible();
+    await expect(page.locator('#rubyLanguage')).toHaveValue('ja');
     await expect(page.locator('#zhDictHint')).toBeHidden();
+
+    await page.locator('#rubyLanguage').selectOption('zh');
+    await expect.poll(() => stored<string>(page, 'docsRubyLanguage')).toBe('zh');
+    expect(await stored<string>(page, 'slidesRubyLanguage')).toBe('ja'); // スライドの言語は変わらない
+    await expect.poll(() => commands(page)).toEqual(['refresh']);
+    // 拼音は漢字1文字に1音節・学年や JLPT は日本語用なので、振り方・省く漢字は使わない
+    await expect(page.locator('#skipKanji')).toBeDisabled();
+    for (const button of await rubyModeButtons(page).all()) await expect(button).toBeDisabled();
+    await expect(page.locator('#zhDictHint')).toBeVisible();
+    // 見せ方・大きさ・フォント・色は中国語でも使う(括弧書きでない見せ方のとき)
+    await expect(page.locator('input[name="docsStyle"]').first()).toBeEnabled();
+    await expect(sizeButton(page, 'small')).toBeEnabled();
+  });
+
+  test('言語はスライドとドキュメントで別々に覚える(スライドが中国語でも、ドキュメントは日本語のまま)', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, settings: { slidesRubyLanguage: 'zh', docsRubyLanguage: 'ja' } });
+    await expect(page.locator('#rubyLanguage')).toHaveValue('ja');
+    await expect(page.locator('#skipKanji')).toBeEnabled();
+  });
+
+  test('保存済みのドキュメントの言語が中国語なら、パネルを開いたときから中国語の状態で表示する', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, settings: { slidesRubyLanguage: 'ja', docsRubyLanguage: 'zh' } });
+    await expect(page.locator('#rubyLanguage')).toHaveValue('zh');
+    await expect(page.locator('#skipKanji')).toBeDisabled();
+  });
+
+  test('ドキュメントで付け直している間は、言語も押せない', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL, docsDelayMs: 1500 });
+    await page.locator('#rubyLanguage').selectOption('zh');
+    await expect(page.locator('#docsProgress')).toBeVisible();
+    await expect(page.locator('#rubyLanguage')).toBeDisabled();
+    await expect(page.locator('#docsProgress')).toBeHidden({ timeout: 5000 });
+    await expect(page.locator('#rubyLanguage')).toBeEnabled();
   });
 
   test('スライドで中国語を選んでも、ドキュメントの付け直しを送らない', async ({ page }) => {
