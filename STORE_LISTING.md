@@ -164,14 +164,15 @@ To display and write reading aids (Japanese furigana, and Chinese pinyin) over k
 
 ## スクリーンショット
 
-Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求める。v1.0.0 用に3枚を撮り直した(2026-09-30。`design/` に置いた。1280×800、RGB、透過なし)。
+Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求める。v1.0.0 用に4枚を撮り直した(2026-09-30。`design/` に置いた。1280×800、RGB、透過なし)。
 ページ側は、実際の Googleスライド・ドキュメントの画面。右側の設定パネルは、Chrome のサイドパネルが自動操作では撮れないため、
 実物と同じ HTML・CSS・スクリプトをブラウザで描画したものを合成している(表示内容は実物と同じ)。
 
 1. `design/store-screenshot-v1-1-slides.png` — スライド(日本語のふりがな)。漢字ごとのルビを表示。パネルは「言語:日本語のふりがな」
 2. `design/store-screenshot-v1-2-docs.png` — ドキュメント(漢字の上・表のルビ、熟語ごと)。パネルは見せ方の5種類の選択
 3. `design/store-screenshot-v1-3-pinyin.png` — スライド(中国語の拼音)。パネルは「言語:中国語の拼音(簡体字)」
-4. (任意)ユーザー辞書の詳細設定ページ — `chrome-extension://` のページなので自動操作では撮れない。手動で撮影する場合のみ
+4. `design/store-screenshot-v1-4-docs-pinyin.png` — ドキュメント(中国語の拼音、漢字の上・表のルビ)。パネルは「言語:中国語の拼音(簡体字)」
+5. (任意)ユーザー辞書の詳細設定ページ — `chrome-extension://` のページなので自動操作では撮れない。手動で撮影する場合のみ
 
 撮り直すとき: 撮影用の確認用ビルド(`npm run build:qa`)を読み込み、ページの `window.postMessage` で設定・書き込みを指示する
 (使い方は `src/content/qaBridge.ts`・`src/content/docs/qaBridge.ts` の冒頭)。ドキュメントは、確認用ビルドの「テスト用の文書を作る」
@@ -196,6 +197,6 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
 - [ ] v1.0.0(スライド＆ドキュメント、拼音、PDF の警告、ドキュメントの「変換中」表示)
   - [x] コードとテスト(単体・結合 324 件、e2e 37 件)
   - [x] 拡張機能の説明文(manifest)・プライバシーポリシー(`docs/index.html`)・掲載文(このファイル)を更新
-  - [x] スクリーンショットの撮り直し(3枚。`design/store-screenshot-v1-*.png`)
+  - [x] スクリーンショットの撮り直し(4枚。`design/store-screenshot-v1-*.png`)
   - [ ] GitHub への push(`docs/` は GitHub Pages に反映されるまでに少しかかる。Picker のドキュメント向けの文言も同じ)
   - [ ] `npm run build:store-zip` で zip を作り直して提出(権限の警告が v0.8.0 から増えないことを、提出前にもう一度確認)
