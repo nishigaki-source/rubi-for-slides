@@ -178,6 +178,10 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
 (使い方は `src/content/qaBridge.ts`・`src/content/docs/qaBridge.ts` の冒頭)。ドキュメントは、確認用ビルドの「テスト用の文書を作る」
 (`command: 'create-test-doc'`)で作った文書なら、許可の画面(Picker)なしで書き込める。撮影後は `npm run build` で通常のビルドに戻す。
 
+プロモーション タイル(v1.0.0 で文言を更新。2026-09-30): `design/promo-tile-small-440x280.png`(小、440×280)・`design/promo-tile-marquee-1400x560.png`(マーキー、1400×560)。
+デザインは v0.8.0 までと同じで、副題を「for Googleスライド＆ドキュメント」、一文を「漢字に、ふりがなを。拼音も。」に変えた。
+元データは `design/banner/banner.html`、書き出しは `node design/banner/render.cjs`(Google Fonts の Noto Sans JP を読み込むためネットワークが必要)。24ビット PNG・透過なし。
+
 古い画像(参考): `design/store-screenshot-real-1.png`・`design/store-screenshot-1.png`(v0.8.0 までのスライドの画面)
 
 ## 提出・公開のチェックリスト
