@@ -48,6 +48,21 @@
       }
     }
   },
+  "errorAuthNotSignedIn": {
+    "message": "You are not signed in to Chrome with a Google account. Sign in from the profile icon at the top right of Chrome, then try again."
+  },
+  "errorAuthNotApproved": {
+    "message": "Access to your Google account was not granted. Click \"Allow\" on the screen that appears. If a school or work account blocks it, ask your administrator to allow this extension."
+  },
+  "errorAuthNetwork": {
+    "message": "Could not connect to Google. Check your network connection and try again."
+  },
+  "errorAuthUnsupportedBrowser": {
+    "message": "This browser does not seem to support the Google account authorization this needs. Writing to Docs or Slides works in Google Chrome signed in with a Google account. Showing furigana on the Slides screen works as is."
+  },
+  "errorAuthOther": {
+    "message": "Could not get permission from your Google account. Make sure you are signed in to Chrome with a Google account, then try again."
+  },
   "labelRubyMode": {
     "message": "Placement"
   },
