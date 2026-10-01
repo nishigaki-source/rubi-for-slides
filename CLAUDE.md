@@ -30,9 +30,10 @@
   未対応: 繁体字・儿化・拼音のユーザー辞書・日本語と中国語が混ざったスライド(書き込みは前のルビと置き換えるため、日本語のあとに中国語を書くと日本語が消える)。
 - **PDF・印刷でルビがずれる件の警告**: 本文が Arial など日本語を含まないフォントだと、PDF では別のフォント(MS PGothic)になって本文が狭くなり、
   ルビがずれる。書き込み後、設定パネルに警告を出す(`src/core/fontCoverage.ts`)。本文を Noto Sans JP にすればずれない(利用者が確認済み)。README の「既知の注意点」に経緯。
-- 提出前に残っていること: スクリーンショットの撮り直し、`main` の push、zip の作り直しと提出(手順は STORE_LISTING.md の末尾のチェックリスト)。
-  拡張機能の説明文(manifest の `extDescription`)・掲載文・プライバシーポリシー(`docs/index.html`)は、ドキュメントと拼音を反映済み(2026-09-30)。
-  権限は `storage`・`identity`・`activeTab`・`sidePanel`・`scripting`。ホスト権限に `https://docs.googleapis.com/*` は足さない(警告が増える)。
+- **v1.0.0 は 2026-09-30 に提出済み(審査待ち)**。提出した zip のコードは `a720f1b`(手順・結果の記録は STORE_LISTING.md 末尾のチェックリスト)。
+  承認されたら告知・要望をくださった方への返信。差し戻しなら、メールの指摘に沿って直して再提出する。
+  掲載文・プライバシーポリシー(`docs/index.html`)・拡張機能の説明は、ドキュメントと拼音を反映済み。権限は `storage`・`identity`・`activeTab`・`sidePanel`・`scripting`。
+  ホスト権限に `https://docs.googleapis.com/*` は足さない(警告が増える)。
 
 ### 統合で確かめたこと・気をつけること
 
