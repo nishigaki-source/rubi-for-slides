@@ -36,6 +36,32 @@ const ENTRIES = [
     'This can take tens of seconds for a long document. Settings are locked until it finishes.',
   ],
   ['docsProgressElapsed', '$SECONDS$ 秒経過', '$SECONDS$ s elapsed', ['SECONDS']],
+  // --- Google アカウントの許可の失敗(chrome.identity.getAuthToken)。原因ごとに対処を案内する(src/core/authError.ts) ---
+  [
+    'errorAuthNotSignedIn',
+    'Chrome に Google アカウントでログインしていません。Chrome の右上のプロフィールのアイコンからログインして、もう一度お試しください。',
+    'You are not signed in to Chrome with a Google account. Sign in from the profile icon at the top right of Chrome, then try again.',
+  ],
+  [
+    'errorAuthNotApproved',
+    'Google アカウントへのアクセスが許可されませんでした。表示された画面で「許可」を押してください。学校・会社のアカウントで、許可の画面が出ない・ブロックされるときは、管理者に、この拡張機能の利用を許可してもらってください。',
+    'Access to your Google account was not granted. Click "Allow" on the screen that appears. If a school or work account blocks it, ask your administrator to allow this extension.',
+  ],
+  [
+    'errorAuthNetwork',
+    'Google に接続できませんでした。ネットワークの接続を確認して、もう一度お試しください。',
+    'Could not connect to Google. Check your network connection and try again.',
+  ],
+  [
+    'errorAuthUnsupportedBrowser',
+    'このブラウザでは、Google アカウントの許可の仕組みが使えないようです。ドキュメントへの書き込みと、スライドへの書き込みは、Google Chrome(Google アカウントでログインした状態)でお試しください。スライドの画面へのルビの表示は、そのまま使えます。',
+    'This browser does not seem to support the Google account authorization this needs. Writing to Docs or Slides works in Google Chrome signed in with a Google account. Showing furigana on the Slides screen works as is.',
+  ],
+  [
+    'errorAuthOther',
+    'Google アカウントの許可を得られませんでした。Chrome に Google アカウントでログインしているかを確認して、もう一度お試しください。',
+    'Could not get permission from your Google account. Make sure you are signed in to Chrome with a Google account, then try again.',
+  ],
   ['labelRubyMode', '振り方', 'Placement'],
   ['rubyModeGroupAriaLabel', 'ルビの振り方', 'How furigana is placed'],
   ['rubyModePerKanji', '漢字ごと', 'Per kanji'],

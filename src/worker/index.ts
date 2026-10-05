@@ -34,6 +34,9 @@ import { getKanjiLevels } from './kanjiLevels';
 import { getKanjiReadings } from './kanjiReadings';
 import { batchUpdate, getPageInfo, getPresentationPages, getRubyGroupObjectIds, getRubyObjectIds } from './slidesClient';
 import { tokenize, warmUpTokenizer } from './tokenizer';
+import { setUninstallSurveyUrl } from './uninstallUrl';
+
+void setUninstallSurveyUrl();
 
 chrome.runtime.onInstalled.addListener(() => {
   console.log(

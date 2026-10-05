@@ -1,3 +1,6 @@
+import { AUTH_ERROR_MESSAGE_KEYS, classifyAuthError } from '../core/authError';
+import { t } from '../shared/i18n';
+
 /**
  * chrome.identity を使った OAuth トークン管理(モード B用)。
  * manifest.json の oauth2 設定(client_id・scopes)を前提にする。
@@ -18,6 +21,15 @@ function extractToken(result: GetAuthTokenResult): string | null {
 }
 
 /**
+ * 許可の失敗を、原因に合わせた日本語(ブラウザの言語に合わせる)の案内にする。元の英語のメッセージは、サポートで原因を聞くときの
+ * ために、案内の後ろに添える。
+ */
+export function authError(original: string | undefined): Error {
+  const guide = t(AUTH_ERROR_MESSAGE_KEYS[classifyAuthError(original)]);
+  return new Error(original ? `${guide}\n(${original})` : guide);
+}
+
+/**
  * OAuth アクセストークンを取得する。
  * @param interactive true の場合、未認可なら Google の同意画面を表示する。
  *   false の場合はキャッシュ済みトークンが無ければ即座に失敗する(サイレントチェック用)。
@@ -27,12 +39,7 @@ export function getAuthToken(interactive: boolean): Promise<string> {
     chrome.identity.getAuthToken({ interactive }, (result) => {
       const token = extractToken(result as GetAuthTokenResult);
       if (chrome.runtime.lastError || !token) {
-        reject(
-          new Error(
-            chrome.runtime.lastError?.message ??
-              'Google アカウントへのアクセス許可が必要です。もう一度お試しください。'
-          )
-        );
+        reject(authError(chrome.runtime.lastError?.message));
         return;
       }
       resolve(token);

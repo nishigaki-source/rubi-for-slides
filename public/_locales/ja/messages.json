@@ -48,6 +48,21 @@
       }
     }
   },
+  "errorAuthNotSignedIn": {
+    "message": "Chrome に Google アカウントでログインしていません。Chrome の右上のプロフィールのアイコンからログインして、もう一度お試しください。"
+  },
+  "errorAuthNotApproved": {
+    "message": "Google アカウントへのアクセスが許可されませんでした。表示された画面で「許可」を押してください。学校・会社のアカウントで、許可の画面が出ない・ブロックされるときは、管理者に、この拡張機能の利用を許可してもらってください。"
+  },
+  "errorAuthNetwork": {
+    "message": "Google に接続できませんでした。ネットワークの接続を確認して、もう一度お試しください。"
+  },
+  "errorAuthUnsupportedBrowser": {
+    "message": "このブラウザでは、Google アカウントの許可の仕組みが使えないようです。ドキュメントへの書き込みと、スライドへの書き込みは、Google Chrome(Google アカウントでログインした状態)でお試しください。スライドの画面へのルビの表示は、そのまま使えます。"
+  },
+  "errorAuthOther": {
+    "message": "Google アカウントの許可を得られませんでした。Chrome に Google アカウントでログインしているかを確認して、もう一度お試しください。"
+  },
   "labelRubyMode": {
     "message": "振り方"
   },
