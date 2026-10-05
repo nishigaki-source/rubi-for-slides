@@ -44,6 +44,7 @@ Furigana for kanji and pinyin for Chinese in Google Slides and Docs. Set the rea
 ・文書の本文にルビを書き込みます。見せ方を5種類から選べます
   漢字の上(表)/ 漢字の上(縮める)/ 括弧書き / 括弧書き(小さい文字)/ 漢字の右上
 ・「ルビを消す」で、書き込む前の状態に戻せます
+・文字を選んで「選択した範囲のルビを消す」を押すと、その部分だけ消せます
 ・箇条書き・表の中・ヘッダー・フッター・脚注にも対応(括弧書きで書き込みます)
 ・中国語の拼音(簡体字)にも対応。「言語」で切り替えます(括弧書きでは、続いた漢字をまとめて「汉字(hàn zì)」の形にします)
 ・設定を変えると、ルビを自動で付け直します
@@ -98,6 +99,7 @@ It can also add pinyin over Chinese characters (in Slides and Docs).
 - Writes furigana into the document body, in one of five styles
   Above the kanji (table) / Above the kanji (shrunk) / In parentheses / In parentheses (small) / Superscript
 - "Remove furigana" restores the document to how it was before
+- Select text and press "Remove furigana from the selection" to clear just that part
 - Also works in bullet lists, table cells, headers, footers, and footnotes (written in parentheses)
 - Chinese pinyin (Simplified) is supported too. Switch with "Language" (in parentheses styles, consecutive characters are grouped like 汉字 (hàn zì))
 - Changing a setting redoes the furigana automatically
@@ -157,7 +159,7 @@ To display and write reading aids (Japanese furigana, and Chinese pinyin) over k
 | `identity` | Google Slides API・Google Docs APIを呼び出すためのOAuth認可(`drive.file` スコープ。ユーザーが選んだスライド・ドキュメントのみ)に使用 | For OAuth authorization (`drive.file` scope; only the presentation or document the user selects) to call the Google Slides API and Google Docs API |
 | `activeTab` | 現在開いているタブがGoogleスライド・ドキュメントかどうかを判定するために使用 | To detect whether the current tab is a Google Slides or Docs page |
 | `sidePanel` | 設定パネルを Chrome のサイドパネル(ページの横)に表示するために使用 | To show the settings panel in Chrome's side panel next to the page |
-| `scripting` | Googleドキュメントに表のルビを書き込むとき、表の列の幅を決めるため、開いているドキュメントのページ内で文字の幅を測る短い処理を実行する(受け取るのは幅の数値だけ。文書の内容は読み取らず、外部にも送らない) | When writing table-style furigana to a Google Docs document, to run a short script in the open document's page that measures character widths for the table column widths (only width numbers are returned; the document content is not read or sent anywhere) |
+| `scripting` | Googleドキュメントに表のルビを書き込むとき、表の列の幅を決めるため、開いているドキュメントのページ内で文字の幅を測る短い処理を実行する(受け取るのは幅の数値だけ)。また「選択した範囲のルビを消す」を押したときだけ、利用者が選択している文字を同じページ内で読み取る(どこを選んだかを決めるためにブラウザ内で使うだけで、保存も外部への送信もしない) | When writing table-style furigana to a Google Docs document, to run a short script in the open document's page that measures character widths for the table column widths (only width numbers are returned). Also, only when the user presses "Remove furigana from the selection", to read the text the user has selected in that page (used inside the browser to locate the selection; not stored or sent anywhere) |
 | ホスト権限(`docs.google.com/presentation/*`, `docs.google.com/document/*`, `slides.googleapis.com`) | Googleスライドの編集画面へのルビ表示、ドキュメントの編集画面での動作、Slides APIとの通信のために必要 | Needed to display furigana in the Slides editor, to work in the Docs editor, and to communicate with the Slides API |
 
 (Google Docs API のホスト `docs.googleapis.com` は、ホスト権限に含めていない。含めると利用者への権限の警告が増えるため。API はアクセストークン付きで呼べる。)
@@ -205,6 +207,13 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
   - [x] GitHub への push(プライバシーポリシー・Picker のページは GitHub Pages に反映済み)
   - [x] `npm run build:store-zip` で zip を作り直して**提出**(2026-09-30。提出した zip のコードは main の `a720f1b`。その後の `07ce6ab` はプロモーション タイルと文書のみ)。審査待ち
   - [x] 審査の結果: 承認・公開(2026-10-04 ごろ)。告知用の画像は `design/x-post/`
+- [ ] v1.0.2(ドキュメントの「選択した範囲のルビを消す」。2026-10-05)
+  - [x] コードとテスト(単体・結合 371 件、e2e 41 件)。実機: テスト文書で、括弧書き・表ルビとも選択して消せることを確認
+  - [x] プライバシーポリシー(`docs/index.html`)に「選択した文字の読み取り」を追記。掲載文に1行追加
+  - [ ] GitHub への push(プライバシーポリシーの追記を GitHub Pages に反映)
+  - [ ] `npm run build:store-zip` で zip を作って提出。**ダッシュボードの「権限が必要な理由」の `scripting` を、上の表の文に差し替える**
+    (これまで「文書の内容は読み取らず」と書いていたが、選択した文字を読むようになったため)。掲載文の1行も足す
+  - [ ] 審査の結果
 - [x] v1.0.1(不具合の修正。2026-10-05 に承認)
   - 内容: ドキュメントの「漢字の上」が、長い文書で「Column width must not be less than minimum column width: 5.」と出て
     失敗する件の修正(利用者の13ページの文書で確認済み)、Word から変換した文書への対応(記号フォントの文字・書式の復元)、

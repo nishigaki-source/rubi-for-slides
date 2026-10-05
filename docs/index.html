@@ -26,7 +26,7 @@
 <body>
 
 <h1>ルビふり for Googleスライド＆ドキュメント（拼音対応）</h1>
-<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-10-01</p>
+<p class="updated">プライバシーポリシー / Privacy Policy — 最終更新日 2026-10-05</p>
 <p class="lang-toggle"><a href="#ja">日本語</a> / <a href="#en">English</a></p>
 
 <section id="ja">
@@ -79,6 +79,13 @@
     文書の内容を読み取ったり、外部に送信したりすることはありません。
   </li>
   <li>
+    <strong>選択した文字の読み取り(ドキュメントのページ内)</strong><br />
+    パネルの「選択した範囲のルビを消す」を押したときだけ、開いているドキュメントのページの中で、
+    利用者がそのとき選択している文字を読み取ります(<code>chrome.scripting</code>)。
+    読み取った文字は、文書の中のどこを選んだのかを決めるために利用者のブラウザの中で使うだけで、
+    保存せず、外部にも送信しません。クリップボードの内容は読み取らず、変更もしません。
+  </li>
+  <li>
     <strong>Google Picker(ファイル選択画面)</strong><br />
     アクセスを許可するスライド・ドキュメントを選ぶため、当サイトの静的ページ(<code>rubi.rocketdone.com/picker.html</code>)で
     Google Picker(<code>apis.google.com</code>)を表示します。このページは選択結果を拡張機能に返すだけで、
@@ -122,7 +129,7 @@ JLPT のレベルのデータは、Jonathan Waller 氏の
   <li><code>identity</code>: Google Slides API・Google Docs APIを利用するためのOAuth認可(ログイン済みのGoogleアカウントでの許可。<code>drive.file</code> スコープ)に使用します。</li>
   <li><code>activeTab</code> / Googleスライド・Googleドキュメントへのホスト権限: 現在開いているGoogleスライド・ドキュメントの編集画面でのみ動作するために使用します。</li>
   <li><code>sidePanel</code>: 設定パネルを、Chromeのサイドパネル(画面の横)に表示するために使用します。</li>
-  <li><code>scripting</code>: 上記の「文字の幅の測定」を、開いているドキュメントのページ内で行うために使用します。</li>
+  <li><code>scripting</code>: 上記の「文字の幅の測定」と「選択した文字の読み取り」を、開いているドキュメントのページ内で行うために使用します。</li>
 </ul>
 
 <h2>データの保持・削除</h2>
@@ -206,6 +213,13 @@ In Docs it writes the readings into the document body (as a table, parenthesized
     It receives only width numbers; it does not read the document's content or send anything elsewhere.
   </li>
   <li>
+    <strong>Reading the selected text (inside the Docs page)</strong><br />
+    Only when you press "Remove furigana from the selection" in the panel, the extension reads the text you currently
+    have selected in the open document's page (<code>chrome.scripting</code>). The text is used only inside your browser
+    to work out which part of the document you selected; it is not stored or sent anywhere. The extension does not
+    read or change your clipboard.
+  </li>
+  <li>
     <strong>Google Picker (file selection dialog)</strong><br />
     To let you choose which presentation or document to grant access to, a static page on this site
     (<code>rubi.rocketdone.com/picker.html</code>) shows Google Picker (<code>apis.google.com</code>).
@@ -247,7 +261,7 @@ does your response reach the developer (Google Forms' terms and privacy policy a
   <li><code>identity</code>: used for OAuth authorization (the <code>drive.file</code> scope) to call the Google Slides API and Google Docs API using your already-signed-in Google account.</li>
   <li><code>activeTab</code> / host permission for Google Slides and Google Docs: used so the extension only runs on the currently open Google Slides / Docs editor.</li>
   <li><code>sidePanel</code>: used to show the settings panel in Chrome's side panel next to the page.</li>
-  <li><code>scripting</code>: used to measure text width inside the open document's page, as described above.</li>
+  <li><code>scripting</code>: used to measure text width and to read the selected text inside the open document's page, as described above.</li>
 </ul>
 
 <h2>Data retention and deletion</h2>
