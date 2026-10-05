@@ -1,0 +1,110 @@
+<!doctype html>
+<!--
+  X(旧 Twitter)の告知ポストに添える画像(1600x900)の元データ。v1.0.0 公開(2026-10)。
+  配色・フォントは、プロモーション タイル(design/banner/banner.html)に合わせている。
+  書き出し: node design/x-post/render.cjs(Google Fonts の Noto Sans JP を読み込むため、ネットワークが必要)
+-->
+<html lang="ja">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@500;700;900&display=block" rel="stylesheet" />
+<style>
+  :root { --bg: #faf9f3; --ink: #1d1f24; --muted: #54575c; --orange: #f2b233; --red: #c5221f; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Noto Sans JP', sans-serif; background: #fff; -webkit-font-smoothing: antialiased; }
+  .tile { position: relative; overflow: hidden; width: 1600px; height: 900px; background: var(--bg); color: var(--ink); margin-bottom: 20px; }
+  .dots {
+    position: absolute; right: -60px; top: -60px; width: 520px; height: 420px;
+    background-image: radial-gradient(var(--orange) 3.2px, transparent 3.3px); background-size: 28px 28px;
+    opacity: .5; -webkit-mask-image: radial-gradient(circle at 100% 0%, #000 25%, transparent 70%);
+  }
+  .copy { position: absolute; left: 84px; top: 150px; width: 580px; }
+  .badge { display: inline-block; padding: 8px 22px; border-radius: 999px; background: var(--orange); font-weight: 900; font-size: 26px; letter-spacing: .02em; }
+  h1 { margin-top: 28px; font-size: 58px; line-height: 1.28; font-weight: 900; letter-spacing: -0.02em; }
+  h1 .hl { background: linear-gradient(transparent 62%, rgba(242,178,51,.55) 62%); }
+  .sub { margin-top: 30px; font-size: 27px; line-height: 1.7; font-weight: 500; color: var(--muted); }
+  .brand { position: absolute; left: 84px; bottom: 70px; display: flex; align-items: center; gap: 16px; }
+  .brand img { width: 62px; height: 62px; border-radius: 22%; box-shadow: 0 4px 12px rgba(29,31,36,.2); }
+  .brand .name { font-size: 36px; font-weight: 900; letter-spacing: -0.03em; line-height: 1; }
+  .brand .for { font-size: 17px; font-weight: 700; color: var(--muted); margin-top: 6px; }
+  .shot { position: absolute; right: 48px; top: 190px; width: 820px; border-radius: 18px; overflow: hidden; background: #fff;
+    box-shadow: 0 30px 70px rgba(29,31,36,.28); border: 1px solid rgba(0,0,0,.08); }
+  .shot img { display: block; width: 100%; }
+
+  /* 表紙(ロゴ + 見出し + 3つの特長) */
+  .hero { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+  .hero .lockup { display: flex; align-items: center; gap: 36px; }
+  .hero .lockup img { width: 150px; height: 150px; border-radius: 22%; box-shadow: 0 14px 40px rgba(29,31,36,.22); }
+  .hero .wordmark { font-size: 112px; font-weight: 900; letter-spacing: -0.04em; line-height: 1; text-align: left; }
+  .hero .for { font-size: 30px; font-weight: 700; color: var(--muted); margin-top: 14px; text-align: left; }
+  .hero .announce { margin-top: 56px; display: flex; align-items: center; gap: 22px; }
+  .hero .announce .badge { font-size: 40px; padding: 12px 34px; }
+  .hero .announce .text { font-size: 64px; font-weight: 900; letter-spacing: -0.02em; }
+  .chips { margin-top: 56px; display: flex; gap: 22px; }
+  .chip { padding: 20px 34px; border-radius: 18px; background: #fff; border: 2px solid rgba(29,31,36,.1); font-size: 34px; font-weight: 700;
+    box-shadow: 0 8px 22px rgba(29,31,36,.08); }
+  .chip b { color: var(--red); font-weight: 900; }
+  .hero .store { margin-top: 48px; font-size: 26px; font-weight: 700; color: var(--muted); }
+  .hero .dots { top: auto; bottom: -60px; right: -60px; -webkit-mask-image: radial-gradient(circle at 100% 100%, #000 25%, transparent 70%); }
+</style>
+</head>
+<body>
+
+<!-- 1. 表紙 -->
+<div class="tile hero" id="hero">
+  <div class="dots"></div>
+  <div class="lockup">
+    <img src="../icon-master-512.png" alt="" />
+    <div>
+      <div class="wordmark">ルビふり</div>
+      <div class="for">for Googleスライド＆ドキュメント（拼音対応）</div>
+    </div>
+  </div>
+  <div class="announce"><span class="badge">v1.0.0</span><span class="text">公開しました！</span></div>
+  <div class="chips">
+    <div class="chip"><b>Googleドキュメント</b>に対応</div>
+    <div class="chip"><b>中国語の拼音</b>に対応</div>
+    <div class="chip">PDFの<b>ずれ</b>をお知らせ</div>
+  </div>
+  <div class="store">Chrome ウェブストアで無料</div>
+</div>
+
+<!-- 2. ドキュメント -->
+<div class="tile" id="docs">
+  <div class="dots"></div>
+  <div class="copy">
+    <span class="badge">v1.0.0 新機能</span>
+    <h1><span class="hl">Googleドキュメント</span><br>に対応</h1>
+    <p class="sub">本文にルビを書き込み。5種類の見せ方から選べて、「ルビを消す」で元に戻せます。</p>
+  </div>
+  <div class="shot"><img src="../store-screenshot-v1-2-docs.png" alt="" /></div>
+  <div class="brand"><img src="../icon-master-512.png" alt="" /><div><div class="name">ルビふり</div><div class="for">for Googleスライド＆ドキュメント</div></div></div>
+</div>
+
+<!-- 3. 拼音 -->
+<div class="tile" id="pinyin">
+  <div class="dots"></div>
+  <div class="copy">
+    <span class="badge">v1.0.0 新機能</span>
+    <h1>中国語の<span class="hl">拼音</span><br>（ピンイン）にも対応</h1>
+    <p class="sub">声調記号つき。Googleスライドにも、Googleドキュメントにも使えます。</p>
+  </div>
+  <div class="shot"><img src="../store-screenshot-v1-4-docs-pinyin.png" alt="" /></div>
+  <div class="brand"><img src="../icon-master-512.png" alt="" /><div><div class="name">ルビふり</div><div class="for">for Googleスライド＆ドキュメント</div></div></div>
+</div>
+
+<!-- 4. スライド -->
+<div class="tile" id="slides">
+  <div class="dots"></div>
+  <div class="copy">
+    <span class="badge">もちろん</span>
+    <h1><span class="hl">Googleスライド</span><br>も、これまでどおり</h1>
+    <p class="sub">漢字1文字ずつのルビ。JLPT・学年で、習った漢字は省けます。</p>
+  </div>
+  <div class="shot"><img src="../store-screenshot-v1-1-slides.png" alt="" /></div>
+  <div class="brand"><img src="../icon-master-512.png" alt="" /><div><div class="name">ルビふり</div><div class="for">for Googleスライド＆ドキュメント</div></div></div>
+</div>
+
+</body>
+</html>
