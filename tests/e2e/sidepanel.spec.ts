@@ -223,6 +223,14 @@ test.describe('ドキュメント', () => {
     expect(await commands(page)).toEqual(['write', 'delete']);
   });
 
+  test('「選択した範囲のルビを消す」で指示を送り、結果を表示する', async ({ page }) => {
+    await openPanel(page, { url: DOCS_URL });
+    await expect(page.locator('#docsDeleteSelection')).toHaveText('選択した範囲のルビを消す');
+    await page.locator('#docsDeleteSelection').click();
+    await expect(page.locator('#writeStatus')).toContainText('ルビを消しました(5 か所)');
+    expect(await commands(page)).toEqual(['delete-selection']);
+  });
+
   test('スライドのタブでは、設定を変えてもドキュメントの付け直しを送らない', async ({ page }) => {
     await openPanel(page, { url: SLIDES_URL });
     await page.locator('#skipKanji').selectOption('grade-2');

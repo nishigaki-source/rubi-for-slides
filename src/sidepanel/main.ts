@@ -73,6 +73,7 @@ const deleteAllBtn = qs<HTMLButtonElement>('#deleteAllSlides');
 const actionButtons = [writeBtn, writeAllBtn, deleteCurrentBtn, deleteAllBtn];
 const docsWriteBtn = qs<HTMLButtonElement>('#docsWrite');
 const docsDeleteBtn = qs<HTMLButtonElement>('#docsDelete');
+const docsDeleteSelectionBtn = qs<HTMLButtonElement>('#docsDeleteSelection');
 
 type PanelMode = 'slides' | 'docs';
 type TabKind = PanelMode | null;
@@ -102,6 +103,7 @@ function updateButtonsEnabled(): void {
   actionButtons.forEach((b) => (b.disabled = disabled));
   docsWriteBtn.disabled = busy || docsTarget === null;
   docsDeleteBtn.disabled = busy || docsTarget === null;
+  docsDeleteSelectionBtn.disabled = busy || docsTarget === null;
 }
 
 /** 画面の種類を切り替える(見出しのバッジ・出し分け・押せない設定・案内)。 */
@@ -526,9 +528,10 @@ function endDocsProgress(): void {
   }
 }
 
-const DOCS_STATUS: Record<'write' | 'delete' | 'refresh', string> = {
+const DOCS_STATUS: Record<'write' | 'delete' | 'delete-selection' | 'refresh', string> = {
   write: 'statusDocsWriting',
   delete: 'statusDocsDeleting',
+  'delete-selection': 'statusDocsDeletingSelection',
   refresh: 'statusDocsRefreshing',
 };
 
@@ -537,7 +540,7 @@ function skippedNote(skipped: number | undefined): string {
   return skipped ? `\n${t('statusDocsSkipped', String(skipped))}` : '';
 }
 
-async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'refresh'>): Promise<void> {
+async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'delete-selection' | 'refresh'>): Promise<void> {
   if (docsTarget === null) return;
   busy = true;
   updateButtonsEnabled();
@@ -561,7 +564,11 @@ async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'refre
       setWriteStatus(t('statusDocsSettingsSaved'), 'info');
       return;
     }
-    const key = command === 'write' ? 'statusDocsWriteSuccess' : command === 'delete' ? 'statusDocsDeleteSuccess' : 'statusDocsRefreshed';
+    if (command === 'delete-selection' && (res.count ?? 0) === 0 && !res.skipped) {
+      setWriteStatus(t('statusDocsSelectionNoRuby'), 'info');
+      return;
+    }
+    const key = command === 'write' ? 'statusDocsWriteSuccess' : command === 'refresh' ? 'statusDocsRefreshed' : 'statusDocsDeleteSuccess';
     setWriteStatus(`${t(key, count)}${skippedNote(res.skipped)}`, 'success');
   } catch (err) {
     setWriteStatus(err instanceof Error ? err.message : String(err), 'error');
@@ -579,3 +586,4 @@ async function runDocs(command: Extract<DocsCommand, 'write' | 'delete' | 'refre
 
 docsWriteBtn.addEventListener('click', () => void runDocs('write'));
 docsDeleteBtn.addEventListener('click', () => void runDocs('delete'));
+docsDeleteSelectionBtn.addEventListener('click', () => void runDocs('delete-selection'));

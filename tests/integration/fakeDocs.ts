@@ -146,6 +146,9 @@ export class FakeDocs {
       this.insertItems(index, items);
     } else if ('deleteContentRange' in req) {
       const { startIndex, endIndex } = req.deleteContentRange.range;
+      // 本物の Docs API は、範囲に知らない項目があると 400 を返す(2026-10-05 実機: namedRangeId を入れてしまった)
+      const unknown = Object.keys(req.deleteContentRange.range).filter((k) => !['startIndex', 'endIndex', 'segmentId', 'tabId'].includes(k));
+      if (unknown.length > 0) throw new Error(`Unknown name "${unknown[0]}" at 'delete_content_range.range'`);
       this.deleteRange(startIndex as number, endIndex as number);
     } else if ('updateTextStyle' in req) {
       const { range, textStyle, fields } = req.updateTextStyle;

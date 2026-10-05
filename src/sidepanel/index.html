@@ -119,6 +119,8 @@
   }
 
   .btnRow { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  /* ボタン1つだけの行(上の行と同じ間隔を空け、幅いっぱいにする) */
+  .btnRow.single { grid-template-columns: 1fr; margin-top: 8px; }
   button.primary {
     height: 36px;
     border: none; border-radius: 8px;
@@ -293,6 +295,10 @@
       <button type="button" class="primary" id="docsWrite" data-i18n="btnDocsWrite"></button>
       <button type="button" class="secondary" id="docsDelete" data-i18n="btnDocsDelete"></button>
     </div>
+    <div class="btnRow single docsOnly">
+      <button type="button" class="secondary" id="docsDeleteSelection" data-i18n="btnDocsDeleteSelection"></button>
+    </div>
+    <div class="fieldHint docsOnly" data-i18n="hintDocsDeleteSelection"></div>
 
     <div class="confirmBox" id="confirmBox" role="alertdialog" hidden>
       <p id="confirmText"></p>

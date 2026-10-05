@@ -38,6 +38,19 @@ export function collectRubiRanges(namedRanges: NamedRanges | undefined, segmentI
   return merged;
 }
 
+/** 名前付き範囲 RUBI_RANGE_NAME の区間を、まとめずに ID 付きで集める(本文のものだけ。選択した範囲だけ消すとき用)。 */
+export function collectRubiRangeEntries(namedRanges: NamedRanges | undefined): (IndexRange & { namedRangeId?: string })[] {
+  const out: (IndexRange & { namedRangeId?: string })[] = [];
+  for (const nr of namedRanges?.[RUBI_RANGE_NAME]?.namedRanges ?? []) {
+    for (const r of nr.ranges ?? []) {
+      if (r.segmentId) continue;
+      if (typeof r.startIndex !== 'number' || typeof r.endIndex !== 'number' || r.endIndex <= r.startIndex) continue;
+      out.push({ startIndex: r.startIndex, endIndex: r.endIndex, ...(nr.namedRangeId ? { namedRangeId: nr.namedRangeId } : {}) });
+    }
+  }
+  return out.sort((a, b) => a.startIndex - b.startIndex);
+}
+
 /** 読みの書式として付けた項目(段落の終わりの改行に残ったら戻す)。 */
 const READING_STYLE_FIELDS = ['fontSize', 'foregroundColor', 'baselineOffset', 'weightedFontFamily'] as const;
 

@@ -69,7 +69,7 @@ beforeAll(async () => {
   }) as typeof fetch;
 }, 30000);
 
-const { writeRuby, deleteRuby } = await import('../../src/worker/docsRuby');
+const { writeRuby, deleteRuby, deleteRubyInSelection } = await import('../../src/worker/docsRuby');
 
 const PARAGRAPHS = (): FakeParagraph[] => [
   { text: '春の遠足のお知らせ', style: { namedStyleType: 'HEADING_1' } },
@@ -288,5 +288,56 @@ describe('Word 形式(.docx)のまま開いた文書', () => {
     await expect(remove()).rejects.toThrow('errorDocsOfficeFile');
     const ja = JSON.parse(new TextDecoder().decode(readFileSync(`${ROOT}public/_locales/ja/messages.json`))) as Record<string, { message: string }>;
     expect(ja.errorDocsOfficeFile?.message).toContain('「ファイル」→「Google ドキュメントとして保存」');
+  });
+});
+
+describe('選択した範囲のルビだけを消す', () => {
+  const removeIn = (selected: string) => deleteRubyInSelection(fake.documentId, selected, fake.tabId);
+
+  it('括弧書き: 選んだ範囲の読みだけを消し、ほかは残す。残りも「ルビを消す」で消えて、元の文書に戻る', async () => {
+    setSettings({ docsStyle: 'paren' });
+    const before = fake.snapshot();
+    const w = await write();
+    // 画面で選ぶと、読みも一緒にコピーされる
+    const r = await removeIn('公園（こうえん）へ遠足（えんそく）');
+    expect(r).toEqual({ status: 'deleted', count: 2, skipped: 0 });
+    const text = fake.text();
+    expect(text).toContain('近（ちか）くの公園へ遠足に行（い）きます');
+    expect(fake.namedRangesOf('rubi')).toHaveLength(w.count - 2);
+    const d = await remove();
+    expect(d.count).toBe(w.count - 2);
+    expect(fake.snapshot()).toBe(before);
+    expect(fake.namedRangesOf('rubi')).toEqual([]);
+  });
+
+  it('括弧書き: 漢字だけを選んでも、その語の読みを消す', async () => {
+    setSettings({ docsStyle: 'paren' });
+    await write();
+    expect(await removeIn('正門')).toEqual({ status: 'deleted', count: 1, skipped: 0 });
+    expect(fake.text()).toContain('学校（がっこう）の正門に集合（しゅうごう）');
+  });
+
+  it('漢字の上(表ルビ): 選んだ範囲を含む段落を丸ごと元に戻し、ほかの段落の表は残す', async () => {
+    const before = fake.snapshot();
+    await write();
+    const tables = fake.tableCount;
+    // 表の行をコピーした文字(読み・本文がセルごとに改行やタブで区切られる)
+    const r = await removeIn('じゅうよう\n重要\t\nな\tれんらく\n連絡');
+    expect(r).toEqual({ status: 'deleted', count: 1, skipped: 0 });
+    expect(fake.tableCount).toBe(tables - 1);
+    expect(fake.text()).toContain('今日は重要な連絡です。');
+    await remove();
+    expect(fake.snapshot()).toBe(before);
+  });
+
+  it('同じ文字の並びが何か所もあるときは消さない。見つからないとき・ルビが無い範囲のときも、文書を変えない', async () => {
+    setSettings({ docsStyle: 'paren' });
+    await write();
+    const after = fake.snapshot();
+    expect(await removeIn('年生')).toMatchObject({ status: 'ambiguous' });
+    expect(await removeIn('この文書には無い文字')).toEqual({ status: 'not-found' });
+    expect(await removeIn(' \n')).toEqual({ status: 'empty' });
+    expect(await removeIn('してください。')).toEqual({ status: 'deleted', count: 0, skipped: 0 });
+    expect(fake.snapshot()).toBe(after);
   });
 });

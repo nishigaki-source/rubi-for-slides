@@ -6,21 +6,24 @@
  * - 'write': ルビをふる(付いていれば付け直す)
  * - 'refresh': ルビが付いているときだけ、今の設定で付け直す(設定を変えたときにサイドパネルが送る)
  * - 'delete': ルビを消す
+ * - 'delete-selection': 文書で選択している範囲のルビだけを消す
  * - 'create-test-doc': テスト用の文書を作る(開発版)
  */
-export type DocsCommand = 'write' | 'refresh' | 'delete' | 'create-test-doc';
+export type DocsCommand = 'write' | 'refresh' | 'delete' | 'delete-selection' | 'create-test-doc';
 
-const DOCS_COMMANDS: readonly string[] = ['write', 'refresh', 'delete', 'create-test-doc'];
+const DOCS_COMMANDS: readonly string[] = ['write', 'refresh', 'delete', 'delete-selection', 'create-test-doc'];
 
 export interface DocsCommandRequest {
   type: 'rubi-docs/command';
   command: DocsCommand;
-  /** 文書を開いているブラウザのタブの ID(表ルビの文字幅をそのページで測るため) */
+  /** 文書を開いているブラウザのタブの ID(表ルビの文字幅をそのページで測る・選択した文字を読むため) */
   browserTabId?: number;
   /** 'write'・'delete' の対象の文書 */
   documentId?: string;
   /** 複数タブの文書で、対象のタブ(省略すると最初のタブ) */
   tabId?: string;
+  /** 'delete-selection' で、選択した文字を直接渡す(動作確認用。省略すると文書のページから読む) */
+  selectedText?: string;
 }
 
 export type DocsCommandResponse =

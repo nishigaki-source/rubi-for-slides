@@ -199,6 +199,35 @@
   "btnDocsDelete": {
     "message": "Remove furigana"
   },
+  "btnDocsDeleteSelection": {
+    "message": "Remove furigana from the selection"
+  },
+  "statusDocsDeletingSelection": {
+    "message": "Removing furigana from the selection…"
+  },
+  "statusDocsSelectionNoRuby": {
+    "message": "There is no furigana in the selection."
+  },
+  "hintDocsDeleteSelection": {
+    "message": "Select text in the document first. With \"Above the kanji\", the whole paragraph containing the selection is cleared."
+  },
+  "errorDocsNoSelection": {
+    "message": "Select the text in the document first, then press the button."
+  },
+  "errorDocsSelectionUnreadable": {
+    "message": "Couldn't read the selection. Reload the document tab and try again."
+  },
+  "errorDocsSelectionNotFound": {
+    "message": "Couldn't find the selection in the document. Select a range without images, footnotes or headers and try again."
+  },
+  "errorDocsSelectionAmbiguous": {
+    "message": "The same text appears in $COUNT$ places, so the selection is ambiguous. Select a little more text around it.",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
   "statusDocsWriting": {
     "message": "Adding furigana…"
   },

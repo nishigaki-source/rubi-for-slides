@@ -199,6 +199,35 @@
   "btnDocsDelete": {
     "message": "ルビを消す"
   },
+  "btnDocsDeleteSelection": {
+    "message": "選択した範囲のルビを消す"
+  },
+  "statusDocsDeletingSelection": {
+    "message": "選択した範囲のルビを消しています…"
+  },
+  "statusDocsSelectionNoRuby": {
+    "message": "選択した範囲に、ルビはありませんでした。"
+  },
+  "hintDocsDeleteSelection": {
+    "message": "ドキュメントで文字を選んでから押します。「漢字の上」では、選んだ範囲を含む段落ごと消します。"
+  },
+  "errorDocsNoSelection": {
+    "message": "ルビを消したい範囲を、ドキュメントで選択してから押してください。"
+  },
+  "errorDocsSelectionUnreadable": {
+    "message": "選択した範囲を読み取れませんでした。ドキュメントのタブを再読み込みしてから、もう一度お試しください。"
+  },
+  "errorDocsSelectionNotFound": {
+    "message": "選択した範囲を、文書の中に見つけられませんでした。画像・脚注・ヘッダーなどを含まない範囲で、選び直してください。"
+  },
+  "errorDocsSelectionAmbiguous": {
+    "message": "同じ文字の並びが文書に $COUNT$ か所あり、どこを選んだのか分かりません。前後の文字も含めて、もう少し広く選んでください。",
+    "placeholders": {
+      "COUNT": {
+        "content": "$1"
+      }
+    }
+  },
   "statusDocsWriting": {
     "message": "ルビをふっています…"
   },

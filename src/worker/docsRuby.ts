@@ -15,7 +15,8 @@ import { createKnownKanjiFilter } from '../core/knownKanji';
 import { buildPinyinRanges } from '../core/pinyin';
 import { buildRubyTokens } from '../core/reading';
 import type { ReadingServiceOptions } from '../core/types';
-import { buildDeleteRubyRequests, collectRubiRanges, newlineStyleFix } from '../core/docs/deleteRuby';
+import { buildDeleteRubyRequests, collectRubiRangeEntries, collectRubiRanges, newlineStyleFix } from '../core/docs/deleteRuby';
+import { findSelectionRanges, flattenContent, groupInSelection, inlineReadingInSelection } from '../core/docs/selection';
 import {
   canUseTableRuby,
   extractParagraphs,
@@ -167,6 +168,68 @@ export async function deleteRuby(documentId: string, tabId?: string): Promise<{ 
   ];
   await batchUpdate(documentId, [...blocks.flatMap((b) => b.requests), ...subRequests, ...removeNamed], doc.revisionId);
   return { count: inline.length + restorable.length + subCount, skipped };
+}
+
+/** 選択した範囲のルビを消した結果。消せなかったときは理由。 */
+export type DeleteSelectionResult =
+  | { status: 'deleted'; count: number; skipped: number }
+  /** 選択が空 */
+  | { status: 'empty' }
+  /** 選択した文字の並びが、本文に見つからない */
+  | { status: 'not-found' }
+  /** 同じ文字の並びが何か所もあり、どれを選んだのか分からない */
+  | { status: 'ambiguous'; places: number };
+
+/**
+ * 対象のタブの本文で、選択した文字(selectedText)の範囲にかかるルビだけを消す(src/core/docs/selection.ts)。
+ * 本文に差し込んだ読みは、範囲にかかるものだけ。表ルビは段落ごとのまとまりなので、範囲にかかる段落を丸ごと元に戻す。
+ * ヘッダー・フッター・脚注は対象外。
+ */
+export async function deleteRubyInSelection(documentId: string, selectedText: string, tabId?: string): Promise<DeleteSelectionResult> {
+  const doc = await getDocument(documentId);
+  const seg = pickSegment(doc, tabId);
+  const content = seg.body.content ?? [];
+  const found = findSelectionRanges(flattenContent(content), selectedText);
+  if (found.length === 0) return selectedText.trim() === '' ? { status: 'empty' } : { status: 'not-found' };
+  if (found.length > 1) return { status: 'ambiguous', places: found.length };
+  const selection = found[0] as { startIndex: number; endIndex: number };
+
+  const inline = collectRubiRangeEntries(seg.namedRanges).filter((r) => inlineReadingInSelection(r, selection));
+  const groups = collectTableGroups(seg.namedRanges).filter((g) => groupInSelection(g, selection));
+  if (inline.length === 0 && groups.length === 0) return { status: 'deleted', count: 0, skipped: 0 };
+  const paragraphs = extractParagraphs(content, seg.tabId !== undefined ? { tabId: seg.tabId } : {});
+
+  const restorable: { start: number; requests: DocsRequest[]; group: (typeof groups)[number] }[] = [];
+  let skipped = 0;
+  for (const g of groups) {
+    const reqs = buildRestoreTableRubyRequests(
+      content,
+      g,
+      seg.tabId,
+      namedStyleFontSize(seg.namedStyles, g.style.namedStyleType ?? 'NORMAL_TEXT')
+    );
+    if (reqs) restorable.push({ start: g.startIndex, requests: reqs, group: g });
+    else skipped++;
+  }
+  // 後ろのものから順に消す(前の位置がずれないように)
+  const blocks: { start: number; requests: DocsRequest[] }[] = [
+    ...restorable,
+    ...inline.map((r) => {
+      // 範囲には位置だけを渡す(namedRangeId を入れたままだと、Docs API が知らない項目として 400 を返す)
+      const range = { startIndex: r.startIndex, endIndex: r.endIndex };
+      const fix = newlineStyleFix(paragraphs, range, seg.tabId);
+      return { start: r.startIndex, requests: [...buildDeleteRubyRequests([range], seg.tabId).slice(0, 1), ...(fix ? [fix] : [])] };
+    }),
+  ].sort((a, b) => b.start - a.start);
+
+  // 名前付き範囲は、消したものだけを ID で消す(名前で消すと、選択の外の読みの目印まで消えて、あとで消せなくなる)
+  const tabsCriteria = seg.tabId !== undefined ? { tabsCriteria: { tabIds: [seg.tabId] } } : {};
+  const removeNamed: DocsRequest[] = [
+    ...inline.flatMap((r) => (r.namedRangeId ? [{ deleteNamedRange: { namedRangeId: r.namedRangeId, ...tabsCriteria } }] : [])),
+    ...restorable.flatMap((r) => (r.group.namedRangeId ? [{ deleteNamedRange: { namedRangeId: r.group.namedRangeId, ...tabsCriteria } }] : [])),
+  ];
+  await batchUpdate(documentId, [...blocks.flatMap((b) => b.requests), ...removeNamed], doc.revisionId);
+  return { status: 'deleted', count: inline.length + restorable.length, skipped };
 }
 
 /**

@@ -12,8 +12,9 @@ import type { DocsRequest } from '../core/docs/types';
 import { t } from '../shared/i18n';
 import { getAuthToken } from './auth';
 import { batchUpdate, getDocument } from './docsClient';
-import { createTestDocument, deleteRuby, writeRuby } from './docsRuby';
+import { createTestDocument, deleteRuby, deleteRubyInSelection, writeRuby } from './docsRuby';
 import { requestFileAccess } from './filePicker';
+import { readSelectedText } from './selection';
 
 const LOG_PREFIX = '[ルビふり] ドキュメント:';
 
@@ -48,6 +49,17 @@ async function runCommand(req: DocsCommandRequest, senderTabId: number | undefin
       writeRuby(documentId, req.tabId, req.browserTabId ?? senderTabId)
     );
     return { ok: true, count, measuredChars, skipped, ...(__RUBI_QA__ ? { timing } : {}) };
+  }
+  if (req.command === 'delete-selection') {
+    // 動作確認用の受け口からは、選択した文字を直接渡せる(selectedText)
+    const selected = req.selectedText ?? (await readSelectedText(req.browserTabId ?? senderTabId));
+    if (selected === null) return { ok: false, message: t('errorDocsSelectionUnreadable') };
+    if (selected.trim() === '') return { ok: false, message: t('errorDocsNoSelection') };
+    const result = await withAccess(() => deleteRubyInSelection(documentId, selected, req.tabId));
+    if (result.status === 'empty') return { ok: false, message: t('errorDocsNoSelection') };
+    if (result.status === 'not-found') return { ok: false, message: t('errorDocsSelectionNotFound') };
+    if (result.status === 'ambiguous') return { ok: false, message: t('errorDocsSelectionAmbiguous', String(result.places)) };
+    return { ok: true, count: result.count, skipped: result.skipped };
   }
   const { count, skipped } = await withAccess(() => deleteRuby(documentId, req.tabId));
   return { ok: true, count, skipped };
