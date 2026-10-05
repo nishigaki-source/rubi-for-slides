@@ -211,5 +211,5 @@ Chromeウェブストアは1280×800(または640×400)の画像を1〜5枚求�
     リンクが消える件、Google の許可のエラーをわかりやすく、アンインストール後の案内ページ(`docs/bye.html`)
   - [x] コードとテスト(単体・結合 361 件、e2e 40 件)
   - [x] GitHub への push(`docs/bye.html` とプライバシーポリシーの追記を GitHub Pages に反映)
-  - [ ] `npm run build:store-zip` で zip を作って提出
+  - [x] `npm run build:store-zip` で zip を作って**提出**(2026-10-05。提出した zip のコードは main の `e2d4b4f`)。審査待ち
   - [ ] 審査の結果。公開後、ストアから入れた版でアンインストール後のページが開くかを確認
