@@ -57,7 +57,7 @@ export interface ParagraphStyle {
 export interface ParagraphElement {
   startIndex?: number;
   endIndex?: number;
-  textRun?: { content?: string; textStyle?: TextStyle };
+  textRun?: { content?: string; textStyle?: TextStyle; suggestedInsertionIds?: string[]; suggestedDeletionIds?: string[] };
   // 文字以外の要素(画像・自動テキスト・脚注の参照・改ページなど)。それぞれ index を 1 つ使う。
   inlineObjectElement?: unknown;
   autoText?: unknown;

@@ -3,7 +3,7 @@ import kuromoji from 'kuromoji';
 import { buildRubyTokens } from '@core/reading';
 import { parseKanjiReadingTable } from '@core/kanjiSplit';
 import type { ReadingServiceOptions, RubyToken, TokenizedWord } from '@core/types';
-import { extractParagraphs, fontSizeAt, listSegments, OBJECT_PLACEHOLDER, type DocParagraph } from '@core/docs/extract';
+import { canUseTableRuby, extractParagraphs, fontSizeAt, listSegments, OBJECT_PLACEHOLDER, type DocParagraph } from '@core/docs/extract';
 import { excludeOverlapping, rubySpansForParagraph, type RubySpan } from '@core/docs/rubySpans';
 import { buildInlineRubyRequests, readingFontSize, RUBI_RANGE_NAME, type InlineRubyStyle } from '@core/docs/inlineRuby';
 import { buildDeleteRubyRequests, collectRubiRanges, newlineStyleFix } from '@core/docs/deleteRuby';
@@ -408,6 +408,26 @@ describe('layoutRubyLines: 表ルビ(E・F)の行の分け方', () => {
     ]);
   });
 
+  it('列の幅は 5pt より狭くしない(Docs API が受け付けず、書き込み全体が失敗するため)', () => {
+    // 漢字の語にはさまれた半角の空白: 11pt で 0.278em → 3.1pt
+    const narrow: LineLayoutOptions = { ...base, measure: (text, size) => [...text].reduce((w, c) => w + (c === ' ' ? 0.278 : 1) * size, 0) };
+    const [p] = extractParagraphs(bodyContent(['漢字 学校'], { fontSize: { magnitude: 11, unit: 'PT' } }));
+    const para = p as DocParagraph;
+    const [line] = layoutRubyLines(unitsForParagraph(para, spansFor(para, PER_WORD)), narrow);
+    expect(line?.map((c) => [c.base, c.widthPt])).toEqual([
+      ['漢字', 23],
+      [' ', 5],
+      ['学校', 23],
+    ]);
+  });
+
+  it('読みの大きさは 1pt より小さくしない', () => {
+    const [p] = extractParagraphs(bodyContent(['漢字'], { fontSize: { magnitude: 1, unit: 'PT' } }));
+    const para = p as DocParagraph;
+    const [line] = layoutRubyLines(unitsForParagraph(para, spansFor(para, PER_WORD)), base);
+    expect(line?.[0]?.readingSizePt).toBe(1);
+  });
+
   it('行頭に「、。」などが来ない(行頭禁則)', () => {
     const lines = linesFor(TEXT, { ...base, maxWidthPt: 150 });
     for (const line of lines.slice(1)) {
@@ -570,5 +590,33 @@ describe('readingFontOf: 読みのフォント', () => {
       ['学校', 'がっこう', 'Arial', 'M PLUS Rounded 1c'],
       ['へ', null, 'Arial', 'M PLUS Rounded 1c'],
     ]);
+  });
+});
+
+describe('canUseTableRuby: 表ルビにできる段落か', () => {
+  const para = (content: string, run: Record<string, unknown> = {}): DocParagraph =>
+    extractParagraphs([
+      {
+        startIndex: 1,
+        endIndex: 1 + content.length + 1,
+        paragraph: { elements: [{ startIndex: 1, endIndex: 1 + content.length + 1, textRun: { content: `${content}\n`, ...run } }] },
+      },
+    ])[0] as DocParagraph;
+
+  it('普通の段落はできる。タブを含んでもできる', () => {
+    expect(canUseTableRuby(para('漢字の学校'))).toBe(true);
+    expect(canUseTableRuby(para('日時\t10月5日'))).toBe(true);
+  });
+
+  it('Docs が入れ直すときに取り除く文字(Word の記号フォントの私用領域の文字・制御文字)を含む段落はできない', () => {
+    expect(canUseTableRuby(para('\uf0b7売上高の推移'))).toBe(false);
+    expect(canUseTableRuby(para('売上\u0007高'))).toBe(false);
+  });
+
+  it('提案(承認待ちの挿入・削除)を含む段落・段落内の改行を含む段落はできない', () => {
+    expect(canUseTableRuby(para('漢字', { suggestedInsertionIds: ['s1'] }))).toBe(false);
+    expect(canUseTableRuby(para('漢字', { suggestedDeletionIds: ['s2'] }))).toBe(false);
+    expect(canUseTableRuby(para('漢字', { suggestedInsertionIds: [] }))).toBe(true);
+    expect(canUseTableRuby(para('漢字\u000b学校'))).toBe(false);
   });
 });

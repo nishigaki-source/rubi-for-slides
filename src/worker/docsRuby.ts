@@ -17,12 +17,12 @@ import { buildRubyTokens } from '../core/reading';
 import type { ReadingServiceOptions } from '../core/types';
 import { buildDeleteRubyRequests, collectRubiRanges, newlineStyleFix } from '../core/docs/deleteRuby';
 import {
+  canUseTableRuby,
   extractParagraphs,
   fontSizeAt,
   listSegments,
   namedStyleFontFamily,
   namedStyleFontSize,
-  OBJECT_PLACEHOLDER,
   paragraphGeometry,
   textAreaWidthPt,
   type DocParagraph,
@@ -169,11 +169,6 @@ export async function deleteRuby(documentId: string, tabId?: string): Promise<{ 
   return { count: inline.length + restorable.length + subCount, skipped };
 }
 
-/** 表ルビにできる段落か(箇条書き・表の中・画像や段落内の改行を含む段落は B にする)。 */
-function canUseTable(p: DocParagraph): boolean {
-  return !p.inTable && !p.hasBullet && !p.text.includes(OBJECT_PLACEHOLDER) && !p.text.includes('\u000b');
-}
-
 /**
  * 対象のタブにルビを書き込む。書き込んだ読みの数と、表ルビのためにページで幅を測れた文字の数を返す。
  * browserTabId は文書を開いているブラウザのタブ(表ルビの文字の幅をそのページで測る)。
@@ -219,7 +214,7 @@ export async function writeRuby(
   const planned: { paragraph: DocParagraph; spans: RubySpan[]; table: boolean }[] = [];
   for (const p of paragraphs) {
     if (!hasKanji(p.text)) continue;
-    const table = useTable && canUseTable(p);
+    const table = useTable && canUseTableRuby(p);
     const spans = await spansForParagraph(p, options, !table);
     if (!spans) {
       console.warn('[ルビふり] 段落の位置の対応が取れないため飛ばしました', p.startIndex);

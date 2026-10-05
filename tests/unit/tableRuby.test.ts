@@ -198,6 +198,26 @@ describe('元に戻す', () => {
     ]);
   });
 
+  it('字下げ・余白をすべて持つ段落(Word から変換した文書): 256 文字を超えるときは長さを数だけで書き、書式をすべて残す', () => {
+    const pt = (magnitude: number) => ({ magnitude, unit: 'PT' as const });
+    const style: ParagraphStyle = {
+      namedStyleType: 'NORMAL_TEXT',
+      alignment: 'JUSTIFIED',
+      lineSpacing: 115,
+      spaceAbove: pt(0),
+      spaceBelow: pt(8),
+      indentStart: pt(35.4330708661),
+      indentEnd: pt(0),
+      indentFirstLine: pt(17.7165354331),
+    };
+    const name = encodeGroupName(style, 12);
+    expect(name.length).toBeLessThanOrEqual(256);
+    expect(decodeGroupName(name)).toEqual({
+      style: { ...style, indentStart: pt(35.433), indentFirstLine: pt(17.717) },
+      tables: 12,
+    });
+  });
+
   const cell = (reading: string, base: string, style: object) => ({
     content: [
       { paragraph: { elements: [{ textRun: { content: `${reading}\n` } }] } },
@@ -305,6 +325,8 @@ describe('alignLines: 字下げ・中央揃え・右揃えを、行の先頭の�
     expect(alignLines([line(100)], geo('START'), 400)[0]).toHaveLength(1);
     // 2pt より狭い空きは入れない
     expect(alignLines([line(399)], geo('CENTER'), 400)[0]).toHaveLength(1);
+    // 2pt 以上で 5pt より狭い空きは、列の幅の下限(5pt)にする(Docs API が 5pt 未満の列を受け付けない)
+    expect(alignLines([line(100)], geo('START', 3, 3), 400)[0]?.[0]?.widthPt).toBe(5);
   });
 
   it('見えない列(本文も読みも空)も表のセルになり、元に戻すときの文字には入らない', () => {
@@ -348,5 +370,22 @@ describe('ユーザー辞書の見た目の上書き(漢字の上・漢字の上
       foregroundColor: { color: { rgbColor: { red: 1, green: 0, blue: 0 } } },
       weightedFontFamily: { fontFamily: 'Klee One' },
     });
+  });
+});
+
+describe('buildTableRubyRequests: リンクのある段落', () => {
+  it('行の大半がリンクでも、リンクは表全体には付けず、リンクのある列ごとに付ける(改行だけのセルにはリンクが付かないため)', () => {
+    const link = { url: 'https://example.com/' };
+    const linked = (base: string, reading: string, start: number): RubyColumn => ({ ...col(base, reading, start), textStyle: { link } });
+    const p = paragraphAt(1, '漢字学校の');
+    const { requests } = buildTableRubyRequests(p, [[linked('漢字', 'かんじ', 1), linked('学校', 'がっこう', 3), { ...col('の', null, 5), textStyle: {} }]]);
+    const styles = requests.flatMap((r) => ('updateTextStyle' in r ? [r.updateTextStyle] : []));
+    const withLink = styles.filter((u) => u.textStyle.link !== undefined);
+    // リンクのある2列の本文にだけ付く
+    expect(withLink).toHaveLength(2);
+    for (const u of withLink) expect(u.fields.split(',')).toContain('link');
+    // 表全体(セルをまたぐ範囲)に付ける書式には、リンクを入れない
+    const wide = styles.find((u) => u.fields === 'fontSize');
+    expect(wide).toBeDefined();
   });
 });

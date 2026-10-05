@@ -46,13 +46,28 @@ type SavedParagraphStyle = Partial<Pick<ParagraphStyle, (typeof SAVED_PARAGRAPH_
 /** 名前付き範囲の名前で、表の数を入れる項目の名前。 */
 const TABLE_COUNT_KEY = 'tables';
 
-/** 元の段落の書式と表の数を名前付き範囲の名前にする(256 文字まで)。 */
+/** 長さ(pt)で持つ項目。名前が長くなりすぎるときは、数だけにして短く書く。 */
+const DIMENSION_FIELDS: readonly string[] = ['spaceAbove', 'spaceBelow', 'indentStart', 'indentEnd', 'indentFirstLine'];
+
+/**
+ * 元の段落の書式と表の数を名前付き範囲の名前にする(256 文字まで)。
+ * 字下げ・余白をすべて持つ段落(Word から変換した文書に多い)は、そのままでは 256 文字を超える。そのときは
+ * 長さを数だけ(pt)で書く(`"indentStart":36`)。以前は段落の種類だけを残していたため、ルビを消したときに
+ * 揃え方・字下げ・行間が失われた(2026-10-05 修正)。
+ */
 export function encodeGroupName(style: ParagraphStyle, tableCount?: number): string {
   const saved: Record<string, unknown> = {};
   for (const f of SAVED_PARAGRAPH_FIELDS) if (style[f] !== undefined) saved[f] = style[f];
   const count = tableCount !== undefined ? { [TABLE_COUNT_KEY]: tableCount } : {};
   const name = RUBI_TABLE_PREFIX + JSON.stringify({ ...saved, ...count });
-  return name.length <= 256 ? name : RUBI_TABLE_PREFIX + JSON.stringify({ namedStyleType: style.namedStyleType, ...count });
+  if (name.length <= 256) return name;
+  const compact: Record<string, unknown> = { ...saved };
+  for (const f of DIMENSION_FIELDS) {
+    const d = compact[f] as { magnitude?: number } | undefined;
+    if (d !== undefined) compact[f] = Math.round((d.magnitude ?? 0) * 1000) / 1000;
+  }
+  const short = RUBI_TABLE_PREFIX + JSON.stringify({ ...compact, ...count });
+  return short.length <= 256 ? short : RUBI_TABLE_PREFIX + JSON.stringify({ namedStyleType: style.namedStyleType, ...count });
 }
 
 export function decodeGroupName(name: string): { style: SavedParagraphStyle; tables?: number } | null {
@@ -61,6 +76,8 @@ export function decodeGroupName(name: string): { style: SavedParagraphStyle; tab
     const v = JSON.parse(name.slice(RUBI_TABLE_PREFIX.length)) as unknown;
     if (typeof v !== 'object' || v === null) return null;
     const { [TABLE_COUNT_KEY]: tables, ...style } = v as Record<string, unknown>;
+    // 短く書いた長さ(数だけ)を、Docs の形に戻す
+    for (const f of DIMENSION_FIELDS) if (typeof style[f] === 'number') style[f] = PT(style[f] as number);
     return { style: style as SavedParagraphStyle, ...(typeof tables === 'number' ? { tables } : {}) };
   } catch {
     return null;
@@ -103,7 +120,12 @@ function commonBaseStyle(line: readonly RubyColumn[]): TextStyle {
     counts.set(key, e);
   }
   const best = [...counts.values()].sort((a, b) => b.n - a.n)[0];
-  return best?.style ?? { fontSize: PT(line[0]?.sizePt ?? 11) };
+  if (!best) return { fontSize: PT(line[0]?.sizePt ?? 11) };
+  // リンクは表全体には付けない(改行だけのセルにはリンクが付かず、あとから入れる文字も引き継がないため、
+  // 行の大半がリンクの段落でリンクが消える)。リンクのある列は、7. で列ごとに付ける
+  const withoutLink = { ...best.style };
+  delete withoutLink.link;
+  return withoutLink;
 }
 
 /**

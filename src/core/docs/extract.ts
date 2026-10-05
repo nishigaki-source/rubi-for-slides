@@ -51,6 +51,8 @@ export interface DocParagraph {
   hasBullet: boolean;
   /** 表のセルの中の段落か */
   inTable: boolean;
+  /** 提案(承認待ちの挿入・削除)の文字を含むか */
+  hasSuggestion: boolean;
   /** 複数タブの文書でのタブ ID(includeTabsContent=true で取得したとき) */
   tabId?: string;
 }
@@ -188,6 +190,7 @@ function toDocParagraph(el: StructuralElement, inTable: boolean, options: Extrac
   const runs: DocTextRun[] = [];
   let startIndex: number | undefined;
   let cursor: number | undefined;
+  let hasSuggestion = false;
 
   for (const pe of elements) {
     // index が 0 の項目は API の応答で省かれる(ヘッダー・フッター・脚注の最初の段落。2026-09-29 に実物で確認)
@@ -203,6 +206,7 @@ function toDocParagraph(el: StructuralElement, inTable: boolean, options: Extrac
       const content = pe.textRun.content ?? '';
       if (content.length !== e - s) return null;
       const textStyle = pe.textRun.textStyle ?? {};
+      if ((pe.textRun.suggestedInsertionIds?.length ?? 0) > 0 || (pe.textRun.suggestedDeletionIds?.length ?? 0) > 0) hasSuggestion = true;
       runs.push({ startIndex: s, endIndex: e, text: content, textStyle, fontSizePt: styleFontSize(textStyle) ?? baseSize });
       text += content;
     } else {
@@ -223,8 +227,26 @@ function toDocParagraph(el: StructuralElement, inTable: boolean, options: Extrac
     paragraphStyle: paragraph?.paragraphStyle ?? {},
     hasBullet: paragraph?.bullet !== undefined,
     inTable,
+    hasSuggestion,
     ...(options.tabId !== undefined ? { tabId: options.tabId } : {}),
   };
+}
+
+/**
+ * Docs API の insertText が黙って取り除く文字(私用領域 U+E000〜F8FF と、タブ・改行以外の制御文字。API の仕様)。
+ * Word から変換した文書の Symbol・Wingdings の記号(U+F0B7 など)がこれに当たる。
+ */
+const STRIPPED_ON_INSERT = /[\u0000-\u0008\u000c-\u001f\ue000-\uf8ff]/;
+
+/**
+ * 表ルビ(段落の文字を消して、表のセルへ入れ直す)にできる段落か。できない段落は、本文に読みを差し込む見せ方にする。
+ * - 箇条書き・表の中・画像など文字以外の要素・段落内の改行(Shift+Enter): 表にすると形が崩れる(2026-09-28 決定)
+ * - 入れ直すときに取り除かれる文字: その後ろの位置が1つずつずれて書き込み全体が失敗し、文字も失われる
+ * - 提案の文字: 入れ直すと、提案が承認(挿入)・却下(削除)されたのと同じ状態になる
+ */
+export function canUseTableRuby(p: DocParagraph): boolean {
+  if (p.inTable || p.hasBullet || p.hasSuggestion) return false;
+  return !p.text.includes(OBJECT_PLACEHOLDER) && !p.text.includes('\u000b') && !STRIPPED_ON_INSERT.test(p.text);
 }
 
 /** 段落の書式のうち、表ルビの位置に関わるもの(段落の種類の既定を含めて決める)。 */

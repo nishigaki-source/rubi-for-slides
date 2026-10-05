@@ -157,6 +157,13 @@ export function unitsForParagraph(
   return units;
 }
 
+/**
+ * 表の列の幅の下限(pt)。Docs API は、これより狭い列の幅を受け付けない
+ * (2026-10-05 利用者の文書: 「Column width must not be less than minimum column width: 5.」で全体が失敗した。
+ *  11pt の本文で、漢字の語にはさまれた半角の空白1つだけの列が 4pt になる)。
+ */
+export const MIN_COLUMN_WIDTH_PT = 5;
+
 function sameLook(a: RubyUnit, b: RubyUnit): boolean {
   return a.sizePt === b.sizePt && JSON.stringify(a.textStyle) === JSON.stringify(b.textStyle) && JSON.stringify(a.font) === JSON.stringify(b.font);
 }
@@ -173,7 +180,8 @@ export function readingFontOf(unit: RubyUnit): FontSpec {
 
 function readingSize(unit: RubyUnit, options: LineLayoutOptions): number {
   const ratio = unit.readingStyle?.sizeRatio ?? options.readingRatio;
-  const normal = Math.round(unit.sizePt * ratio * 10) / 10;
+  // 1pt より小さくしない(本文に差し込む読みと同じ下限。inlineRuby.ts の readingFontSize)
+  const normal = Math.max(1, Math.round(unit.sizePt * ratio * 10) / 10);
   if (!unit.reading || !options.shrink) return normal;
   const baseW = options.measure(unit.base, unit.sizePt, unit.font);
   const allowed = baseW + options.shrink.allowanceEm * unit.sizePt;
@@ -200,7 +208,7 @@ export function toColumns(units: readonly RubyUnit[], options: LineLayoutOptions
     const rs = readingSize(c, options);
     const w = Math.max(options.measure(c.base, c.sizePt, c.font), c.reading ? options.measure(c.reading, rs, readingFontOf(c)) : 0);
     // 幅は 1pt 単位に切り上げる(同じ幅の列をまとめて指定し、リクエストを減らすため)
-    return { ...c, readingSizePt: rs, widthPt: Math.ceil(w + padding) };
+    return { ...c, readingSizePt: rs, widthPt: Math.max(MIN_COLUMN_WIDTH_PT, Math.ceil(w + padding)) };
   });
 }
 
@@ -239,7 +247,7 @@ export function layoutRubyLines(units: readonly RubyUnit[], options: LineLayoutO
   return lines.map((line) => toColumns(line, options));
 }
 
-/** 先頭に入れる見えない列を、これより狭いときは入れない(pt)。 */
+/** 先頭に入れる見えない列を、これより狭いときは入れない(pt)。これ以上で列の幅の下限より狭いときは、下限の幅にする。 */
 const MIN_PAD_PT = 2;
 
 /**
@@ -273,7 +281,7 @@ export function alignLines(
       font: first.font,
       textStyle: {},
       readingSizePt: 1,
-      widthPt: pad,
+      widthPt: Math.max(MIN_COLUMN_WIDTH_PT, pad),
     };
     return [padColumn, ...line];
   });
